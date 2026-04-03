@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAISON — MEDIA ART</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Cinzel:wght@400;600&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#0a0800;cursor:none}
+
+canvas{position:fixed;inset:0;display:block}
+#c-bg   {z-index:0}
+#c-flora{z-index:1}
+#c-burst{z-index:2}
+#c-ui   {z-index:3;pointer-events:none}
+
+#overlay{
+  position:fixed;inset:0;z-index:4;pointer-events:none;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-end;
+  padding-bottom:42px;
+}
+.wordmark{
+  font-family:'Cinzel',serif;
+  font-size:clamp(10px,1.1vw,15px);
+  font-weight:400;
+  letter-spacing:.65em;
+  color:rgba(255,215,80,0.38);
+  text-transform:uppercase;
+  margin-bottom:10px;
+}
+.tagline{
+  font-family:'Cormorant Garamond',serif;
+  font-style:italic;
+  font-size:clamp(9px,.9vw,12px);
+  font-weight:300;
+  letter-spacing:.25em;
+  color:rgba(255,215,80,0.2);
+}
+
+#cursor-dot{
+  position:fixed;width:10px;height:10px;
+  border-radius:50%;
+  pointer-events:none;z-index:999;
+  transform:translate(-50%,-50%);
+  background:rgba(255,215,60,0.9);
+  box-shadow:0 0 12px rgba(255,200,0,0.8),0 0 28px rgba(255,160,0,0.4);
+  transition:transform .08s;
+  mix-blend-mode:screen;
+}
+#cursor-ring{
+  position:fixed;width:34px;height:34px;
+  border-radius:50%;border:1px solid rgba(255,200,60,0.4);
+  pointer-events:none;z-index:998;
+  transform:translate(-50%,-50%);
+  transition:transform .18s cubic-bezier(.23,1,.32,1), width .2s, height .2s;
+  mix-blend-mode:screen;
+}
+</style>
+</head>
+<body>
+<canvas id="c-bg"></canvas>
+<canvas id="c-flora"></canvas>
+<canvas id="c-burst"></canvas>
+<canvas id="c-ui"></canvas>
+
+<div id="overlay">
+  <div class="wordmark">Maison · Reinterpreted</div>
+  <div class="tagline">an ode to the murakami era</div>
+</div>
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+
+<script>
+// ═══════════════════════════════════════
+// MURAKAMI × LV  PALETTE
+// ═══════════════════════════════════════
+const PAL = {
+  gold:    '#FFD740',
+  amber:   '#FF9B00',
+  cherry:  '#FF2D55',
+  cerise:  '#E8005A',
+  tangerine:'#FF6B00',
+  lime:    '#AAFF00',
+  chartreuse:'#DDFF00',
+  sky:     '#00C8FF',
+  cobalt:  '#0055FF',
+  violet:  '#9B00FF',
+  fuchsia: '#FF00CC',
+  cream:   '#FFF8DC',
+  bg:      '#0a0800',
+};
+const VIVID = [PAL.gold,PAL.amber,PAL.cherry,PAL.cerise,PAL.tangerine,
+               PAL.lime,PAL.chartreuse,PAL.sky,PAL.cobalt,PAL.violet,PAL.fuchsia];
+
+// ═══════════════════════════════════════
+// CANVAS SETUP
+// ═══════════════════════════════════════
+const bgCvs    = document.getElementById('c-bg');
+const floraCvs = document.getElementById('c-flora');
+const burstCvs = document.getElementById('c-burst');
+const uiCvs    = document.getElementById('c-ui');
+const bgCtx    = bgCvs.getContext('2d');
+const floraCtx = floraCvs.getContext('2d');
+const burstCtx = burstCvs.getContext('2d');
+const uiCtx    = uiCvs.getContext('2d');
+
+let W = 0, H = 0;
+function resize(){
+  W = innerWidth; H = innerHeight;
+  [bgCvs,floraCvs,burstCvs,uiCvs].forEach(c=>{c.width=W;c.height=H;});
+  initBg();
+}
+window.addEventListener('resize', resize);
+
+// ═══════════════════════════════════════
+// MOUSE
+// ═══════════════════════════════════════
+let mx = 0, my = 0, pmx = 0, pmy = 0;
+const curDot  = document.getElementById('cursor-dot');
+const curRing = document.getElementById('cursor-ring');
+document.addEventListener('mousemove', e=>{
+  pmx=mx; pmy=my;
+  mx=e.clientX; my=e.clientY;
+  curDot.style.left=mx+'px'; curDot.style.top=my+'px';
+  curRing.style.left=mx+'px'; curRing.style.top=my+'px';
+});
+
+// ═══════════════════════════════════════
+// BACKGROUND — warm dark canvas + subtle LV-monogram grid
+// ═══════════════════════════════════════
+let bgCanvas2 = null; // offscreen
+function initBg(){
+  const off = document.createElement('canvas');
+  off.width=W; off.height=H;
+  const ctx = off.getContext('2d');
+
+  // Rich dark warm gradient
+  const grad = ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,Math.max(W,H)*.72);
+  grad.addColorStop(0,  '#1a1000');
+  grad.addColorStop(.45,'#0d0900');
+  grad.addColorStop(1,  '#000000');
+  ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+
+  // Subtle LV-style diamond grid (Damier ghost)
+  ctx.save();
+  ctx.globalAlpha=0.028;
+  ctx.strokeStyle='#FFD740';
+  ctx.lineWidth=.6;
+  const gs=52; // grid size
+  // rotated 45°
+  ctx.translate(W/2,H/2); ctx.rotate(Math.PI/4); ctx.translate(-W/2,-H/2);
+  const ex=Math.max(W,H)*1.5;
+  for(let x=-ex;x<ex*2;x+=gs){ ctx.beginPath();ctx.moveTo(x,-ex);ctx.lineTo(x,ex*2);ctx.stroke(); }
+  for(let y=-ex;y<ex*2;y+=gs){ ctx.beginPath();ctx.moveTo(-ex,y);ctx.lineTo(ex*2,y);ctx.stroke(); }
+  ctx.restore();
+
+  bgCanvas2 = off;
+}
+
+function drawBg(){
+  if(!bgCanvas2) return;
+  bgCtx.drawImage(bgCanvas2,0,0);
+}
+
+// ═══════════════════════════════════════
+// FLORA — Murakami flower field
+// ═══════════════════════════════════════
+class Flower {
+  constructor(x,y,scale,col1,col2,depth){
+    this.ox=x; this.oy=y;
+    this.x=x;  this.y=y;
+    this.scale=scale;
+    this.col1=col1; // petal color
+    this.col2=col2; // center
+    this.depth=depth; // 0=far, 1=close
+    this.angle=Math.random()*Math.PI*2;
+    this.sway=0;
+    this.swayTarget=0;
+    this.swaySpeed=0.0018+Math.random()*.0022;
+    this.swayAmp=0.12+Math.random()*.18;
+    this.windPhase=Math.random()*Math.PI*2;
+    this.windSpeed=.0008+Math.random()*.0012;
+    this.windAmp=3+Math.random()*8;
+    this.baseAlpha=0.45+depth*.4;
+    this.alpha=this.baseAlpha;
+    this.petals=5;
+    this.petalLen=22*scale;
+    this.petalW=10*scale;
+    this.eyeR=7*scale;
+    // face expression cycling
+    this.facePhase=Math.random()*Math.PI*2;
+    this.hovered=false;
+    this.hoverT=0;
+    this.pulse=0;
+  }
+
+  update(ts, mouseX, mouseY){
+    // Wind sway
+    const wind = Math.sin(ts*this.windSpeed+this.windPhase);
+    this.x = this.ox + wind*this.windAmp*this.depth;
+    this.y = this.oy + Math.cos(ts*this.windSpeed*.7+this.windPhase)*this.windAmp*.3*this.depth;
+
+    // Mouse repulsion / attraction (near = shy, far = lean)
+    const dx=mouseX-this.x, dy=mouseY-this.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    const R=120*this.scale;
+    if(dist<R){
+      const force=(R-dist)/R;
+      this.swayTarget = -dx/dist*force*this.swayAmp*2.5;
+      this.hovered=true;
+      this.hoverT=Math.min(this.hoverT+.08,1);
+    } else {
+      this.swayTarget = wind*this.swayAmp;
+      this.hovered=false;
+      this.hoverT=Math.max(this.hoverT-.03,0);
+    }
+    this.sway += (this.swayTarget-this.sway)*0.07;
+    this.alpha = this.baseAlpha*(1+this.hoverT*.3);
+    this.pulse = (1+Math.sin(ts*.003+this.facePhase))*.5;
+  }
+
+  draw(ctx, ts){
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle+this.sway);
+    ctx.globalAlpha=this.alpha;
+
+    // Draw petals
+    for(let i=0;i<this.petals;i++){
+      const pa=(i/this.petals)*Math.PI*2;
+      ctx.save();
+      ctx.rotate(pa);
+      ctx.fillStyle=this.col1;
+      ctx.shadowColor=this.col1;
+      ctx.shadowBlur=8*this.scale*(1+this.hoverT);
+      ctx.beginPath();
+      ctx.ellipse(0,-this.petalLen*.55,this.petalW*.5,this.petalLen*.55,0,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Center circle — Murakami face
+    const eyeR = this.eyeR*(1+this.hoverT*.15);
+    ctx.fillStyle=PAL.cream;
+    ctx.shadowColor='rgba(255,240,180,0.6)';
+    ctx.shadowBlur=12*this.scale;
+    ctx.beginPath(); ctx.arc(0,0,eyeR,0,Math.PI*2); ctx.fill();
+
+    // Face
+    ctx.globalAlpha=this.alpha*.9;
+    // Eyes
+    const eyeOff=eyeR*.28, eyeSize=eyeR*.15;
+    const blinkH = this.pulse > .85 ? eyeSize*.15 : eyeSize;
+    ctx.fillStyle='#1a0a00';
+    // left eye
+    ctx.beginPath(); ctx.ellipse(-eyeOff,-eyeR*.12,eyeSize,blinkH,0,0,Math.PI*2); ctx.fill();
+    // right eye
+    ctx.beginPath(); ctx.ellipse(eyeOff,-eyeR*.12,eyeSize,blinkH,0,0,Math.PI*2); ctx.fill();
+    // eye shine
+    ctx.fillStyle='rgba(255,255,255,0.9)';
+    ctx.beginPath(); ctx.arc(-eyeOff-eyeSize*.25,-eyeR*.2,eyeSize*.3,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(eyeOff-eyeSize*.25,-eyeR*.2,eyeSize*.3,0,Math.PI*2); ctx.fill();
+    // smile
+    ctx.strokeStyle='#1a0a00'; ctx.lineWidth=eyeSize*.8; ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.arc(0,eyeR*.08,eyeR*.3,0.2,Math.PI-.2);
+    ctx.stroke();
+    // cheeks
+    ctx.fillStyle='rgba(255,100,120,0.45)';
+    ctx.beginPath(); ctx.ellipse(-eyeOff*1.1,eyeR*.15,eyeSize*.9,eyeSize*.55,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(eyeOff*1.1,eyeR*.15,eyeSize*.9,eyeSize*.55,0,0,Math.PI*2); ctx.fill();
+
+    ctx.restore();
+  }
+}
+
+let flowers = [];
+function initFlowers(){
+  flowers=[];
+  const count = Math.min(Math.floor(W*H/14000), 65);
+  for(let i=0;i<count;i++){
+    const depth = .2+Math.random()*.8;
+    const scale = .4+depth*.9;
+    const col1 = VIVID[Math.floor(Math.random()*VIVID.length)];
+    let col2;
+    do{ col2=VIVID[Math.floor(Math.random()*VIVID.length)]; }while(col2===col1);
+    flowers.push(new Flower(
+      Math.random()*W, Math.random()*H,
+      scale, col1, col2, depth
+    ));
+  }
+  // Sort by depth (far first)
+  flowers.sort((a,b)=>a.depth-b.depth);
+}
+
+// ═══════════════════════════════════════
+// BURST SYSTEM — LV symbolic shapes
+// ═══════════════════════════════════════
+
+// LV symbol paths (normalized −1..1)
+const LV_SHAPES = {
+  // Diamond (Damier)
+  diamond: (t,r)=>{
+    const a = t*Math.PI*2;
+    const sq = Math.max(Math.abs(Math.cos(a)),Math.abs(Math.sin(a)));
+    return {x:Math.cos(a)*r/sq*0.72, y:Math.sin(a)*r/sq*0.72};
+  },
+  // Star/flower (4-petal)
+  flower: (t,r)=>{
+    const a=t*Math.PI*2, petals=5;
+    const rr=r*(0.4+0.6*Math.pow(Math.abs(Math.cos(a*petals/2)),1.5));
+    return {x:Math.cos(a)*rr, y:Math.sin(a)*rr};
+  },
+  // Monogram LV rough outline (simplified oval burst)
+  oval: (t,r)=>{
+    const a=t*Math.PI*2;
+    return {x:Math.cos(a)*r*.8, y:Math.sin(a)*r*.55};
+  },
+  // Clover / quatrefoil
+  clover: (t,r)=>{
+    const a=t*Math.PI*2;
+    const rr=r*.5*(1+Math.cos(4*a)*.55);
+    return {x:Math.cos(a)*rr, y:Math.sin(a)*rr};
+  },
+  // Starburst
+  star8: (t,r)=>{
+    const a=t*Math.PI*2, pts=8;
+    const rr=r*(0.38+0.62*Math.abs(Math.cos(pts/2*a)));
+    return {x:Math.cos(a)*rr, y:Math.sin(a)*rr};
+  },
+};
+const SHAPE_KEYS = Object.keys(LV_SHAPES);
+
+let burstParticles=[];
+let shapeIdx=0;
+
+class BurstParticle{
+  constructor(cx,cy,targetX,targetY,color,size,delay){
+    this.sx=cx; this.sy=cy;
+    this.tx=cx+targetX; this.ty=cy+targetY;
+    this.x=cx; this.y=cy;
+    this.color=color;
+    this.size=size;
+    this.delay=delay; // ms
+    this.born=performance.now()+delay;
+    this.life=0; // 0→1
+    this.dead=false;
+    this.tail=[];
+    this.trailLen=6;
+    this.glow=Math.random()>.35;
+    // secondary drift after reaching target
+    this.driftA=Math.random()*Math.PI*2;
+    this.driftR=2+Math.random()*6;
+  }
+  update(now){
+    const age=(now-this.born);
+    if(age<0){this.x=this.sx;this.y=this.sy;return;}
+    const TRAVEL=600; // ms to travel to target
+    const HOLD=400;
+    const FADE=700;
+    const total=TRAVEL+HOLD+FADE;
+    if(age>total){this.dead=true;return;}
+
+    if(age<TRAVEL){
+      const p=age/TRAVEL;
+      const e=1-Math.pow(1-p,3); // easeOutCubic
+      this.x=this.sx+(this.tx-this.sx)*e;
+      this.y=this.sy+(this.ty-this.sy)*e;
+      this.life=p*.9;
+    } else if(age<TRAVEL+HOLD){
+      // slight drift / shimmer at target
+      const p=(age-TRAVEL)/HOLD;
+      this.x=this.tx+Math.cos(this.driftA+p*2)*this.driftR*(1-p*.5);
+      this.y=this.ty+Math.sin(this.driftA+p*2)*this.driftR*(1-p*.5);
+      this.life=1.0;
+    } else {
+      const p=(age-TRAVEL-HOLD)/FADE;
+      this.x=this.tx; this.y=this.ty;
+      this.life=1-p;
+    }
+    // record trail
+    this.tail.push({x:this.x,y:this.y});
+    if(this.tail.length>this.trailLen) this.tail.shift();
+  }
+  draw(ctx){
+    if(this.life<=0) return;
+    // Trail
+    if(this.tail.length>1){
+      ctx.save();
+      for(let i=1;i<this.tail.length;i++){
+        const ta=(i/this.tail.length)*this.life*.4;
+        ctx.globalAlpha=ta;
+        ctx.strokeStyle=this.color;
+        ctx.lineWidth=this.size*.5;
+        ctx.lineCap='round';
+        ctx.beginPath();
+        ctx.moveTo(this.tail[i-1].x,this.tail[i-1].y);
+        ctx.lineTo(this.tail[i].x,this.tail[i].y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    ctx.save();
+    ctx.globalAlpha=this.life;
+    if(this.glow){
+      ctx.shadowColor=this.color;
+      ctx.shadowBlur=this.size*4;
+    }
+    ctx.fillStyle=this.color;
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,this.size*this.life,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function spawnBurst(cx,cy){
+  const shape=LV_SHAPES[SHAPE_KEYS[shapeIdx%SHAPE_KEYS.length]];
+  shapeIdx++;
+  const count=140;
+  const radius=90+Math.random()*60;
+  const baseColor=VIVID[Math.floor(Math.random()*VIVID.length)];
+  let alt; do{alt=VIVID[Math.floor(Math.random()*VIVID.length)];}while(alt===baseColor);
+
+  for(let i=0;i<count;i++){
+    const t=i/count;
+    const pos=shape(t,radius);
+    // scatter slightly
+    const scatter=(Math.random()-.5)*12;
+    const tx=pos.x+(Math.random()-.5)*scatter;
+    const ty=pos.y+(Math.random()-.5)*scatter;
+    const color=Math.random()>.4?baseColor:alt;
+    const size=1.2+Math.random()*2.8;
+    const delay=Math.random()*120;
+    burstParticles.push(new BurstParticle(cx,cy,tx,ty,color,size,delay));
+  }
+
+  // Central flash
+  flashList.push({x:cx,y:cy,r:0,maxR:80,color:baseColor,life:1});
+}
+
+// ═══════════════════════════════════════
+// FLASH
+// ═══════════════════════════════════════
+let flashList=[];
+function updateFlashes(){
+  flashList=flashList.filter(f=>f.life>0);
+  for(const f of flashList){
+    f.r=Math.min(f.r+14,f.maxR);
+    f.life-=.07;
+    if(f.life<=0) continue;
+    burstCtx.save();
+    const grad=burstCtx.createRadialGradient(f.x,f.y,0,f.x,f.y,f.r);
+    const a=f.life*.45;
+    grad.addColorStop(0,f.color.replace(')',`,${a})`).replace('rgb','rgba'));
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    burstCtx.globalCompositeOperation='screen';
+    burstCtx.fillStyle=grad;
+    burstCtx.beginPath(); burstCtx.arc(f.x,f.y,f.r,0,Math.PI*2); burstCtx.fill();
+    burstCtx.restore();
+  }
+}
+
+// ═══════════════════════════════════════
+// AMBIENT FLOATING SYMBOLS
+// ═══════════════════════════════════════
+class AmbientSymbol{
+  constructor(){this.reset(true);}
+  reset(init=false){
+    this.x = Math.random()*W;
+    this.y = init ? Math.random()*H : H+60;
+    this.size = 6+Math.random()*20;
+    this.color = VIVID[Math.floor(Math.random()*VIVID.length)];
+    this.speed = .12+Math.random()*.25;
+    this.drift = (Math.random()-.5)*.4;
+    this.rot = Math.random()*Math.PI*2;
+    this.rotSpeed = (Math.random()-.5)*.01;
+    this.alpha = .04+Math.random()*.12;
+    this.type = Math.floor(Math.random()*3); // 0=diamond,1=flower,2=quatrefoil
+  }
+  update(){
+    this.y-=this.speed; this.x+=this.drift;
+    this.rot+=this.rotSpeed;
+    if(this.y<-80) this.reset();
+  }
+  draw(ctx){
+    ctx.save();
+    ctx.translate(this.x,this.y);
+    ctx.rotate(this.rot);
+    ctx.globalAlpha=this.alpha;
+    ctx.fillStyle=this.color;
+    ctx.strokeStyle=this.color;
+    ctx.lineWidth=1;
+    if(this.type===0){
+      // Diamond
+      const s=this.size;
+      ctx.beginPath();ctx.moveTo(0,-s);ctx.lineTo(s,0);ctx.lineTo(0,s);ctx.lineTo(-s,0);ctx.closePath();
+      ctx.fill();
+    } else if(this.type===1){
+      // Flower 4-petal
+      for(let i=0;i<4;i++){
+        ctx.save(); ctx.rotate(i*Math.PI/2);
+        ctx.beginPath(); ctx.ellipse(0,-this.size*.55,this.size*.3,this.size*.55,0,0,Math.PI*2);
+        ctx.fill(); ctx.restore();
+      }
+      ctx.fillStyle=PAL.cream; ctx.globalAlpha=this.alpha*.7;
+      ctx.beginPath(); ctx.arc(0,0,this.size*.28,0,Math.PI*2); ctx.fill();
+    } else {
+      // LV-style star
+      ctx.beginPath();
+      for(let i=0;i<8;i++){
+        const a=(i/8)*Math.PI*2, r=i%2===0?this.size:this.size*.45;
+        i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
+      }
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+let ambSymbols=[];
+function initAmbSymbols(){
+  ambSymbols=[];
+  for(let i=0;i<35;i++) ambSymbols.push(new AmbientSymbol());
+}
+
+// ═══════════════════════════════════════
+// UI CANVAS — mouse trail
+// ═══════════════════════════════════════
+let trail=[];
+const TRAIL_MAX=22;
+function updateTrail(){
+  trail.push({x:mx,y:my,t:performance.now()});
+  if(trail.length>TRAIL_MAX) trail.shift();
+}
+function drawTrail(){
+  uiCtx.clearRect(0,0,W,H);
+  if(trail.length<2) return;
+  for(let i=1;i<trail.length;i++){
+    const p=(i/trail.length);
+    const col=VIVID[Math.floor(p*VIVID.length*.7)];
+    uiCtx.save();
+    uiCtx.globalAlpha=p*.35;
+    uiCtx.strokeStyle=col;
+    uiCtx.lineWidth=p*3.5;
+    uiCtx.lineCap='round';
+    uiCtx.shadowColor=col; uiCtx.shadowBlur=6;
+    uiCtx.beginPath();
+    uiCtx.moveTo(trail[i-1].x,trail[i-1].y);
+    uiCtx.lineTo(trail[i].x,trail[i].y);
+    uiCtx.stroke();
+    uiCtx.restore();
+  }
+}
+
+// ═══════════════════════════════════════
+// CLICK
+// ═══════════════════════════════════════
+document.addEventListener('click', e=>{
+  spawnBurst(e.clientX, e.clientY);
+  // ripple cursor
+  curRing.style.width='60px'; curRing.style.height='60px';
+  setTimeout(()=>{curRing.style.width='34px';curRing.style.height='34px';},300);
+});
+
+// ═══════════════════════════════════════
+// MAIN LOOP
+// ═══════════════════════════════════════
+function loop(ts){
+  // BG
+  drawBg();
+
+  // Ambient symbols
+  floraCtx.clearRect(0,0,W,H);
+  for(const s of ambSymbols){ s.update(); s.draw(floraCtx); }
+
+  // Flowers
+  for(const f of flowers){
+    f.update(ts,mx,my);
+    f.draw(floraCtx,ts);
+  }
+
+  // Burst
+  burstCtx.clearRect(0,0,W,H);
+  updateFlashes();
+  const now=performance.now();
+  burstParticles=burstParticles.filter(p=>!p.dead);
+  for(const p of burstParticles){ p.update(now); p.draw(burstCtx); }
+
+  // Trail
+  updateTrail();
+  drawTrail();
+
+  requestAnimationFrame(loop);
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+resize();
+initFlowers();
+initAmbSymbols();
+requestAnimationFrame(loop);
+
+// Intro burst
+setTimeout(()=>spawnBurst(W/2,H/2), 900);
+</script>
+</body>
+</html>
