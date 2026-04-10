@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Pop-Art Flower Field</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #ffb6c1; /* 기본 핑크 톤 배경 */
+            font-family: sans-serif;
+        }
+        
+        /* 은은한 45도 체크무늬 및 그라데이션 배경 */
+        .bg-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(135deg, rgba(255,215,0,0.3), rgba(255,105,180,0.4), rgba(147,112,219,0.3), rgba(30,144,255,0.2));
+            background-size: 400% 400%;
+            animation: gradientMove 15s ease infinite;
+            z-index: -2;
+        }
+
+        .checkerboard {
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background-image: repeating-linear-gradient(45deg, 
+                rgba(255, 255, 255, 0.07) 0px, 
+                rgba(255, 255, 255, 0.07) 30px, 
+                transparent 30px, 
+                transparent 60px
+            );
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* 렌즈 플레어 느낌의 빛 효과 */
+        .lens-flare {
+            position: absolute;
+            width: 100vw; height: 100vh;
+            background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.2) 0%, transparent 60%);
+            pointer-events: none;
+            mix-blend-mode: overlay;
+            z-index: 10;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-layer"></div>
+    <div class="checkerboard"></div>
+    <div class="lens-flare"></div>
+    <canvas id="artCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('artCanvas');
+    const ctx = canvas.getContext('2d');
+    let W, H;
+
+    // 고급 색상 팔레트
+    const PALETTE = ['#FFD700', '#FF4500', '#1E90FF', '#32CD32', '#FF69B4', '#9370DB', '#FFA500'];
+    const SHAPES = ['diamond', 'flower', 'oval', 'clover', 'star'];
+    let clickCount = 0; // 클릭 시 모양 순환용
+
+    let flowers = [];
+    let particles = [];
+    let floatingShapes = [];
+    let shockwaves = [];
+    let mouseTrails = [];
+    let sparkles = [];
+    
+    let mouse = { x: -1000, y: -1000 };
+    let time = 0;
+
+    function resize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    window.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+        // 마우스 무지개 트레일 생성
+        mouseTrails.push({
+            x: mouse.x, y: mouse.y,
+            life: 1, maxLife: 30,
+            hue: Math.random() * 360
+        });
+    });
+
+    // ---------------------------------------------
+    // 객체 클래스 정의
+    // ---------------------------------------------
+
+    class Flower {
+        constructor(isBig = false, forceX, forceY) {
+            this.z = isBig ? 2 : Math.random() * 0.8 + 0.2; // 깊이감 (0.2 멀리 ~ 1 가까이)
+            this.baseSize = isBig ? 150 : (Math.random() * 30 + 20) * this.z;
+            this.x = forceX !== undefined ? forceX : Math.random() * W;
+            this.y = forceY !== undefined ? forceY : Math.random() * H;
+            this.color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+            this.phase = Math.random() * Math.PI * 2;
+            this.swaySpeed = 0.02 * (this.z * 1.5);
+            
+            // 상태 변수
+            this.blinkTimer = Math.random() * 100;
+            this.isBlinking = false;
+            this.blushIntensity = Math.random();
+            this.life = isBig ? 60 : Infinity; // 큰 꽃은 클릭 시 나타났다 사라짐
+            this.isBig = isBig;
+        }
+
+        draw(ctx, rhythmScale) {
+            if(this.life <= 0) return;
+            if(this.isBig) this.life--;
+
+            // 마우스 인터랙션 (부끄러움/휘어짐)
+            let dx = mouse.x - this.x;
+            let dy = mouse.y - this.y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            let bendAngle = 0;
+            let tremble = 0;
+
+            if(dist < 150 && !this.isBig) {
+                bendAngle = (dx / dist) * 0.5; // 마우스 반대/향하는 방향으로 살짝 휨
+                tremble = Math.sin(time * 10) * 2; // 살짝 떨림
+            }
+
+            // 바람 흔들림
+            let sway = Math.sin(time * this.swaySpeed + this.phase) * 15 * this.z;
+            let currentX = this.x + sway + tremble;
+            let currentY = this.y;
+
+            // 리듬 스케일 (음악 바운스 느낌) + 큰 꽃 사라지는 애니메이션
+            let scale = rhythmScale * (this.isBig ? Math.sin((this.life/60) * Math.PI) : 1);
+
+            ctx.save();
+            ctx.translate(currentX, currentY);
+            ctx.rotate(bendAngle + Math.sin(time * 0.01 + this.phase) * 0.2); // 약간의 회전
+            ctx.scale(scale, scale);
+
+            // 꽃잎 그리기 + 글로우
+            ctx.shadowBlur = 15 * this.z;
+            ctx.shadowColor = this.color;
+            ctx.fillStyle = this.color;
+            
+            for(let i=0; i<6; i++) {
+                ctx.rotate(Math.PI / 3);
+                ctx.beginPath();
+                ctx.arc(this.baseSize * 0.7, 0, this.baseSize * 0.55, 0, Math.PI*2);
+                ctx.fill();
+                // 유광 하이라이트
+                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.beginPath();
+                ctx.arc(this.baseSize * 0.8, -this.baseSize * 0.2, this.baseSize * 0.15, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = this.color; // 색상 복구
+            }
+
+            // 꽃술 (얼굴)
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#FFF8DC';
+            ctx.beginPath();
+            ctx.arc(0, 0, this.baseSize * 0.6, 0, Math.PI*2);
+            ctx.fill();
+
+            // 눈 깜빡임 로직
+            this.blinkTimer--;
+            if(this.blinkTimer < 0) {
+                this.isBlinking = true;
+                if(this.blinkTimer < -5) {
+                    this.isBlinking = false;
+                    this.blinkTimer = Math.random() * 150 + 50;
+                }
+            }
+
+            ctx.fillStyle = '#333';
+            if(this.isBlinking || (dist < 150 && !this.isBig)) {
+                // 부끄럽거나 깜빡일 때 눈 (>< 모양 또는 닫힌 눈)
+                ctx.fillRect(-this.baseSize*0.25, -this.baseSize*0.1, this.baseSize*0.15, this.baseSize*0.05);
+                ctx.fillRect(this.baseSize*0.1, -this.baseSize*0.1, this.baseSize*0.15, this.baseSize*0.05);
+            } else {
+                // 뜬 눈
+                ctx.beginPath(); ctx.arc(-this.baseSize*0.2, -this.baseSize*0.1, this.baseSize*0.08, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(this.baseSize*0.2, -this.baseSize*0.1, this.baseSize*0.08, 0, Math.PI*2); ctx.fill();
+            }
+
+            // 웃는 입
+            ctx.beginPath();
+            ctx.arc(0, this.baseSize*0.1, this.baseSize*0.2, 0.2, Math.PI - 0.2);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = this.baseSize * 0.05;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // 볼 터치 (홍조) 반짝임
+            let blushAlpha = 0.5 + Math.sin(time * 0.1 + this.phase) * 0.3;
+            if(dist < 150 && !this.isBig) blushAlpha = 0.9; // 마우스 근처면 홍조 강해짐
+            ctx.fillStyle = `rgba(255, 105, 180, ${blushAlpha})`;
+            ctx.beginPath(); ctx.arc(-this.baseSize*0.35, this.baseSize*0.1, this.baseSize*0.15, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(this.baseSize*0.35, this.baseSize*0.1, this.baseSize*0.15, 0, Math.PI*2); ctx.fill();
+
+            ctx.restore();
+
+            // 주변 스파클링 생성
+            if(Math.random() < 0.05 && !this.isBig) {
+                sparkles.push(new Sparkle(currentX + (Math.random()-0.5)*100, currentY + (Math.random()-0.5)*100));
+            }
+        }
+    }
+
+    class Particle {
+        constructor(x, y, shape) {
+            this.x = x; this.y = y;
+            this.shape = shape;
+            let angle = Math.random() * Math.PI * 2;
+            let speed = Math.random() * 15 + 5;
+            this.vx = Math.cos(angle) * speed;
+            this.vy = Math.sin(angle) * speed;
+            this.life = 100;
+            this.maxLife = 100;
+            this.size = Math.random() * 10 + 5;
+            this.hue = Math.random() * 360; // 무지개색 시작
+            this.history = [];
+        }
+
+        draw(ctx) {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vx *= 0.92; // 마찰력 (강하게 퍼지다 느려짐)
+            this.vy *= 0.92;
+            this.hue += 5; // 무지개색 변화
+            this.life--;
+
+            this.history.push({x: this.x, y: this.y});
+            if(this.history.length > 10) this.history.shift();
+
+            // 꼬리 그리기
+            ctx.beginPath();
+            for(let i=0; i<this.history.length; i++) {
+                let pos = this.history[i];
+                if(i===0) ctx.moveTo(pos.x, pos.y);
+                else ctx.lineTo(pos.x, pos.y);
+            }
+            ctx.strokeStyle = `hsla(${this.hue}, 100%, 60%, ${this.life/this.maxLife})`;
+            ctx.lineWidth = this.size * 0.5;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // 본체 그리기
+            ctx.fillStyle = `hsla(${this.hue}, 100%, 70%, ${this.life/this.maxLife})`;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = ctx.fillStyle;
+            
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(time * 0.1);
+            
+            let s = this.size * (this.life/this.maxLife);
+            ctx.beginPath();
+            if(this.shape === 'diamond') {
+                ctx.moveTo(0, -s); ctx.lineTo(s, 0); ctx.lineTo(0, s); ctx.lineTo(-s, 0);
+            } else if(this.shape === 'oval') {
+                ctx.ellipse(0, 0, s, s*0.5, 0, 0, Math.PI*2);
+            } else if(this.shape === 'star') {
+                for(let i=0; i<10; i++) {
+                    let r = i%2===0 ? s : s/2;
+                    let a = (Math.PI/5) * i;
+                    ctx.lineTo(r*Math.cos(a), r*Math.sin(a));
+                }
+            } else if(this.shape === 'flower') {
+                 for(let i=0; i<5; i++) {
+                    let a = (Math.PI*2/5) * i;
+                    ctx.arc(s*0.6*Math.cos(a), s*0.6*Math.sin(a), s*0.5, 0, Math.PI*2);
+                }
+            } else if(this.shape === 'clover') {
+                for(let i=0; i<4; i++) {
+                    let a = (Math.PI/2) * i;
+                    ctx.arc(s*0.6*Math.cos(a), s*0.6*Math.sin(a), s*0.5, 0, Math.PI*2);
+                }
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    class FloatingShape {
+        constructor() {
+            this.x = Math.random() * W;
+            this.y = H + Math.random() * 500;
+            this.size = Math.random() * 40 + 20;
+            this.speed = Math.random() * 2 + 0.5;
+            this.type = Math.random() > 0.5 ? 'circle' : 'rect';
+            this.color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+            this.phase = Math.random() * Math.PI * 2;
+        }
+        draw(ctx) {
+            this.y -= this.speed;
+            this.x += Math.sin(time * 0.02 + this.phase) * 1.5; // 흔들리며 올라감
+            
+            if(this.y < -100) this.y = H + 100;
+
+            ctx.fillStyle = this.color;
+            ctx.globalAlpha = 0.15; // 아주 은은하게
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(time * 0.01 + this.phase);
+            ctx.beginPath();
+            if(this.type === 'circle') {
+                ctx.arc(0, 0, this.size, 0, Math.PI*2);
+            } else {
+                ctx.rect(-this.size/2, -this.size/2, this.size, this.size);
+            }
+            ctx.fill();
+            ctx.restore();
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    class Sparkle {
+        constructor(x, y) {
+            this.x = x; this.y = y;
+            this.size = Math.random() * 3 + 1;
+            this.life = 40;
+            this.maxLife = 40;
+        }
+        draw(ctx) {
+            this.life--;
+            let alpha = this.life / this.maxLife;
+            ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size * alpha, 0, Math.PI*2);
+            ctx.fill();
+        }
+    }
+
+    class Shockwave {
+        constructor(x, y) {
+            this.x = x; this.y = y;
+            this.radius = 0;
+            this.life = 30;
+            this.maxLife = 30;
+        }
+        draw(ctx) {
+            this.radius += 15;
+            this.life--;
+            let alpha = this.life / this.maxLife;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+            ctx.lineWidth = 5 * alpha;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+            ctx.stroke();
+        }
+    }
+
+    // ---------------------------------------------
+    // 초기화 및 클릭 이벤트
+    // ---------------------------------------------
+
+    // 꽃 70개 생성 (깊이에 따라 정렬)
+    for(let i=0; i<70; i++) {
+        flowers.push(new Flower());
+    }
+    flowers.sort((a, b) => a.z - b.z); // 먼 꽃(z가 작음)이 먼저 그려지도록 정렬
+
+    // 배경 도형 35개 생성
+    for(let i=0; i<35; i++) {
+        floatingShapes.push(new FloatingShape());
+    }
+
+    window.addEventListener('click', (e) => {
+        let shape = SHAPES[clickCount % SHAPES.length];
+        clickCount++;
+
+        // 빛의 파동
+        shockwaves.push(new Shockwave(e.clientX, e.clientY));
+
+        // 파티클 140개 폭발
+        for(let i=0; i<140; i++) {
+            particles.push(new Particle(e.clientX, e.clientY, shape));
+        }
+
+        // 큰 꽃 깜짝 등장
+        let bigFlower = new Flower(true, e.clientX, e.clientY);
+        flowers.push(bigFlower);
+        // z-index 재정렬
+        flowers.sort((a, b) => a.z - b.z);
+    });
+
+    // ---------------------------------------------
+    // 메인 렌더링 루프
+    // ---------------------------------------------
+
+    function animate() {
+        ctx.clearRect(0, 0, W, H); // 배경은 CSS가 처리하므로 캔버스는 투명하게 클리어
+        time++;
+
+        // 리듬감 (배경음악 느낌의 스케일 바운스)
+        let rhythmScale = 1 + Math.sin(time * 0.05) * 0.03;
+
+        // 배경 도형 그리기
+        floatingShapes.forEach(shape => shape.draw(ctx));
+
+        // 마우스 트레일 그리기
+        for(let i = mouseTrails.length - 1; i >= 0; i--) {
+            let t = mouseTrails[i];
+            t.life++;
+            let alpha = 1 - (t.life / t.maxLife);
+            ctx.fillStyle = `hsla(${t.hue}, 100%, 70%, ${alpha})`;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = ctx.fillStyle;
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, 8 * alpha, 0, Math.PI*2);
+            ctx.fill();
+            if(t.life >= t.maxLife) mouseTrails.splice(i, 1);
+        }
+        ctx.shadowBlur = 0; // 초기화
+
+        // 꽃 그리기
+        for(let i = flowers.length - 1; i >= 0; i--) {
+            flowers[i].draw(ctx, rhythmScale);
+            if(flowers[i].life <= 0) flowers.splice(i, 1);
+        }
+
+        // 스파클링 그리기
+        for(let i = sparkles.length - 1; i >= 0; i--) {
+            sparkles[i].draw(ctx);
+            if(sparkles[i].life <= 0) sparkles.splice(i, 1);
+        }
+
+        // 빛의 파동 그리기
+        for(let i = shockwaves.length - 1; i >= 0; i--) {
+            shockwaves[i].draw(ctx);
+            if(shockwaves[i].life <= 0) shockwaves.splice(i, 1);
+        }
+
+        // 폭발 파티클 그리기
+        for(let i = particles.length - 1; i >= 0; i--) {
+            particles[i].draw(ctx);
+            if(particles[i].life <= 0) particles.splice(i, 1);
+        }
+
+        // 햇빛(빛번짐)이 지나가는 효과 (주기적으로 화면 가로지름)
+        if(time % 300 < 50) {
+            let sweepX = (time % 300) / 50 * W * 1.5 - W*0.2;
+            let grad = ctx.createLinearGradient(sweepX-200, 0, sweepX+200, 0);
+            grad.addColorStop(0, 'rgba(255,255,255,0)');
+            grad.addColorStop(0.5, 'rgba(255,255,255,0.15)');
+            grad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = grad;
+            ctx.globalCompositeOperation = 'overlay';
+            ctx.fillRect(0, 0, W, H);
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        // 별 폭죽 효과 (일정 시간마다 화면 전체)
+        if(time % 400 === 0) {
+            for(let j=0; j<3; j++) {
+                let px = Math.random() * W;
+                let py = Math.random() * H * 0.5;
+                shockwaves.push(new Shockwave(px, py));
+                for(let i=0; i<50; i++) {
+                    particles.push(new Particle(px, py, 'star'));
+                }
+            }
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    animate();
+</script>
+</body>
+</html>

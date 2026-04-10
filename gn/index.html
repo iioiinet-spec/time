@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Pop-Art Interactive Media Art</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #000; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+<script>
+let flowers = [];
+let particles = [];
+let bgShapes = [];
+let clickShapes = ['diamond', 'flower', 'ellipse', 'clover', 'star'];
+let shapeIndex = 0;
+let mouseTrail = [];
+
+function setup() {
+    createCanvas(windowWidth, windowHeight);
+    colorMode(HSB, 360, 100, 100, 1);
+    
+    // 꽃 생성 (깊이감에 따른 레이어)
+    for (let i = 0; i < 40; i++) {
+        flowers.push(new Flower());
+    }
+    
+    // 배경 떠오르는 도형 생성
+    for (let i = 0; i < 35; i++) {
+        bgShapes.push(new BackgroundShape());
+    }
+}
+
+function draw() {
+    drawBackground();
+    
+    // 배경 도형 애니메이션
+    bgShapes.forEach(shape => {
+        shape.update();
+        shape.display();
+    });
+
+    // 꽃들 그리기 (깊이에 따라 정렬하여 그림)
+    flowers.sort((a, b) => a.z - b.z);
+    flowers.forEach(f => {
+        f.update();
+        f.display();
+    });
+
+    // 클릭 파티클 시스템
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].display();
+        if (particles[i].alpha <= 0) particles.splice(i, 1);
+    }
+
+    // 마우스 트레일 효과
+    drawMouseTrail();
+    
+    // 주기적 별 폭죽 효과
+    if (frameCount % 180 === 0) {
+        createExplosion(random(width), random(height), 'star');
+    }
+
+    // 렌즈 플레어 효과 (은은한 빛 번짐)
+    drawLensFlare();
+}
+
+function drawBackground() {
+    // 그라데이션 배경
+    let c1 = color(280, 20, 10);
+    let c2 = color(320, 30, 20);
+    for (let y = 0; y < height; y++) {
+        let inter = map(y, 0, height, 0, 1);
+        let c = lerpColor(c1, c2, inter);
+        stroke(c);
+        line(0, y, width, y);
+    }
+
+    // 45도 체크무늬
+    stroke(0, 0, 100, 0.05);
+    strokeWeight(1);
+    let gap = 50;
+    for (let i = -width; i < width + height; i += gap) {
+        line(i, 0, i + height, height);
+        line(i, height, i + height, 0);
+    }
+}
+
+class Flower {
+    constructor() {
+        this.z = random(0.1, 1); // 깊이감
+        this.reset();
+    }
+
+    reset() {
+        this.x = random(width);
+        this.y = random(height);
+        this.size = map(this.z, 0.1, 1, 40, 120);
+        this.color = random([color(50, 80, 100), color(0, 80, 100), color(200, 80, 100), color(120, 80, 100), color(300, 80, 100)]);
+        this.angle = 0;
+        this.rotSpeed = random(-0.02, 0.02) * this.z;
+        this.offset = random(1000);
+        this.blink = 0;
+        this.isShy = false;
+    }
+
+    update() {
+        // 바람 효과 및 리듬 커짐 효과
+        let rhythm = sin(frameCount * 0.05) * 5;
+        this.currentSize = this.size + rhythm;
+        
+        let wind = sin(frameCount * 0.02 * this.z + this.offset) * 10;
+        this.xOffset = wind;
+        this.angle += this.rotSpeed;
+
+        // 마우스 상호작용 (부끄러움)
+        let d = dist(mouseX, mouseY, this.x, this.y);
+        if (d < 100) {
+            this.isShy = true;
+            this.xOffset += random(-2, 2); // 떨림
+        } else {
+            this.isShy = false;
+        }
+
+        // 눈 깜빡임
+        if (frameCount % 120 === floor(random(10))) this.blink = 10;
+        if (this.blink > 0) this.blink--;
+    }
+
+    display() {
+        push();
+        translate(this.x + this.xOffset, this.y);
+        if (this.isShy) rotate(sin(frameCount * 0.1) * 0.1);
+        rotate(this.angle);
+
+        // 꽃잎 글로우 효과
+        noStroke();
+        for (let i = 5; i > 0; i--) {
+            fill(hue(this.color), saturation(this.color), 100, 0.1);
+            ellipse(0, 0, this.currentSize + i * 10);
+        }
+
+        // 꽃잎 (팝아트 스타일)
+        fill(this.color);
+        stroke(0, 0, 0);
+        strokeWeight(2);
+        for (let i = 0; i < 6; i++) {
+            rotate(PI / 3);
+            ellipse(this.currentSize / 2, 0, this.currentSize / 1.5, this.currentSize / 2);
+        }
+
+        // 가운데 얼굴
+        fill(60, 20, 100); // 연한 크림색
+        ellipse(0, 0, this.currentSize / 1.2);
+        
+        // 반짝이는 홍조
+        fill(0, 50, 100, abs(sin(frameCount * 0.05)) * 0.5);
+        noStroke();
+        ellipse(-this.currentSize/4, 5, 15, 10);
+        ellipse(this.currentSize/4, 5, 15, 10);
+
+        // 눈 (깜빡임 애니메이션)
+        fill(0);
+        if (this.blink < 2) {
+            ellipse(-15, -5, 8, 8);
+            ellipse(15, -5, 8, 8);
+        } else {
+            stroke(0);
+            line(-20, -5, -10, -5);
+            line(10, -5, 20, -5);
+        }
+        
+        // 웃는 입
+        noFill();
+        stroke(0);
+        arc(0, 5, 20, 15, 0, PI);
+        
+        pop();
+    }
+}
+
+class Particle {
+    constructor(x, y, type, col) {
+        this.pos = createVector(x, y);
+        this.vel = p5.Vector.random2D().mult(random(2, 8));
+        this.acc = createVector(0, 0.05);
+        this.type = type;
+        this.color = col;
+        this.alpha = 1;
+        this.life = random(0.01, 0.02);
+        this.history = [];
+    }
+
+    update() {
+        this.vel.add(this.acc);
+        this.pos.add(this.vel);
+        this.alpha -= this.life;
+        
+        this.history.push(this.pos.copy());
+        if (this.history.length > 10) this.history.shift();
+    }
+
+    display() {
+        push();
+        // 꼬리 효과
+        noStroke();
+        for (let i = 0; i < this.history.length; i++) {
+            fill(hue(this.color), 80, 100, (i / 10) * this.alpha);
+            ellipse(this.history[i].x, this.history[i].y, 5);
+        }
+        
+        translate(this.pos.x, this.pos.y);
+        fill(hue(this.color), 80, 100, this.alpha);
+        this.drawShape();
+        pop();
+    }
+
+    drawShape() {
+        let s = 10;
+        if (this.type === 'diamond') {
+            beginShape();
+            vertex(0, -s); vertex(s, 0); vertex(0, s); vertex(-s, 0);
+            endShape(CLOSE);
+        } else if (this.type === 'star') {
+            star(0, 0, 5, 12, 5);
+        } else if (this.type === 'clover') {
+            ellipse(-3, -3, s, s); ellipse(3, -3, s, s);
+            ellipse(-3, 3, s, s); ellipse(3, 3, s, s);
+        } else {
+            ellipse(0, 0, s, s);
+        }
+    }
+}
+
+class BackgroundShape {
+    constructor() {
+        this.reset();
+    }
+    reset() {
+        this.x = random(width);
+        this.y = height + 50;
+        this.size = random(10, 30);
+        this.speed = random(0.5, 2);
+        this.osc = random(100);
+        this.col = color(random(360), 40, 100, 0.3);
+    }
+    update() {
+        this.y -= this.speed;
+        this.x += sin(frameCount * 0.02 + this.osc) * 0.5;
+        if (this.y < -50) this.reset();
+    }
+    display() {
+        noStroke();
+        fill(this.col);
+        rect(this.x, this.y, this.size, this.size, 5);
+    }
+}
+
+function mousePressed() {
+    createExplosion(mouseX, mouseY, clickShapes[shapeIndex]);
+    shapeIndex = (shapeIndex + 1) % clickShapes.length;
+}
+
+function createExplosion(x, y, type) {
+    // 중앙 링 파동
+    particles.push(new Ring(x, y));
+    
+    // 파티클 140개 생성
+    for (let i = 0; i < 140; i++) {
+        let col = color((frameCount + i) % 360, 80, 100);
+        particles.push(new Particle(x, y, type, col));
+    }
+}
+
+class Ring {
+    constructor(x, y) {
+        this.x = x; this.y = y;
+        this.r = 10;
+        this.alpha = 1;
+    }
+    update() { this.r += 10; this.alpha -= 0.03; }
+    display() {
+        noFill();
+        stroke(0, 0, 100, this.alpha);
+        strokeWeight(4);
+        ellipse(this.x, this.y, this.r);
+    }
+}
+
+function drawMouseTrail() {
+    mouseTrail.push({x: mouseX, y: mouseY, hue: frameCount % 360});
+    if (mouseTrail.length > 20) mouseTrail.shift();
+    
+    for (let i = 0; i < mouseTrail.length; i++) {
+        let p = mouseTrail[i];
+        let size = map(i, 0, mouseTrail.length, 0, 25);
+        fill(p.hue, 80, 100, i / 20);
+        noStroke();
+        ellipse(p.x, p.y, size);
+    }
+}
+
+function drawLensFlare() {
+    let x = map(sin(frameCount * 0.01), -1, 1, 0, width);
+    let y = map(cos(frameCount * 0.013), -1, 1, 0, height);
+    for (let i = 10; i > 0; i--) {
+        fill(60, 30, 100, 0.02);
+        ellipse(x, y, i * 100);
+    }
+}
+
+function star(x, y, radius1, radius2, npoints) {
+    let angle = TWO_PI / npoints;
+    let halfAngle = angle / 2.0;
+    beginShape();
+    for (let a = 0; a < TWO_PI; a += angle) {
+        let sx = x + cos(a) * radius2;
+        let sy = y + sin(a) * radius2;
+        vertex(sx, sy);
+        sx = x + cos(a + halfAngle) * radius1;
+        sy = y + sin(a + halfAngle) * radius1;
+        vertex(sx, sy);
+    }
+    endShape(CLOSE);
+}
+
+function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
+}
+</script>
+</body>
+</html>
