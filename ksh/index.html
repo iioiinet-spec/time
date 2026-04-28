@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Barim Studio - Final Master</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #eee; font-family: 'Apple SD Gothic Neo', sans-serif; }
+        canvas { display: block; cursor: crosshair; }
+        .sidebar {
+            position: fixed; top: 0; left: 0; width: 260px; height: 100%;
+            background: rgba(255, 255, 255, 0.98); border-right: 1px solid #ddd;
+            padding: 20px; box-sizing: border-box; z-index: 100;
+            transition: transform 0.3s ease; box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+        }
+        .sidebar.closed { transform: translateX(-260px); }
+        .toggle-btn {
+            position: absolute; top: 20px; right: -40px; width: 40px; height: 40px;
+            background: #ffb7b2; border: none; border-radius: 0 8px 8px 0;
+            color: white; cursor: pointer; font-size: 20px;
+        }
+        .preview-box { width: 100%; height: 50px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #eee; }
+        .control-group { margin-bottom: 18px; }
+        label { display: block; font-size: 12px; color: #555; margin-bottom: 6px; font-weight: bold; }
+        input[type="range"] { width: 100%; cursor: pointer; accent-color: #ffb7b2; }
+        .bg-options { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        .bg-btn { padding: 8px; font-size: 11px; border: 1px solid #eee; border-radius: 5px; background: #fff; cursor: pointer; }
+        .main-btn { width: 100%; padding: 10px; border: none; border-radius: 8px; background: #ffb7b2; color: white; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .save-btn { background: #4c97ff; }
+        .switch-row { display: flex; align-items: center; justify-content: space-between; }
+        .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 18px; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: .4s; }
+        input:checked + .slider { background-color: #ffb7b2; }
+        input:checked + .slider:before { transform: translateX(16px); }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar">
+        <button class="toggle-btn" onclick="toggleSidebar()" id="tBtn">◀</button>
+        <h3 style="margin-top:0; color:#ffb7b2;">Barim Studio</h3>
+        <div id="preview" class="preview-box"></div>
+        
+        <!-- 1. 색채명 -->
+        <div class="control-group">
+            <label>색상 / 채도 / 명도</label>
+            <input type="range" id="h" min="0" max="100" value="10">
+            <input type="range" id="s" min="0" max="100" value="70">
+            <input type="range" id="b" min="0" max="100" value="80">
+        </div>
+
+        <!-- 2. 바림 강도 -->
+        <div class="control-group">
+            <label>바림 강도 (Blur)</label>
+            <input type="range" id="blur" min="0" max="50" value="25">
+        </div>
+
+        <!-- 3. 투명도 -->
+        <div class="control-group">
+            <label>투명도 (Opacity)</label>
+            <input type="range" id="alpha" min="1" max="100" value="15">
+        </div>
+
+        <!-- 4. 크기 & 세기 -->
+        <div class="control-group">
+            <label>붓 크기 (Size)</label>
+            <input type="range" id="size" min="1" max="150" value="50">
+            <label style="margin-top:8px;">번짐 세기 (Spread & Density)</label>
+            <input type="range" id="intensity" min="0" max="100" value="30">
+        </div>
+
+        <!-- 5. 무지개 -->
+        <div class="control-group switch-row">
+            <label style="margin-bottom:0;">자동 무지개 모드</label>
+            <label class="switch"><input type="checkbox" id="autoHue"><span class="slider"></span></label>
+        </div>
+
+        <!-- 6. 테마 -->
+        <div class="control-group">
+            <label>테마 선택</label>
+            <div class="bg-options">
+                <button class="bg-btn" onclick="changeBG('white')">🤍 화이트</button>
+                <button class="bg-btn" onclick="changeBG('black')">🖤 블랙</button>
+                <button class="bg-btn" onclick="changeBG('grid')">📏 모눈</button>
+                <button class="bg-btn" onclick="changeBG('paper')">📜 한지</button>
+            </div>
+        </div>
+        
+        <button class="main-btn" onclick="clearCanvas()">지우기 (C)</button>
+        <button class="main-btn save-btn" onclick="saveCanvas()">이미지 저장</button>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let lastX = 0, lastY = 0;
+        let currentBG = 'white';
+        let hueCounter = 0;
+        let drawInterval;
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            sb.classList.toggle('closed');
+            document.getElementById('tBtn').innerText = sb.classList.contains('closed') ? '▶' : '◀';
+        }
+
+        function updateUI() {
+            const hSlider = document.getElementById('h');
+            if (document.getElementById('autoHue').checked && isDrawing) {
+                hueCounter = (hueCounter + 0.3) % 100;
+                hSlider.value = hueCounter;
+            }
+            const h = hSlider.value, s = document.getElementById('s').value, b = document.getElementById('b').value;
+            const a = document.getElementById('alpha').value / 100;
+            const colorStr = `hsla(${(h/100)*360}, ${s}%, ${b}%, ${a})`;
+            document.getElementById('preview').style.background = `hsl(${(h/100)*360}, ${s}%, ${b}%)`;
+            return colorStr;
+        }
+
+        function paint(x, y, lx, ly, isStagnant = false) {
+            const colorVal = updateUI();
+            const baseSize = parseFloat(document.getElementById('size').value);
+            const blurVal = parseFloat(document.getElementById('blur').value);
+            const intensity = parseFloat(document.getElementById('intensity').value);
+            const baseAlpha = parseFloat(document.getElementById('alpha').value) / 100;
+            
+            ctx.beginPath();
+            if (isStagnant) {
+                // 세기에 따라 투명도와 확산 범위 동시 강화
+                const alphaBoost = 1 + (intensity / 50); 
+                const currentAlpha = Math.min(baseAlpha * alphaBoost, 0.8);
+                const dynamicColor = colorVal.replace(/[\d.]+\)$/g, `${currentAlpha})`);
+                
+                const spread = (intensity / 100) * baseSize * 2.5;
+                const offsetX = (Math.random() - 0.5) * spread;
+                const offsetY = (Math.random() - 0.5) * spread;
+                
+                ctx.shadowBlur = blurVal * 1.5;
+                ctx.shadowColor = dynamicColor;
+                ctx.fillStyle = dynamicColor;
+                ctx.arc(x + offsetX, y + offsetY, baseSize / 2, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                ctx.shadowBlur = blurVal;
+                ctx.shadowColor = colorVal;
+                ctx.strokeStyle = colorVal;
+                ctx.lineWidth = baseSize;
+                ctx.lineCap = 'round';
+                ctx.moveTo(lx, ly);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+        }
+
+        function splash(x, y) {
+            const intensity = parseFloat(document.getElementById('intensity').value);
+            const count = 5 + Math.floor(intensity / 10);
+            for(let i=0; i<count; i++) paint(x, y, x, y, true);
+        }
+
+        function changeBG(type) { currentBG = type; clearCanvas(); }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.shadowBlur = 0;
+            if (currentBG === 'white') { ctx.fillStyle = '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height); }
+            else if (currentBG === 'black') { ctx.fillStyle = '#000'; ctx.fillRect(0,0,canvas.width,canvas.height); }
+            else if (currentBG === 'grid') { 
+                ctx.fillStyle = '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+                ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
+                for(let i=0; i<canvas.width; i+=30) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); }
+                for(let i=0; i<canvas.height; i+=30) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke(); }
+            }
+            else if (currentBG === 'paper') {
+                ctx.fillStyle = '#f4f0e6'; ctx.fillRect(0,0,canvas.width,canvas.height);
+                for(let i=0; i<1500; i++) {
+                    const gray = Math.floor(Math.random()*40+180);
+                    ctx.fillStyle = `rgba(${gray},${gray},${gray},0.15)`;
+                    const x=Math.random()*canvas.width, y=Math.random()*canvas.height, w=Math.random()*15+2, h=2, angle=Math.random()*Math.PI;
+                    ctx.save(); ctx.translate(x,y); ctx.rotate(angle); ctx.fillRect(0,0,w,h); ctx.restore();
+                }
+            }
+        }
+
+        function saveCanvas() { const link = document.createElement('a'); link.download='art.png'; link.href=canvas.toDataURL(); link.click(); }
+
+        window.addEventListener('mousedown', (e) => {
+            if(e.clientX < 260 && !document.getElementById('sidebar').classList.contains('closed')) return;
+            isDrawing = true; [lastX, lastY] = [e.clientX, e.clientY];
+            splash(e.clientX, e.clientY);
+            drawInterval = setInterval(() => paint(lastX, lastY, lastX, lastY, true), 40);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            paint(e.clientX, e.clientY, lastX, lastY);
+            [lastX, lastY] = [e.clientX, e.clientY];
+        });
+
+        window.addEventListener('mouseup', () => { isDrawing = false; clearInterval(drawInterval); });
+        window.addEventListener('keydown', (e) => { if(e.key.toLowerCase()==='c') clearCanvas(); });
+        window.addEventListener('resize', () => { canvas.width=window.innerWidth; canvas.height=window.innerHeight; clearCanvas(); });
+        
+        canvas.width=window.innerWidth; canvas.height=window.innerHeight; clearCanvas();
+        document.querySelectorAll('input').forEach(i => i.oninput = updateUI);
+    </script>
+</body>
+</html>
