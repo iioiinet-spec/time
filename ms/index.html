@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Crossy Road - Deluxe Edition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Pretendard', sans-serif; background: #4cc9f0; }
+        canvas { display: block; }
+        .overlay-ui { position: absolute; z-index: 100; pointer-events: none; width: 100%; height: 100%; }
+        .pointer-events-auto { pointer-events: auto; }
+        #main-menu { position: absolute; inset: 0; background: #4cc9f0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 800; }
+        #game-over { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.9); display: none; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 900; }
+    </style>
+</head>
+<body>
+
+    <div id="main-menu">
+        <div class="text-center p-10 bg-white/95 rounded-[3.5rem] shadow-2xl max-w-sm w-full mx-4 border-b-8 border-slate-200">
+            <div class="text-9xl mb-6">🐔</div>
+            <h1 class="text-5xl font-black text-slate-800 mb-2 tracking-tighter">CROSSY 3D</h1>
+            <p class="text-slate-500 font-bold mb-8 italic">깜빡이는 경고등과 매를 조심하세요!</p>
+            <button onclick="startGame()" class="pointer-events-auto w-full py-5 bg-emerald-500 text-white rounded-2xl text-2xl font-black shadow-[0_8px_0_#059669] active:translate-y-1 active:shadow-none transition-all">시작하기</button>
+        </div>
+    </div>
+
+    <div id="ui" class="overlay-ui p-8 pointer-events-none opacity-0 transition-opacity duration-500">
+        <div class="bg-slate-900/60 backdrop-blur-md px-6 py-3 rounded-3xl border border-white/20 inline-block">
+            <div class="text-white text-xs font-black tracking-widest opacity-60">SCORE</div>
+            <div id="score-val" class="text-5xl font-black text-white">0</div>
+        </div>
+    </div>
+
+    <div id="game-over">
+        <h2 class="text-7xl font-black text-rose-500 mb-4 italic tracking-tighter">WASTED</h2>
+        <p id="death-reason" class="text-2xl text-yellow-400 mb-10 font-bold bg-yellow-400/10 px-6 py-2 rounded-full"></p>
+        <button onclick="location.reload()" class="pointer-events-auto px-16 py-5 bg-white text-slate-900 font-black rounded-3xl text-2xl shadow-2xl hover:scale-105 transition-transform">재도전</button>
+    </div>
+
+    <script>
+        // --- 전역 설정 및 변수 ---
+        let scene, camera, renderer, player, eagle;
+        let score = 0, isGameOver = false, isGameStarted = false, eagleCatching = false;
+        let lanes = [], obstacles = [], trees = [], signals = [];
+        let targetPos = { x: 0, z: 0 };
+        let lastMoveTime = Date.now();
+        const SNATCH_TIMEOUT = 8000; // 매가 나타나기까지 대기 시간 (8초)
+        let cameraZoom = 14;
+
+        // --- 초기화 ---
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x4cc9f0);
+            scene.fog = new THREE.Fog(0x4cc9f0, 40, 110);
+
+            const aspect = window.innerWidth / window.innerHeight;
+            camera = new THREE.OrthographicCamera(-cameraZoom * aspect, cameraZoom * aspect, cameraZoom, -cameraZoom, 0.1, 1000);
+            camera.position.set(-35, 35, 30);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambient);
+            const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+            sun.position.set(20, 50, 20);
+            sun.castShadow = true;
+            sun.shadow.camera.left = -50; sun.shadow.camera.right = 50;
+            sun.shadow.camera.top = 50; sun.shadow.camera.bottom = -50;
+            scene.add(sun);
+
+            createPlayer();
+            createEagle();
+            
+            for(let i = -15; i < 40; i++) createLane(i);
+
+            window.addEventListener('keydown', handleInput);
+            window.addEventListener('resize', onWindowResize);
+            animate();
+        }
+
+        // --- 지형 생성 ---
+        function createLane(x) {
+            if (lanes.some(l => l.x === x)) return;
+
+            const prevLane = lanes.find(l => l.x === x - 1);
+            let type = 'grass';
+
+            if (x > 5) {
+                const r = Math.random();
+                if (prevLane && (prevLane.type === 'road' || prevLane.type === 'water' || prevLane.type === 'rail')) {
+                    type = (r > 0.5) ? 'grass' : prevLane.type; 
+                } else {
+                    if (r > 0.88) type = 'rail';
+                    else if (r > 0.68) type = 'water';
+                    else if (r > 0.38) type = 'road';
+                }
+            }
+
+            const laneGroup = new THREE.Group();
+            let color = type === 'grass' ? 0x76b947 : (type === 'road' ? 0x334155 : (type === 'water' ? 0x0ea5e9 : 0x71717a));
+            
+            const laneMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(1, 1, 120), 
+                new THREE.MeshStandardMaterial({ color })
+            );
+            laneMesh.position.set(x, -0.5, 0);
+            laneMesh.receiveShadow = true;
+            laneGroup.add(laneMesh);
+
+            if (type === 'rail') {
+                // 철길 침목 및 레일
+                for (let j = -60; j < 60; j += 2) {
+                    const tie = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 0.3), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
+                    tie.position.set(x, 0.05, j);
+                    laneGroup.add(tie);
+                }
+                const track1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 120), new THREE.MeshStandardMaterial({ color: 0x94a3b8 }));
+                track1.position.set(x - 0.22, 0.1, 0);
+                const track2 = track1.clone();
+                track2.position.x = x + 0.22;
+                laneGroup.add(track1, track2);
+
+                // 경고등 기둥 추가
+                const signalPole = new THREE.Group();
+                const pole = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.5, 0.2), new THREE.MeshStandardMaterial({ color: 0x1f2937 }));
+                pole.position.y = 1.25;
+                const lightBox = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), new THREE.MeshStandardMaterial({ color: 0x111827 }));
+                lightBox.position.y = 2.2;
+                const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.15), new THREE.MeshBasicMaterial({ color: 0x330000 }));
+                lamp.position.set(0, 2.2, 0.25);
+                signalPole.add(pole, lightBox, lamp);
+                signalPole.position.set(x, 0, 8); // 길 옆에 배치
+                laneGroup.add(signalPole);
+                signals.push({ x, lamp });
+            }
+
+            scene.add(laneGroup);
+
+            const laneData = { 
+                x, type, 
+                speed: (type === 'water' ? (Math.random() * 0.03 + 0.02) : (Math.random() * 0.1 + 0.08)) * (Math.random() > 0.5 ? 1 : -1),
+                spawnTimer: Math.random() * 300 + 100
+            };
+            lanes.push(laneData);
+
+            if (type === 'grass' && Math.random() > 0.6 && Math.abs(x) > 2) {
+                trees.push(createTree(x, Math.floor(Math.random() * 40 - 20)));
+            }
+        }
+
+        function createTree(x, z) {
+            const group = new THREE.Group();
+            const trunk = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.2, 0.4), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
+            const leaves = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 1), new THREE.MeshStandardMaterial({ color: 0x064e3b }));
+            leaves.position.y = 1.2;
+            group.add(trunk, leaves);
+            group.position.set(x, 0.6, z);
+            group.castShadow = true;
+            scene.add(group);
+            return group;
+        }
+
+        function createPlayer() {
+            player = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.7), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+            const comb = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.4), new THREE.MeshStandardMaterial({ color: 0xe11d48 }));
+            comb.position.set(0.1, 0.5, 0);
+            const beak = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 0.2), new THREE.MeshStandardMaterial({ color: 0xfbbf24 }));
+            beak.position.set(0.4, 0.3, 0);
+            player.add(body, comb, beak);
+            player.position.y = 0.35;
+            scene.add(player);
+        }
+
+        function createEagle() {
+            eagle = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.BoxGeometry(5, 1, 3), new THREE.MeshStandardMaterial({ color: 0x27272a }));
+            const head = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+            head.position.set(2.5, 0.3, 0);
+            const beak = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.4), new THREE.MeshStandardMaterial({ color: 0xfacc15 }));
+            beak.position.set(3.3, 0.2, 0);
+            const wingL = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.1, 6), new THREE.MeshStandardMaterial({ color: 0x18181b }));
+            wingL.position.set(0, 0.5, 3.5);
+            const wingR = wingL.clone();
+            wingR.position.z = -3.5;
+            eagle.add(body, head, beak, wingL, wingR);
+            eagle.position.y = 25;
+            eagle.visible = false;
+            scene.add(eagle);
+        }
+
+        // --- 게임 로직 ---
+        function handleInput(e) {
+            if (!isGameStarted || isGameOver || eagleCatching) return;
+            const key = e.key.toLowerCase();
+            if (['w', 'arrowup', ' '].includes(key)) move('up');
+            if (['s', 'arrowdown'].includes(key)) move('down');
+            if (['a', 'arrowleft'].includes(key)) move('left');
+            if (['d', 'arrowright'].includes(key)) move('right');
+        }
+
+        function move(dir) {
+            let nextX = targetPos.x;
+            let nextZ = targetPos.z;
+            if (dir === 'up') nextX += 1;
+            if (dir === 'down') nextX -= 1;
+            if (dir === 'left') nextZ -= 1;
+            if (dir === 'right') nextZ += 1;
+
+            if (trees.some(t => Math.round(t.position.x) === nextX && Math.round(t.position.z) === nextZ)) return;
+
+            targetPos.x = nextX;
+            targetPos.z = nextZ;
+            lastMoveTime = Date.now();
+
+            if (targetPos.x > score) {
+                score = targetPos.x;
+                document.getElementById('score-val').innerText = score;
+                const lastX = lanes[lanes.length - 1].x;
+                if (targetPos.x + 35 > lastX) {
+                    for(let i = lastX + 1; i <= targetPos.x + 45; i++) createLane(i);
+                }
+            }
+        }
+
+        function animate() {
+            if (isGameOver) return;
+            requestAnimationFrame(animate);
+
+            if (isGameStarted) {
+                const now = Date.now();
+                const idleTime = now - lastMoveTime;
+
+                // 클로즈업 연출: 가만히 있을수록 카메라 줌인
+                if (idleTime > 2000 && !eagleCatching) {
+                    const progress = Math.min((idleTime - 2000) / (SNATCH_TIMEOUT - 2000), 1);
+                    cameraZoom = 14 - (progress * 8); // 14에서 6까지 줌인
+                    onWindowResize();
+                } else if (!eagleCatching) {
+                    cameraZoom += (14 - cameraZoom) * 0.1;
+                    onWindowResize();
+                }
+
+                // 매 습격 로직
+                if (idleTime > SNATCH_TIMEOUT && !eagleCatching) {
+                    if (!eagle.visible) {
+                        eagle.visible = true;
+                        eagle.position.set(player.position.x - 50, 18, player.position.z);
+                    }
+                }
+
+                if (eagle.visible) {
+                    eagle.position.x += 2.2;
+                    if (Math.abs(eagle.position.x - player.position.x) < 1.5) eagleCatching = true;
+                    if (eagleCatching) {
+                        player.position.set(eagle.position.x, eagle.position.y - 1.2, eagle.position.z);
+                        eagle.position.y += 0.6;
+                        if (eagle.position.y > 45) gameOver("가만히 있다가 매에게 잡혔습니다!");
+                    }
+                }
+
+                lanes.forEach(lane => {
+                    if (lane.type === 'grass') return;
+                    
+                    lane.spawnTimer--;
+
+                    // 기차 경고등 깜빡임 버그 수정 및 시각화
+                    if (lane.type === 'rail') {
+                        const signal = signals.find(s => s.x === lane.x);
+                        if (signal) {
+                            if (lane.spawnTimer < 100 && lane.spawnTimer > 0) {
+                                // 100프레임 전부터 빨간불 깜빡임
+                                const flash = Math.floor(now / 200) % 2 === 0;
+                                signal.lamp.material.color.set(flash ? 0xff0000 : 0x330000);
+                            } else {
+                                signal.lamp.material.color.set(0x330000);
+                            }
+                        }
+                    }
+
+                    if (lane.spawnTimer <= 0) {
+                        const startZ = lane.speed > 0 ? -60 : 60;
+                        let geom, color, speed = lane.speed;
+
+                        if (lane.type === 'road') {
+                            const isBus = Math.random() > 0.7;
+                            geom = isBus ? new THREE.BoxGeometry(1.6, 1.2, 5.5) : new THREE.BoxGeometry(1.4, 0.9, 3);
+                            color = new THREE.Color().setHSL(Math.random(), 0.7, 0.5);
+                        } else if (lane.type === 'water') {
+                            geom = new THREE.BoxGeometry(1.2, 0.4, 6);
+                            color = 0x92400e; 
+                        } else if (lane.type === 'rail') {
+                            geom = new THREE.BoxGeometry(1.8, 2.2, 20);
+                            color = 0xbe123c;
+                            speed = lane.speed * 4.5;
+                        }
+
+                        const mesh = new THREE.Mesh(geom, new THREE.MeshStandardMaterial({ color }));
+                        mesh.position.set(lane.x, (lane.type==='rail'? 1.1 : (lane.type==='road'? 0.45 : 0.2)), startZ);
+                        mesh.castShadow = true;
+                        scene.add(mesh);
+                        obstacles.push({ mesh, speed, type: lane.type });
+
+                        lane.spawnTimer = lane.type === 'rail' ? (Math.random() * 300 + 400) : (Math.random() * 80 + 90);
+                    }
+                });
+
+                let onLog = false;
+                const pBox = new THREE.Box3().setFromObject(player).expandByScalar(-0.15);
+
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    const o = obstacles[i];
+                    o.mesh.position.z += o.speed;
+
+                    const oBox = new THREE.Box3().setFromObject(o.mesh);
+                    if (pBox.intersectsBox(oBox)) {
+                        if (o.type === 'road' || o.type === 'rail') {
+                            gameOver(o.type === 'rail' ? "기차는 멈추지 않습니다!" : "교통사고가 났습니다!");
+                        } else if (o.type === 'water') {
+                            onLog = true;
+                            if (!eagleCatching) targetPos.z += o.speed;
+                        }
+                    }
+
+                    if (Math.abs(o.mesh.position.z) > 80) {
+                        scene.remove(o.mesh);
+                        obstacles.splice(i, 1);
+                    }
+                }
+
+                player.position.x += (targetPos.x - player.position.x) * 0.25;
+                player.position.z += (targetPos.z - player.position.z) * 0.25;
+                if (!eagleCatching) {
+                    const dist = Math.sqrt(Math.pow(targetPos.x-player.position.x, 2) + Math.pow(targetPos.z-player.position.z, 2));
+                    player.position.y = 0.35 + Math.max(0, Math.sin(dist * Math.PI) * 0.8);
+                }
+
+                const curLane = lanes.find(l => l.x === Math.round(player.position.x));
+                if (curLane && curLane.type === 'water' && !onLog && player.position.y < 0.5 && !eagleCatching) {
+                    gameOver("강물에 빠지고 말았습니다!");
+                }
+
+                camera.position.x += (player.position.x - 22 - camera.position.x) * 0.1;
+                camera.position.z += (player.position.z + 22 - camera.position.z) * 0.1;
+                camera.lookAt(player.position.x + 3, 0, player.position.z - 3);
+            }
+            renderer.render(scene, camera);
+        }
+
+        function startGame() {
+            isGameStarted = true;
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('ui').style.opacity = 1;
+            lastMoveTime = Date.now();
+        }
+
+        function gameOver(reason) {
+            if (isGameOver) return;
+            isGameOver = true;
+            document.getElementById('death-reason').innerText = reason;
+            document.getElementById('game-over').style.display = 'flex';
+        }
+
+        function onWindowResize() {
+            const aspect = window.innerWidth / window.innerHeight;
+            camera.left = -cameraZoom * aspect; camera.right = cameraZoom * aspect;
+            camera.top = cameraZoom; camera.bottom = -cameraZoom;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
