@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>컬러 유체 미디어아트 시뮬레이션</title>
+    <style>
+        /* 1. 기본 스타일 설정 */
+        body {
+            margin: 0;
+            overflow: hidden; /* 스크롤 바 숨기기 */
+            background-color: #000; /* 검은색 배경 */
+            font-family: 'Arial', sans-serif;
+        }
+
+        /* 화면 상단 안내 문구 */
+        #info {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            letter-spacing: 2px;
+            pointer-events: none; /* 마우스 클릭 방해 금지 */
+            text-transform: uppercase;
+        }
+
+        /* 캔버스 설정 */
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="info">Move your mouse to paint the fluid<br>Space: Reset | C: Change Color | S: Save</div>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        /**
+         * [설정 변수] - 학생들이 이 부분을 수정하며 놀 수 있습니다.
+         */
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let particles = []; // 유체 입자들을 담는 배열
+        let sparks = [];    // 반짝이 입자들을 담는 배열
+        let hue = 280;      // 기본 색상 (보라색 계열)
+        let isDrawing = false;
+
+        // 화면 크기에 맞게 캔버스 크기 조정
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        /**
+         * [입자(Particle) 클래스]
+         * 유체의 흐름과 번짐을 담당합니다.
+         */
+        class FluidParticle {
+            constructor(x, y, vx, vy, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx; // X축 속도
+                this.vy = vy; // Y축 속도
+                this.color = color;
+                this.size = Math.random() * 30 + 20; // 초기 크기
+                this.alpha = 1; // 투명도
+                this.decay = Math.random() * 0.02 + 0.01; // 사라지는 속도
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vx *= 0.96; // 공기 저항 (속도가 점점 줄어듦)
+                this.vy *= 0.96;
+                this.size += 0.5; // 커지면서 번지는 효과
+                this.alpha -= this.decay; // 서서히 투명해짐
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalCompositeOperation = 'lighter'; // Additive Blending (겹칠수록 밝아짐)
+                ctx.beginPath();
+                // 그라데이션을 이용하여 부드러운 유체 느낌 생성
+                let grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+                grad.addColorStop(0, `hsla(${this.color}, 100%, 70%, ${this.alpha})`);
+                grad.addColorStop(1, `hsla(${this.color}, 100%, 50%, 0)`);
+                
+                ctx.fillStyle = grad;
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        /**
+         * [반짝이(Spark) 클래스]
+         * 유체 속에 섞인 작은 반짝임들
+         */
+        class Spark {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 10;
+                this.vy = (Math.random() - 0.5) * 10;
+                this.size = Math.random() * 2 + 1;
+                this.alpha = 1;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.alpha -= 0.01;
+            }
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+            }
+        }
+
+        /**
+         * [이벤트 리스너] - 마우스 상호작용
+         */
+        window.addEventListener('mousemove', (e) => {
+            createFluid(e.clientX, e.clientY, e.movementX, e.movementY);
+        });
+
+        window.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            // 클릭 시 강한 폭발 효과
+            for(let i=0; i<20; i++) {
+                let angle = Math.random() * Math.PI * 2;
+                let speed = Math.random() * 10 + 5;
+                createFluid(e.clientX, e.clientY, Math.cos(angle) * speed, Math.sin(angle) * speed);
+            }
+            hue = Math.random() * 360; // 클릭할 때마다 랜덤 색상 추가
+        });
+
+        function createFluid(x, y, vx, vy) {
+            // 입자 생성 (부드러운 유체와 반짝이)
+            particles.push(new FluidParticle(x, y, vx * 0.5, vy * 0.5, hue));
+            if (Math.random() > 0.8) sparks.push(new Spark(x, y));
+        }
+
+        /**
+         * [키보드 조작]
+         */
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                particles = []; // 초기화
+                sparks = [];
+            }
+            if (e.code === 'KeyC') {
+                hue = Math.random() * 360; // 팔레트 변경
+            }
+            if (e.code === 'KeyS') {
+                // 스크린샷 저장
+                const link = document.createElement('a');
+                link.download = 'fluid-art.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            }
+        });
+
+        /**
+         * [메인 루프] - 애니메이션 실행
+         */
+        function animate() {
+            // 잔상 효과를 위해 화면을 완전히 지우지 않고 반투명하게 덮음
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 유체 입자 업데이트 및 그리기
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                if (particles[i].alpha <= 0) particles.splice(i, 1);
+            }
+
+            // 반짝이 업데이트 및 그리기
+            for (let i = sparks.length - 1; i >= 0; i--) {
+                sparks[i].update();
+                sparks[i].draw();
+                if (sparks[i].alpha <= 0) sparks.splice(i, 1);
+            }
+
+            // 부드러운 색상 변화 (시간에 따라 조금씩 변함)
+            hue += 0.5;
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
