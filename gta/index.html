@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>3D GTA: Ultimate Masterpiece Final (Enhanced)</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #87ceeb; font-family: 'Arial Black', sans-serif; }
+        #ui { position: absolute; top: 15px; left: 15px; color: #fff; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; border: 2px solid #e74c3c; pointer-events: none; z-index: 5; }
+        #wanted { color: #f1c40f; font-size: 24px; letter-spacing: 5px; }
+        #action-msg { position: absolute; bottom: 25%; left: 50%; transform: translateX(-50%); color: #fff; background: rgba(231, 76, 60, 0.9); padding: 12px 25px; border-radius: 5px; font-size: 22px; display: none; z-index: 10; border: 2px solid #fff; }
+        #shop-ui { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; background: rgba(0,0,0,0.9); border: 3px solid #f1c40f; color: white; padding: 20px; display: none; text-align: center; z-index: 2000; border-radius: 15px; }
+        .shop-btn { background: #f1c40f; border: none; padding: 10px; margin: 10px; width: 100%; cursor: pointer; font-weight: bold; border-radius: 5px; }
+        .shop-btn:hover { background: #fff; }
+        #busted { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #ff0000; font-size: 80px; font-weight: bold; display: none; text-shadow: 4px 4px #000; text-align: center; z-index: 1000; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 12px; height: 12px; border: 2px solid #fff; border-radius: 50%; transform: translate(-50%, -50%); opacity: 0.8; }
+        .stat { color: #f1c40f; }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <div id="wanted">WANTED: NONE</div>
+        <div style="margin-top:10px; font-size:13px;">
+            - WASD: 이동 / F: 승하차 / E: 상점 입장<br>
+            - 마우스: 시점 / 클릭: 사격 / <b>휠: 줌인/아웃</b><br>
+            - <span style="color:#5dade2;">시동 중(3초)에는 무적입니다!</span>
+        </div>
+        <br>
+        KILLS: <span id="kills" class="stat">0</span> | POLICE: <span id="pkills" class="stat">0</span>
+    </div>
+
+    <div id="shop-ui">
+        <h2 style="color:#f1c40f;">AMMO-NATION</h2>
+        <button class="shop-btn" onclick="buyItem('armor')">유리 수리 & 방어구 ($500)</button>
+        <button class="shop-btn" onclick="buyItem('bribe')">경찰 뇌물 매수 ($1000)</button>
+        <p style="font-size:12px;">ESC를 눌러 닫기</p>
+    </div>
+
+    <div id="action-msg">시동 거는 중...</div>
+    <div id="busted">BUSTED<br><span style="font-size:20px; color:#fff;">Press 'R' to Restart</span></div>
+    <div id="crosshair"></div>
+
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // 전역 함수 설정
+        window.buyItem = (type) => {
+            if (type === 'armor') { window.repairWindows(); alert("수리 완료!"); }
+            else if (type === 'bribe') { window.lowerWanted(); alert("수배 레벨 감소!"); }
+        };
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87ceeb);
+        scene.fog = new THREE.Fog(0x87ceeb, 150, 850);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 2000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+        sun.position.set(100, 250, 100);
+        scene.add(sun);
+
+        // 지형
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000), new THREE.MeshStandardMaterial({color: 0x27ae60}));
+        floor.rotation.x = -Math.PI / 2;
+        scene.add(floor);
+
+        const roadMat = new THREE.MeshStandardMaterial({color: 0x333333, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1});
+        const road = new THREE.Mesh(new THREE.PlaneGeometry(60, 5000), roadMat);
+        road.rotation.x = -Math.PI / 2; road.position.y = 0.02;
+        scene.add(road);
+
+        const createSidewalk = (x) => {
+            const s = new THREE.Mesh(new THREE.PlaneGeometry(15, 5000), new THREE.MeshStandardMaterial({color: 0x95a5a6, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2}));
+            s.rotation.x = -Math.PI / 2; s.position.set(x, 0.03, 0);
+            scene.add(s);
+        };
+        createSidewalk(-37.5); createSidewalk(37.5);
+
+        function createFancyBuilding(x, z, isShop = false) {
+            const h = isShop ? 20 : 40 + Math.random() * 80;
+            const w = isShop ? 25 : 20 + Math.random() * 10;
+            const group = new THREE.Group();
+            const bodyMat = new THREE.MeshStandardMaterial({color: isShop ? 0xe91e63 : new THREE.Color().setHSL(Math.random(), 0.2, 0.5)});
+            const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), bodyMat);
+            body.position.y = h/2;
+            group.add(body);
+            for(let fy=5; fy<h-5; fy+=8) {
+                for(let fx=-w/2+3; fx<w/2-2; fx+=5) {
+                    const win = new THREE.Mesh(new THREE.PlaneGeometry(2, 3), new THREE.MeshBasicMaterial({color: 0xffffcc}));
+                    win.position.set(fx, fy, w/2 + 0.1);
+                    group.add(win);
+                    const win2 = win.clone(); win2.position.set(fx, fy, -w/2 - 0.1); win2.rotation.y = Math.PI;
+                    group.add(win2);
+                }
+            }
+            const roof = new THREE.Mesh(new THREE.BoxGeometry(w*0.6, 5, w*0.6), new THREE.MeshStandardMaterial({color: 0x333333}));
+            roof.position.y = h + 2.5;
+            group.add(roof);
+            group.position.set(x, 0, z);
+            scene.add(group);
+            return group;
+        }
+
+        for(let i=0; i<150; i++) {
+            let x = Math.random()*1500-750, z = Math.random()*1500-750;
+            if (Math.abs(x) < 80) x += (x > 0 ? 100 : -100);
+            createFancyBuilding(x, z);
+        }
+        const shopBuilding = createFancyBuilding(55, 100, true);
+
+        function createPerson(color) {
+            const g = new THREE.Group();
+            const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1.8, 0.6), new THREE.MeshStandardMaterial({color}));
+            b.position.y = 0.9;
+            const h = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.7), new THREE.MeshStandardMaterial({color: 0xffdbac}));
+            h.position.y = 2.1;
+            g.add(b, h); return g;
+        }
+
+        function createVehicle(color, isPolice=false) {
+            const g = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.BoxGeometry(4, 1.3, 8), new THREE.MeshStandardMaterial({color: isPolice?0x111111:color}));
+            body.position.y = 0.65;
+            const roof = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.1, 4), new THREE.MeshStandardMaterial({color: isPolice?0xffffff:color}));
+            roof.position.set(0, 1.8, 0.5);
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.9, 4.1), new THREE.MeshStandardMaterial({color: 0x88ccff, transparent: true, opacity: 0.4}));
+            glass.position.set(0, 1.8, 0.5); glass.name = "windows";
+            g.add(body, roof, glass);
+            if(isPolice) {
+                const s = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.3, 0.6), new THREE.MeshStandardMaterial({color: 0xff0000}));
+                s.position.y = 2.4; g.add(s);
+            }
+            return g;
+        }
+
+        const player = createPerson(0x2980b9); scene.add(player);
+        const playerCar = createVehicle(0xf1c40f); playerCar.position.set(20, 0, 30); scene.add(playerCar);
+
+        let isDriving = false, isStarting = false, isGameOver = false, isShopOpen = false;
+        let citizenKills = 0, policeKills = 0, wantedLevel = 0, isWindowsBroken = false;
+        let camYaw = 0, camPitch = 0.3;
+        
+        // --- 줌 관련 변수 추가 ---
+        let camDist = 30; 
+        const minZoom = 10;
+        const maxZoom = 100;
+
+        const keys = {}, bullets = [], citizens = [], policeUnits = [];
+        const actionMsg = document.getElementById('action-msg');
+        const shopUI = document.getElementById('shop-ui');
+
+        window.repairWindows = () => {
+            if (isWindowsBroken) {
+                const glass = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.9, 4.1), new THREE.MeshStandardMaterial({color: 0x88ccff, transparent: true, opacity: 0.4}));
+                glass.position.set(0, 1.8, 0.5); glass.name = "windows";
+                playerCar.add(glass); isWindowsBroken = false;
+            }
+        };
+        window.lowerWanted = () => { wantedLevel = Math.max(0, wantedLevel - 1); updateWantedUI(); };
+
+        function updateWantedUI() {
+            const stars = "★".repeat(wantedLevel) + "☆".repeat(5-wantedLevel);
+            document.getElementById('wanted').innerText = wantedLevel > 0 ? `WANTED ${stars}` : "WANTED: NONE";
+        }
+
+        // [총알 개선] 총알을 더 크고 밝은 레이저 형태로 변경
+       function shoot(from, isEnemy = false, targetPos = null) {
+    // 🔥 두껍고 긴 레이저 총알
+    const bGeo = new THREE.CylinderGeometry(0.4, 0.4, 6, 8);
+    const bMat = new THREE.MeshStandardMaterial({
+        color: isEnemy ? 0xff0000 : 0xffff00,
+        emissive: isEnemy ? 0xff0000 : 0xffff00,
+        emissiveIntensity: 2
+    });
+    const b = new THREE.Mesh(bGeo, bMat);
+
+    // 시작 위치 (캐릭터/차량의 위치에서 약간 위쪽)
+    b.position.copy(from.position).add(new THREE.Vector3(0, 1.6, 0));
+
+    let dir = new THREE.Vector3();
+
+    if (isEnemy && targetPos) {
+        // 적(경찰)이 쏠 때: 타겟을 향해 발사
+        const err = 5.0 - (wantedLevel * 0.5);
+        const lTarget = targetPos.clone().add(
+            new THREE.Vector3(
+                (Math.random()-0.5)*err,
+                (Math.random()-0.5)*err,
+                (Math.random()-0.5)*err
+            )
+        );
+        dir.subVectors(lTarget, b.position).normalize();
+    } else {
+        // 플레이어가 쏠 때: 카메라 방향을 기반으로 하되 바닥으로 쏠리지 않게 수정
+        camera.getWorldDirection(dir);
+        
+        // --- 수정 포인트 ---
+        // 시점이 아래를 향하더라도 총알은 수평(또는 살짝 위)을 유지하도록 Y축 값을 제한합니다.
+        // dir.y = 0; // 아예 수평으로만 쏘고 싶을 때
+        dir.y = Math.max(dir.y, -0.1); // 바닥으로 너무 꺾이지 않게 최소값 제한
+        dir.normalize(); 
+        // ------------------
+    }
+
+    // 총알이 진행 방향을 바라보도록 회전
+    b.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+
+    bullets.push({ mesh: b, dir, life: 120, isEnemy });
+    scene.add(b);
+}
+        document.addEventListener('keydown', e => {
+            keys[e.code] = true;
+            if(e.code === 'KeyR') location.reload();
+            if(e.code === 'KeyE' && !isGameOver && !isDriving) {
+                if(player.position.distanceTo(shopBuilding.position) < 25) {
+                    isShopOpen = !isShopOpen; shopUI.style.display = isShopOpen ? "block" : "none";
+                    if(isShopOpen) document.exitPointerLock();
+                }
+            }
+            if(e.code === 'KeyF' && !isGameOver) {
+                if(!isDriving && !isStarting && player.position.distanceTo(playerCar.position) < 12) {
+                    isStarting = true; player.visible = false;
+                    actionMsg.innerText = "시동 거는 중... (무적)"; actionMsg.style.display = "block";
+                    setTimeout(() => { if(isStarting) { isDriving = true; isStarting = false; actionMsg.style.display = "none"; camDist = 45; } }, 3000);
+                } else if(isDriving) {
+                    isDriving = false; player.visible = true;
+                    player.position.copy(playerCar.position).add(new THREE.Vector3(6, 0, 0).applyQuaternion(playerCar.quaternion));
+                    camDist = 30;
+                }
+            }
+        });
+
+        // [줌 기능] 마우스 휠 이벤트 추가
+        document.addEventListener('wheel', e => {
+            if(isGameOver) return;
+            camDist += e.deltaY * 0.05;
+            camDist = Math.max(minZoom, Math.min(maxZoom, camDist));
+        }, { passive: true });
+
+        document.addEventListener('keyup', e => keys[e.code] = false);
+        document.addEventListener('mousedown', () => { if(document.pointerLockElement && !isGameOver && !isStarting && !isShopOpen) shoot(isDriving?playerCar:player); });
+        document.addEventListener('click', () => { if(!isGameOver && !isShopOpen) document.body.requestPointerLock(); });
+        document.addEventListener('mousemove', e => { if(document.pointerLockElement) { camYaw -= e.movementX * 0.003; camPitch -= e.movementY * 0.003; camPitch = Math.max(-Math.PI/3, Math.min(Math.PI/3, camPitch)); } });
+
+        for(let i=0; i<80; i++) {
+            const side = Math.random() > 0.5 ? 37.5 : -37.5;
+            const c = createPerson(Math.random()*0xffffff);
+            c.position.set(side + (Math.random()-0.5)*10, 0, Math.random()*1200-600);
+            scene.add(c); citizens.push({mesh: c, side, angle: Math.random()*Math.PI*2, timer: 0});
+        }
+
+        function animate() {
+            if(isGameOver) return;
+            requestAnimationFrame(animate);
+
+            const activeP = isDriving ? playerCar : player;
+            const speed = isDriving ? 1.5 : 0.35;
+
+            if(!isStarting && !isShopOpen) {
+                if(keys['KeyW']) { activeP.position.x -= Math.sin(camYaw)*speed; activeP.position.z -= Math.cos(camYaw)*speed; activeP.rotation.y = camYaw; }
+                if(keys['KeyS']) { activeP.position.x += Math.sin(camYaw)*speed; activeP.position.z += Math.cos(camYaw)*speed; activeP.rotation.y = camYaw; }
+            }
+
+            if(!isDriving && player.position.distanceTo(shopBuilding.position) < 25) {
+                if(!isShopOpen) { actionMsg.innerText = "상점 입장: [E]"; actionMsg.style.display = "block"; }
+            } else if(!isStarting) { actionMsg.style.display = "none"; }
+
+            if (wantedLevel > 0 && policeUnits.length < wantedLevel * 2) {
+                const isCar = Math.random() > 0.4;
+                const unit = isCar ? createVehicle(0x111111, true) : createPerson(0x111111);
+                const ang = Math.random() * Math.PI * 2;
+                unit.position.set(activeP.position.x + Math.cos(ang)*250, 0, activeP.position.z + Math.sin(ang)*250);
+                scene.add(unit); policeUnits.push({ mesh: unit, isCar, shootTimer: 0 });
+            }
+
+            policeUnits.forEach(p => {
+                const d = p.mesh.position.distanceTo(activeP.position);
+                p.mesh.lookAt(activeP.position); p.mesh.translateZ(p.isCar ? 0.6 : 0.28);
+                p.shootTimer++;
+                if (p.shootTimer > 80 && d < 80) { shoot(p.mesh, true, activeP.position); p.shootTimer = 0; }
+                if (d < 6 && !isStarting) {
+                    if (!p.isCar || !isDriving) { 
+                        isGameOver = true; document.getElementById('busted').style.display = 'block'; document.exitPointerLock(); 
+                    }
+                }
+            });
+
+            bullets.forEach((b, i) => {
+                b.mesh.position.add(b.dir.clone().multiplyScalar(4.0)); // 속도 약간 상향
+                b.life--;
+                if (!b.isEnemy) {
+                    citizens.forEach((c, ci) => { if(b.mesh.position.distanceTo(c.mesh.position) < 4) { scene.remove(c.mesh); citizens.splice(ci, 1); citizenKills++; wantedLevel = Math.min(5, Math.ceil(citizenKills/2)); updateWantedUI(); document.getElementById('kills').innerText = citizenKills; } });
+                    policeUnits.forEach((p, pi) => { if(b.mesh.position.distanceTo(p.mesh.position) < 5) { scene.remove(p.mesh); policeUnits.splice(pi, 1); policeKills++; document.getElementById('pkills').innerText = policeKills; } });
+                } else if (!isStarting) {
+                    if (b.mesh.position.distanceTo(activeP.position) < 3.5) {
+                        if (isDriving && !isWindowsBroken) {
+                            const win = playerCar.getObjectByName("windows");
+                            if (win) { playerCar.remove(win); isWindowsBroken = true; }
+                        } else { isGameOver = true; document.getElementById('busted').style.display = 'block'; document.exitPointerLock(); }
+                        scene.remove(b.mesh); bullets.splice(i, 1); return;
+                    }
+                }
+                if(b.life <= 0) { scene.remove(b.mesh); bullets.splice(i, 1); }
+            });
+
+            // 카메라 위치 계산 (camDist 변수 사용)
+            const camX = activeP.position.x + camDist * Math.sin(camYaw) * Math.cos(camPitch);
+            const camY = activeP.position.y + camDist * Math.sin(camPitch) + (isDriving ? 10 : 8);
+            const camZ = activeP.position.z + camDist * Math.cos(camYaw) * Math.cos(camPitch);
+            camera.position.lerp(new THREE.Vector3(camX, camY, camZ), 0.1);
+            camera.lookAt(activeP.position.x, activeP.position.y + 2, activeP.position.z);
+
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>

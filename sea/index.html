@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>바다 미디어아트</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;}
+canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;}
+#ui{position:fixed;top:20px;left:24px;pointer-events:none;z-index:10;}
+#tod{font-family:'Helvetica Neue',sans-serif;font-size:22px;font-weight:300;letter-spacing:3px;text-shadow:0 1px 14px rgba(0,0,0,0.75);transition:color 2s;}
+#sub{font-family:'Helvetica Neue',sans-serif;font-size:10px;color:rgba(255,255,255,0.42);letter-spacing:2px;margin-top:3px;}
+#panel{position:fixed;bottom:24px;right:24px;z-index:10;display:flex;flex-direction:column;gap:10px;align-items:flex-end;}
+.btn{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);font-family:'Helvetica Neue',sans-serif;font-size:10px;letter-spacing:1.5px;padding:7px 14px;border-radius:20px;cursor:pointer;backdrop-filter:blur(8px);transition:all 0.3s;user-select:none;}
+.btn:hover{background:rgba(255,255,255,0.18);color:#fff;}
+.btn.active{background:rgba(255,255,255,0.22);border-color:rgba(255,255,255,0.4);color:#fff;}
+#hint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);font-family:sans-serif;font-size:10px;letter-spacing:2px;color:rgba(255,255,255,0.2);pointer-events:none;z-index:10;white-space:nowrap;transition:opacity 1.5s;}
+#fx{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:5;}
+#toast{position:fixed;top:48%;left:50%;transform:translate(-50%,-50%);font-family:'Helvetica Neue',sans-serif;font-size:13px;letter-spacing:3px;color:rgba(255,255,255,0.0);pointer-events:none;z-index:20;text-align:center;transition:color 1.2s;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<canvas id="fx"></canvas>
+<div id="ui"><div id="tod"></div><div id="sub"></div></div>
+<div id="panel">
+  <div class="btn active" id="btnAuto">⟳ AUTO</div>
+  <div class="btn" id="btnRain">🌧 RAIN</div>
+  <div class="btn" id="btnStorm">⛈ STORM</div>
+  <div class="btn" id="btnFog">🌫 FOG</div>
+  <div class="btn" id="btnReset">↺ RESET</div>
+</div>
+<div id="hint">DRAG · SCROLL · F11</div>
+<div id="toast"></div>
+<script>
+const canvas=document.getElementById('c');
+const fxCanvas=document.getElementById('fx');
+const fxCtx=fxCanvas.getContext('2d');
+const gl=canvas.getContext('webgl',{antialias:true,alpha:false});
+const todEl=document.getElementById('tod');
+const subEl=document.getElementById('sub');
+const hintEl=document.getElementById('hint');
+const toastEl=document.getElementById('toast');
+
+let camYaw=0,camPitch=0.13,tYaw=0,tPitch=0.13,zoom=1,tZoom=1;
+let drag=false,lx=0,ly=0,autoRot=true,startTs=null;
+let rain=false,storm=false,fogMode=false;
+let stormI=0,fogI=0;
+let particles=[];
+const CYCLE=600;
+
+setTimeout(()=>hintEl.style.opacity='0',5000);
+
+function resize(){
+  const dpr=devicePixelRatio||1;
+  canvas.width=Math.round(window.innerWidth*dpr);
+  canvas.height=Math.round(window.innerHeight*dpr);
+  fxCanvas.width=window.innerWidth;
+  fxCanvas.height=window.innerHeight;
+}
+resize();
+window.addEventListener('resize',resize);
+
+document.addEventListener('mousedown',e=>{drag=true;lx=e.clientX;ly=e.clientY;autoRot=false;document.body.style.cursor='grabbing';document.getElementById('btnAuto').classList.remove('active');});
+document.addEventListener('mouseup',()=>{drag=false;document.body.style.cursor='default';});
+document.addEventListener('mousemove',e=>{if(!drag)return;tYaw+=(e.clientX-lx)*0.0032;tPitch=Math.max(-0.58,Math.min(0.68,tPitch+(e.clientY-ly)*0.0028));lx=e.clientX;ly=e.clientY;});
+document.addEventListener('wheel',e=>{tZoom=Math.max(0.4,Math.min(2.2,tZoom-e.deltaY*0.001));e.preventDefault();},{passive:false});
+document.addEventListener('touchstart',e=>{drag=true;lx=e.touches[0].clientX;ly=e.touches[0].clientY;autoRot=false;},{passive:true});
+document.addEventListener('touchend',()=>{drag=false;});
+document.addEventListener('touchmove',e=>{if(!drag)return;tYaw+=(e.touches[0].clientX-lx)*0.0032;tPitch=Math.max(-0.58,Math.min(0.68,tPitch+(e.touches[0].clientY-ly)*0.0028));lx=e.touches[0].clientX;ly=e.touches[0].clientY;e.preventDefault();},{passive:false});
+document.addEventListener('keydown',e=>{if(e.key==='F11'){e.preventDefault();if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();}});
+
+function toast(msg){toastEl.textContent=msg;toastEl.style.color='rgba(255,255,255,0.75)';setTimeout(()=>toastEl.style.color='rgba(255,255,255,0)',2200);}
+
+function initParticles(type){
+  particles=[];
+  const n=type==='storm'?380:180;
+  for(let i=0;i<n;i++) particles.push({
+    x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,
+    len:type==='storm'?Math.random()*26+14:Math.random()*16+7,
+    speed:type==='storm'?Math.random()*16+12:Math.random()*7+4,
+    alpha:Math.random()*0.45+0.18,
+    angle:type==='storm'?Math.PI/2+0.55+Math.random()*0.3-0.15:Math.PI/2+Math.random()*0.12-0.06,
+  });
+}
+
+function updateParticles(){
+  const W=fxCanvas.width,H=fxCanvas.height;
+  fxCtx.clearRect(0,0,W,H);
+  if(!particles.length)return;
+  const isSt=storm;
+  fxCtx.lineCap='round';
+  for(const p of particles){
+    p.x+=Math.sin(p.angle)*p.speed;
+    p.y+=Math.cos(p.angle)*p.speed;
+    if(p.y>H+20){p.y=-20;p.x=Math.random()*W;}
+    if(p.x>W+20)p.x=-20;
+    if(p.x<-20)p.x=W+20;
+    fxCtx.beginPath();
+    fxCtx.moveTo(p.x,p.y);
+    fxCtx.lineTo(p.x-Math.sin(p.angle)*p.len,p.y-Math.cos(p.angle)*p.len);
+    fxCtx.strokeStyle=`rgba(180,210,240,${p.alpha})`;
+    fxCtx.lineWidth=isSt?1.1:0.7;
+    fxCtx.stroke();
+  }
+}
+
+document.getElementById('btnAuto').addEventListener('click',()=>{autoRot=!autoRot;document.getElementById('btnAuto').classList.toggle('active',autoRot);toast(autoRot?'자동 회전 ON':'자동 회전 OFF');});
+document.getElementById('btnRain').addEventListener('click',()=>{rain=!rain;if(rain){storm=false;document.getElementById('btnStorm').classList.remove('active');initParticles('rain');}else particles=[];document.getElementById('btnRain').classList.toggle('active',rain);toast(rain?'비가 내립니다':'맑아졌습니다');});
+document.getElementById('btnStorm').addEventListener('click',()=>{storm=!storm;if(storm){rain=false;document.getElementById('btnRain').classList.remove('active');initParticles('storm');}else particles=[];document.getElementById('btnStorm').classList.toggle('active',storm);toast(storm?'폭풍이 몰아칩니다':'폭풍이 잦아들었습니다');});
+document.getElementById('btnFog').addEventListener('click',()=>{fogMode=!fogMode;document.getElementById('btnFog').classList.toggle('active',fogMode);toast(fogMode?'안개가 깔립니다':'안개가 걷힙니다');});
+document.getElementById('btnReset').addEventListener('click',()=>{tYaw=0;tPitch=0.13;tZoom=1;autoRot=true;document.getElementById('btnAuto').classList.add('active');toast('시점 초기화');});
+
+function getDayF(s){
+  if(s<120)return 0.12+Math.pow(s/120,0.7)*0.43;
+  if(s<240)return 0.55+Math.sin((s-120)/120*Math.PI)*0.35;
+  if(s<360)return 0.55-Math.pow((s-240)/120,0.6)*0.52;
+  if(s<480)return 0.0;
+  return Math.pow((s-480)/120,1.4)*0.13;
+}
+function getSunYaw(s){return(s/CYCLE)*Math.PI*1.1;}
+
+const vs=`attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}`;
+const fs=`
+precision highp float;
+uniform vec2 R;uniform float T;uniform float D;uniform float SY;uniform float YW;uniform float PT;uniform float ZM;uniform float STORM;uniform float FOG;
+#define PI 3.14159265
+mat3 mRY(float a){float c=cos(a),s=sin(a);return mat3(c,0,s,0,1,0,-s,0,c);}
+mat3 mRX(float a){float c=cos(a),s=sin(a);return mat3(1,0,0,0,c,-s,0,s,c);}
+float hash21(vec2 p){p=fract(p*vec2(234.34,435.345));p+=dot(p,p+34.23);return fract(p.x*p.y);}
+float hash11(float p){return fract(sin(p*127.1)*43758.5);}
+float snoise(vec2 p){vec2 i=floor(p),f=fract(p),u=f*f*f*(f*(f*6.-15.)+10.);return mix(mix(hash21(i),hash21(i+vec2(1,0)),u.x),mix(hash21(i+vec2(0,1)),hash21(i+vec2(1,1)),u.x),u.y);}
+float fbm(vec2 p){float v=0.,a=.5;vec2 sh=vec2(3.1,1.7);for(int i=0;i<6;i++){v+=a*snoise(p);p=p*2.+sh;a*=.5;}return v;}
+float cloudFbm(vec2 p){float wx=snoise(p+vec2(1.3,0.8)),wy=snoise(p+vec2(0.5,2.1));p+=vec2(wx,wy)*0.55;return fbm(p);}
+float starField(vec3 dir,float bright){float phi=atan(dir.x,dir.z),theta=asin(clamp(dir.y,-1.,1.));vec2 cell=floor(vec2(phi,theta)*28.);float n=hash21(cell+vec2(71.2,193.7));vec2 cf=fract(vec2(phi,theta)*28.),sp=vec2(hash11(n),hash11(n+.31))*.85+.075;float d=length(cf-sp),sz=mix(.06,.14,hash11(n+.6));return smoothstep(sz,sz*.2,d)*(sin(T*2.5+n*400.)*.35+.72)*bright;}
+vec3 getSky(vec3 dir,float df){
+  float uy=dir.y;
+  vec3 zenD=mix(vec3(.07,.20,.54),vec3(.04,.06,.10),STORM);
+  vec3 horD=mix(vec3(.47,.73,.97),vec3(.20,.25,.32),STORM);
+  vec3 zenN=vec3(.003,.006,.030),horN=vec3(.008,.016,.065),zenDw=vec3(.04,.06,.20),horDw=vec3(.50,.28,.55);
+  float nightF=1.-smoothstep(0.,.10,df),dawnF=smoothstep(0.,.15,df)*(1.-smoothstep(.15,.38,df)),dayF=smoothstep(.12,.45,df);
+  float hh=smoothstep(0.,.5,uy);
+  vec3 sky=mix(mix(mix(horN,horDw,dawnF),horD,dayF),mix(mix(zenN,zenDw,dawnF),zenD,dayF),hh*hh);
+  float stC=fbm(vec2(atan(dir.x,dir.z)*.12+T*.002,dir.y*.4+.3)*3.5);
+  sky=mix(sky,vec3(.07,.08,.11),smoothstep(.28,.58,stC)*smoothstep(-.05,.35,uy)*STORM*.95);
+  float sP=df*PI*.88-.04;
+  vec3 sDir=normalize(vec3(sin(SY)*cos(sP),sin(sP),cos(SY)*cos(sP)));
+  float sd=max(0.,dot(dir,sDir));
+  float golden=smoothstep(.08,.22,df)*(1.-smoothstep(.22,.58,df))+smoothstep(.52,.70,df)*(1.-smoothstep(.75,.92,df));
+  float hg=pow(max(0.,1.-abs(uy)*2.6),2.4);
+  sky=mix(sky,vec3(.95,.38,.07),hg*golden*.90*(1.-STORM));
+  sky=mix(sky,vec3(.80,.22,.04),hg*(1.-smoothstep(.55,.70,df))*golden*.45*(1.-STORM));
+  vec3 sunCol=mix(vec3(1.,.55,.15),vec3(1.,.97,.88),smoothstep(.10,.50,df));
+  sky+=sunCol*(pow(sd,280.)*7.+pow(sd,18.)*.55+pow(sd,6.)*.14)*df*(1.-STORM*.9);
+  float lightning=step(.998,hash21(vec2(floor(T*3.),floor(T*2.1)+3.7)))*STORM;
+  sky+=vec3(.85,.90,1.)*lightning*max(0.,uy)*.7;
+  vec3 mDir=normalize(vec3(-sDir.x,-sDir.y*.5,-sDir.z));float md=max(0.,dot(dir,mDir));float moonV=max(nightF,dawnF*.6)*(1.-STORM);
+  sky+=vec3(.93,.96,1.)*pow(md,700.)*5.5*moonV+vec3(.72,.80,.98)*pow(md,22.)*.24*moonV+vec3(.35,.42,.72)*pow(md,5.)*.08*moonV;
+  float sb=clamp(nightF+dawnF*.5,0.,1.)*smoothstep(-.06,.10,uy)*(1.-STORM);
+  sky+=vec3(.88,.91,1.)*starField(dir,sb);
+  float mw=fbm(vec2(atan(dir.x,dir.z)*.18+.2,dir.y*1.1+.5)*2.6)*.28;
+  sky+=vec3(.30,.38,.70)*mw*nightF*smoothstep(-.04,.22,uy)*(1.-smoothstep(.22,.62,uy))*(1.-STORM);
+  sky=mix(sky,vec3(.52,.28,.68)*.6,dawnF*smoothstep(-.1,.3,uy)*.38*(1.-STORM));
+  float cl=cloudFbm(vec2(atan(dir.x,dir.z)*.20+T*.0012,dir.y*.55+.22)*2.4);
+  cl=smoothstep(.34,.62,cl)*smoothstep(-.02,.20,uy);
+  vec3 cDay=mix(vec3(.84,.87,.94),vec3(.99,.75,.44),hg*golden*.55),cDawn=vec3(.72,.52,.78),cNight=vec3(.09,.11,.18);
+  sky=mix(sky,mix(mix(cNight,cDawn,dawnF),cDay,dayF),cl*.88*(1.-STORM*.7));
+  sky=mix(sky,vec3(.78,.82,.88),FOG*smoothstep(0.,.3,uy)*.85);
+  return sky;
+}
+float wave(vec2 p){float a=1.+STORM*2.5;float h=sin(p.x*.62+T*.97)*.42*a+sin(p.x*1.08+p.y*.52+T*.80)*.22*a+sin(p.x*1.91-p.y*1.02+T*1.28)*.14*a+sin(p.x*3.30+p.y*2.12-T*1.78)*.08+snoise(p*.36+vec2(T*.07,-T*.04))*.34+snoise(p*1.02-vec2(T*.05,T*.09))*.16;return h;}
+vec3 waveNorm(vec2 p){float e=.030;return normalize(vec3(-(wave(p+vec2(e,0.))-wave(p))/e,2.1,-(wave(p+vec2(0.,e))-wave(p))/e));}
+vec3 getOcean(vec3 ro,vec3 rd,float dist,float df){
+  vec2 p=(ro+rd*dist).xz;vec3 nm=waveNorm(p),refl=reflect(rd,nm);
+  float dawnF=smoothstep(0.,.15,df)*(1.-smoothstep(.15,.38,df)),dayF=smoothstep(.12,.45,df),nightF=1.-smoothstep(0.,.12,df),dv=clamp(dist*.038,0.,1.);
+  vec3 shal=mix(mix(mix(vec3(.005,.03,.14),vec3(.10,.04,.22),dawnF),vec3(.04,.22,.45),dayF),vec3(.04,.06,.10),STORM);
+  vec3 deep=mix(mix(mix(vec3(.003,.012,.06),vec3(.04,.02,.14),dawnF),vec3(.01,.06,.23),dayF),vec3(.02,.03,.06),STORM);
+  float fr=mix(.04,1.,pow(1.-max(0.,dot(-rd,nm)),2.7));
+  vec3 col=mix(mix(shal,deep,dv),getSky(refl,df),fr);
+  float sP=df*PI*.88-.04;vec3 sDir=normalize(vec3(sin(SY)*cos(sP),sin(sP),cos(SY)*cos(sP)));
+  float NdH=max(0.,dot(nm,normalize(-rd+sDir)));
+  col+=mix(vec3(1.,.55,.18),vec3(1.,.97,.88),smoothstep(.1,.5,df))*(pow(NdH,215.)*2.8+pow(NdH,44.)*.38)*df*(1.-STORM*.8);
+  float bn=snoise(p*3.1+vec2(T*.4))*snoise(p*5.9-vec2(T*.23));
+  col+=vec3(.06,.30,.92)*smoothstep(.55,.85,bn)*nightF*.88+vec3(.18,.04,.32)*smoothstep(.55,.80,bn)*dawnF*.45;
+  float fo=smoothstep(mix(.37,.18,STORM),.60,wave(p))*smoothstep(.33,.74,snoise(p*6.9+vec2(T*.76))*snoise(p*12.6-vec2(T*.51)));
+  col=mix(col,vec3(.90,.95,.99),fo*mix(.64,.88,STORM));
+  float fog=1.-exp(-dist*mix(.0092,.028,FOG));
+  col=mix(col,mix(mix(vec3(.02,.04,.12),vec3(.38,.24,.52),dawnF),mix(vec3(.60,.77,.95),vec3(.78,.82,.88),FOG),dayF),fog*mix(.60,.92,FOG));
+  return col;
+}
+void main(){
+  vec2 uv=(gl_FragCoord.xy/R*2.-1.);uv.x*=R.x/R.y;uv/=ZM;
+  vec3 rd=normalize(vec3(uv.x,uv.y,1.26));rd=mRX(-PT)*mRY(-YW)*rd;
+  vec3 ro=vec3(0.,2.1,0.),col;
+  if(rd.y<-.006){float d=max(1.,(ro.y-.55)/(-rd.y));col=getOcean(ro,rd,d,D);}else col=getSky(rd,D);
+  vec2 vc=uv*ZM*.46;col*=clamp(1.-dot(vc,vc)*.50,.74,1.)*mix(1.,.70,STORM);
+  col=col*(2.51*col+.03)/(col*(2.43*col+.59)+.14);
+  col=pow(clamp(col,0.,1.),vec3(1./2.2));
+  gl_FragColor=vec4(clamp(col+hash21(uv*R+vec2(T*61.,T*37.))*.016-.008,0.,1.),1.);
+}`;
+
+function mkS(t,s){const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))console.error(gl.getShaderInfoLog(sh));return sh;}
+const prog=gl.createProgram();
+gl.attachShader(prog,mkS(gl.VERTEX_SHADER,vs));gl.attachShader(prog,mkS(gl.FRAGMENT_SHADER,fs));
+gl.linkProgram(prog);gl.useProgram(prog);
+const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+const al=gl.getAttribLocation(prog,'p');gl.enableVertexAttribArray(al);gl.vertexAttribPointer(al,2,gl.FLOAT,false,0,0);
+const uR=gl.getUniformLocation(prog,'R'),uT=gl.getUniformLocation(prog,'T'),uD=gl.getUniformLocation(prog,'D');
+const uSY=gl.getUniformLocation(prog,'SY'),uYW=gl.getUniformLocation(prog,'YW'),uPT=gl.getUniformLocation(prog,'PT'),uZM=gl.getUniformLocation(prog,'ZM');
+const uSTORM=gl.getUniformLocation(prog,'STORM'),uFOG=gl.getUniformLocation(prog,'FOG');
+
+const phaseInfo=[
+  {name:'아침',sub:'MORNING · 06:00',color:'rgba(255,185,80,0.92)'},
+  {name:'점심',sub:'MIDDAY · 12:00',color:'rgba(255,235,100,0.88)'},
+  {name:'저녁',sub:'EVENING · 18:30',color:'rgba(255,130,70,0.92)'},
+  {name:'밤',  sub:'NIGHT · 22:00', color:'rgba(160,188,255,0.88)'},
+  {name:'새벽',sub:'DAWN · 04:00',  color:'rgba(185,148,228,0.88)'},
+];
+
+function frame(ts){
+  if(!startTs)startTs=ts;
+  const elapsed=(ts-startTs)*0.001;
+  const cycSec=elapsed%CYCLE,dayF=getDayF(cycSec),sunYaw=getSunYaw(cycSec);
+  const pi=Math.min(4,Math.floor(cycSec/120));
+  todEl.textContent=phaseInfo[pi].name;todEl.style.color=phaseInfo[pi].color;
+  subEl.textContent=storm?'⛈ 폭풍':rain?'🌧 비':fogMode?'🌫 안개':phaseInfo[pi].sub;
+  stormI+=(( storm?1:0)-stormI)*0.014;
+  fogI  +=(( fogMode?1:0)-fogI)*0.016;
+  if(autoRot)tYaw+=0.00195;
+  camYaw+=(tYaw-camYaw)*0.050;camPitch+=(tPitch-camPitch)*0.050;zoom+=(tZoom-zoom)*0.08;
+  gl.viewport(0,0,canvas.width,canvas.height);
+  gl.uniform2f(uR,canvas.width,canvas.height);gl.uniform1f(uT,elapsed);gl.uniform1f(uD,dayF);
+  gl.uniform1f(uSY,sunYaw);gl.uniform1f(uYW,camYaw);gl.uniform1f(uPT,camPitch);gl.uniform1f(uZM,zoom);
+  gl.uniform1f(uSTORM,stormI);gl.uniform1f(uFOG,fogI);
+  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+  updateParticles();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
