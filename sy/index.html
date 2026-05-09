@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Calendar Diary</title>
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --highlight-color: #ff7675; /* 기본 강조 색상 */
+            --bg-color: #f1f2f6;
+        }
+
+        body {
+            font-family: -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column; height: 100vh;
+        }
+
+        header {
+            background: var(--primary-color);
+            color: white; padding: 15px;
+            text-align: center; font-weight: bold;
+        }
+
+        /* 달력 스타일 */
+        .calendar-container {
+            background: white;
+            margin: 10px; border-radius: 15px;
+            padding: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .calendar-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px; font-weight: bold;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .day-label {
+            text-align: center; font-size: 0.8rem; color: #888;
+            padding: 5px 0;
+        }
+
+        .day {
+            aspect-ratio: 1 / 1;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; font-size: 0.9rem;
+            cursor: pointer; position: relative;
+        }
+
+        .day:active { background-color: #eee; }
+        .day.today { border: 2px solid var(--primary-color); font-weight: bold; }
+        .day.has-content { font-weight: bold; color: var(--highlight-color); text-decoration: underline; }
+
+        /* 모달 스타일 */
+        #editorModal {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 100;
+        }
+
+        .modal-content {
+            background: white; margin: 20% auto; width: 85%;
+            padding: 20px; border-radius: 20px; position: relative;
+        }
+
+        #selectedDateText { font-weight: bold; margin-bottom: 10px; display: block; }
+        
+        textarea {
+            width: 100%; height: 150px; border: 1px solid #ddd;
+            border-radius: 10px; padding: 10px; box-sizing: border-box;
+            resize: none; font-size: 1rem;
+        }
+
+        .color-picker {
+            margin: 10px 0; display: flex; align-items: center; gap: 10px;
+            font-size: 0.8rem;
+        }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        button {
+            flex: 1; padding: 12px; border: none; border-radius: 10px;
+            font-weight: bold; cursor: pointer;
+        }
+        .save-btn { background: var(--primary-color); color: white; }
+        .close-btn { background: #eee; }
+    </style>
+</head>
+<body>
+
+    <header id="currentMonthYear"></header>
+
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <button onclick="changeMonth(-1)" style="width:auto; padding:5px 10px;">◀</button>
+            <span id="monthDisplay"></span>
+            <button onclick="changeMonth(1)" style="width:auto; padding:5px 10px;">▶</button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid">
+            <!-- 요일 표시 -->
+            <div class="day-label">일</div><div class="day-label">월</div>
+            <div class="day-label">화</div><div class="day-label">수</div>
+            <div class="day-label">목</div><div class="day-label">금</div>
+            <div class="day-label">토</div>
+        </div>
+    </div>
+
+    <!-- 일기 작성 모달 -->
+    <div id="editorModal">
+        <div class="modal-content">
+            <span id="selectedDateText"></span>
+            <textarea id="diaryInput" placeholder="이날의 기록을 남겨보세요..."></textarea>
+            
+            <div class="color-picker">
+                강조 색상: <input type="color" id="highlightColor" value="#ff7675">
+            </div>
+
+            <div class="btn-group">
+                <button class="close-btn" onclick="closeModal()">취소</button>
+                <button class="save-btn" onclick="saveEntry()">저장하기</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentNavDate = new Date();
+        let selectedDateKey = '';
+        let diaryData = JSON.parse(localStorage.getItem('calDiaryData')) || {};
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            const monthDisplay = document.getElementById('monthDisplay');
+            
+            // 기존 날짜 제거 (요일 레이블 제외)
+            const labels = document.querySelectorAll('.day-label');
+            grid.innerHTML = '';
+            labels.forEach(l => grid.appendChild(l));
+
+            const year = currentNavDate.getFullYear();
+            const month = currentNavDate.getMonth();
+            monthDisplay.innerText = `${year}년 ${month + 1}월`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const lastDate = new Date(year, month + 1, 0).getDate();
+
+            // 빈 칸
+            for (let i = 0; i < firstDay; i++) {
+                const empty = document.createElement('div');
+                grid.appendChild(empty);
+            }
+
+            // 날짜 생성
+            for (let d = 1; d <= lastDate; d++) {
+                const dayEl = document.createElement('div');
+                dayEl.classList.add('day');
+                dayEl.innerText = d;
+                
+                const dateKey = `${year}-${month + 1}-${d}`;
+                
+                // 기록이 있는 날 체크
+                if (diaryData[dateKey]) {
+                    dayEl.classList.add('has-content');
+                    dayEl.style.color = diaryData[dateKey].color || 'var(--highlight-color)';
+                }
+
+                // 오늘 표시
+                const today = new Date();
+                if (year === today.getFullYear() && month === today.getMonth() && d === today.getDate()) {
+                    dayEl.classList.add('today');
+                }
+
+                dayEl.onclick = () => openModal(dateKey);
+                grid.appendChild(dayEl);
+            }
+        }
+
+        function changeMonth(diff) {
+            currentNavDate.setMonth(currentNavDate.getMonth() + diff);
+            renderCalendar();
+        }
+
+        function openModal(dateKey) {
+            selectedDateKey = dateKey;
+            document.getElementById('selectedDateText').innerText = dateKey + " 기록";
+            document.getElementById('diaryInput').value = diaryData[dateKey]?.content || '';
+            document.getElementById('highlightColor').value = diaryData[dateKey]?.color || '#ff7675';
+            document.getElementById('editorModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('editorModal').style.display = 'none';
+        }
+
+        function saveEntry() {
+            const content = document.getElementById('diaryInput').value.trim();
+            const color = document.getElementById('highlightColor').value;
+
+            if (content) {
+                diaryData[selectedDateKey] = { content, color };
+            } else {
+                delete diaryData[selectedDateKey];
+            }
+
+            localStorage.setItem('calDiaryData', JSON.stringify(diaryData));
+            renderCalendar();
+            closeModal();
+        }
+
+        // 초기 실행
+        renderCalendar();
+    </script>
+</body>
+</html>
