@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>완전판: 곰 사냥 캠핑장</title>
+    <style>body { margin: 0; overflow: hidden; } #info { position: absolute; top: 10px; width: 100%; text-align: center; color: white; font-family: sans-serif; pointer-events: none; }</style>
+</head>
+<body>
+    <div id="info">클릭: 도끼 휘두르기 (5번 때리면 곰 퇴치!)</div>
+    <script type="module">
+        import * as THREE from 'https://cdn.skypack.dev/three@0.136.0';
+        import { PointerLockControls } from 'https://cdn.skypack.dev/three@0.136.0/examples/jsm/controls/PointerLockControls.js';
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // 1. 바닥
+        const plane = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshLambertMaterial({ color: 0x228B22 }));
+        plane.rotation.x = -Math.PI / 2;
+        scene.add(plane);
+
+        // 2. 텐트 & 캠프파이어 & 나무 (기존 환경 복구)
+        const tent = new THREE.Mesh(new THREE.ConeGeometry(3, 4, 4), new THREE.MeshLambertMaterial({ color: 0xc41e3a }));
+        tent.position.set(10, 2, 0); scene.add(tent);
+
+        const fire = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 8), new THREE.MeshBasicMaterial({ color: 0xff4500 }));
+        fire.position.set(10, 1, -5); scene.add(fire);
+
+        function createTree(x, z) {
+            const group = new THREE.Group();
+            group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 5), new THREE.MeshLambertMaterial({ color: 0x5d4037 })));
+            const leaves = new THREE.Mesh(new THREE.ConeGeometry(3, 5, 8), new THREE.MeshLambertMaterial({ color: 0x013220 }));
+            leaves.position.y = 4; group.add(leaves);
+            group.position.set(x, 2.5, z); scene.add(group);
+        }
+        for(let i=0; i<50; i++) createTree((Math.random()-0.5)*200, (Math.random()-0.5)*200);
+
+        // 3. 실제처럼 만든 곰 (머리 + 몸통)
+        const bear = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.BoxGeometry(2, 1.5, 3), new THREE.MeshLambertMaterial({ color: 0x4B3621 }));
+        const head = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), new THREE.MeshLambertMaterial({ color: 0x4B3621 }));
+        head.position.set(0, 1, 1.5);
+        bear.add(body, head);
+        bear.position.set(20, 1, 20);
+        scene.add(bear);
+        let bearHealth = 5;
+
+        // 4. 도끼 및 조작
+        const axe = new THREE.Group();
+        const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1), new THREE.MeshLambertMaterial({ color: 0x4B3621 }));
+        const axeHead = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 0.1), new THREE.MeshLambertMaterial({ color: 0xaaaaaa }));
+        axeHead.position.y = 0.5;
+        axe.add(handle, axeHead);
+        axe.scale.set(0.35, 0.35, 0.35); axe.position.set(0.6, -0.1, -0.5); axe.rotation.set(0.2, -0.2, 0.5);
+        camera.add(axe); scene.add(camera);
+
+        const controls = new PointerLockControls(camera, document.body);
+        let isSwinging = false, swingProgress = 0;
+        
+        document.addEventListener('click', () => { 
+            if(!controls.isLocked) controls.lock(); 
+            else if(!isSwinging) {
+                isSwinging = true;
+                if(bear.position.distanceTo(camera.position) < 6) {
+                    bearHealth--;
+                    bear.traverse(child => { if(child.isMesh) child.material.color.set(0xffffff); });
+                    setTimeout(() => bear.traverse(child => { if(child.isMesh) child.material.color.set(0x4B3621); }), 100);
+                    if(bearHealth <= 0) scene.remove(bear);
+                }
+            }
+        });
+
+        const move = { w: false, a: false, s: false, d: false };
+        window.addEventListener('keydown', e => move[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', e => move[e.key.toLowerCase()] = false);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls.isLocked) {
+                if (move['w']) controls.moveForward(0.5);
+                if (move['s']) controls.moveForward(-0.5);
+                if (move['a']) controls.moveRight(-0.5);
+                if (move['d']) controls.moveRight(0.5);
+            }
+            if (isSwinging) {
+                swingProgress += 0.2;
+                axe.rotation.z = 0.5 + Math.sin(swingProgress * 2) * 1.5;
+                if (swingProgress >= Math.PI) { isSwinging = false; swingProgress = 0; axe.rotation.z = 0.5; }
+            }
+            if(bear.parent) {
+                const dir = new THREE.Vector3().subVectors(camera.position, bear.position).normalize();
+                bear.position.add(dir.multiplyScalar(0.04));
+                bear.lookAt(camera.position);
+            }
+            renderer.render(scene, camera);
+        }
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+        camera.position.set(0, 3, 10);
+        animate();
+    </script>
+</body>
+</html>
