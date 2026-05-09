@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>어버이날 카네이션</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  overflow:hidden;
+  height:100vh;
+  background:
+    radial-gradient(circle at top, #fff0f3 0%, #ffe0e9 35%, #ffd3df 70%, #ffc2d1 100%);
+  font-family: "Pretendard", sans-serif;
+  position:relative;
+  cursor:pointer;
+}
+
+/* 반짝 배경 */
+.sparkle{
+  position:absolute;
+  width:4px;
+  height:4px;
+  background:white;
+  border-radius:50%;
+  animation: twinkle 3s infinite ease-in-out;
+  opacity:0.5;
+}
+
+@keyframes twinkle{
+  0%,100%{ transform:scale(0.5); opacity:0.3; }
+  50%{ transform:scale(1.8); opacity:1; }
+}
+
+/* 중앙 카드 */
+.container{
+  position:absolute;
+  inset:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  pointer-events:none;
+}
+
+.title{
+  font-size:52px;
+  font-weight:800;
+  color:#c9184a;
+  text-shadow:
+    0 0 10px rgba(255,255,255,0.9),
+    0 0 25px rgba(255,255,255,0.5);
+  margin-bottom:30px;
+  animation: float 4s ease-in-out infinite;
+}
+
+.sub{
+  margin-top:25px;
+  color:#9d174d;
+  font-size:18px;
+  letter-spacing:1px;
+  opacity:0.8;
+}
+
+@keyframes float{
+  0%,100%{ transform:translateY(0px); }
+  50%{ transform:translateY(-10px); }
+}
+
+/* 카네이션 */
+.flower{
+  position:relative;
+  width:320px;
+  height:320px;
+}
+
+.petal{
+  position:absolute;
+  width:110px;
+  height:110px;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 30% 30%, #ff9eb5, #ff4d6d 60%, #d90429 100%);
+  box-shadow:
+    inset -10px -10px 20px rgba(0,0,0,0.15),
+    0 10px 20px rgba(217,4,41,0.25);
+}
+
+.p1{ top:40px; left:105px; }
+.p2{ top:95px; left:45px; }
+.p3{ top:95px; right:45px; }
+.p4{ top:155px; left:105px; }
+.p5{ top:95px; left:105px; }
+
+.center{
+  position:absolute;
+  top:122px;
+  left:122px;
+  width:76px;
+  height:76px;
+  border-radius:50%;
+  background:
+    radial-gradient(circle, #ffe066, #ffb703);
+  z-index:2;
+  box-shadow:0 0 25px rgba(255,214,102,0.7);
+}
+
+.stem{
+  position:absolute;
+  width:12px;
+  height:180px;
+  background:linear-gradient(to bottom,#38b000,#1b7f3b);
+  left:154px;
+  top:180px;
+  border-radius:20px;
+}
+
+.leaf{
+  position:absolute;
+  width:70px;
+  height:35px;
+  background:linear-gradient(to right,#38b000,#70e000);
+  border-radius:50px 0;
+}
+
+.leaf1{
+  top:250px;
+  left:95px;
+  transform:rotate(-35deg);
+}
+
+.leaf2{
+  top:295px;
+  left:155px;
+  transform:rotate(145deg);
+}
+
+/* 클릭 문구 */
+.message{
+  position:absolute;
+  transform:translate(-50%, -50%);
+  font-size:26px;
+  font-weight:700;
+  color:white;
+  text-shadow:
+    0 0 8px rgba(255,255,255,0.9),
+    0 0 18px rgba(201,24,74,0.8),
+    0 0 30px rgba(201,24,74,0.5);
+  pointer-events:none;
+  animation: popup 2.8s forwards ease-out;
+  white-space:nowrap;
+}
+
+@keyframes popup{
+  0%{
+    opacity:0;
+    transform:translate(-50%, -50%) scale(0.6);
+  }
+
+  15%{
+    opacity:1;
+    transform:translate(-50%, -65%) scale(1.08);
+  }
+
+  70%{
+    opacity:1;
+  }
+
+  100%{
+    opacity:0;
+    transform:translate(-50%, -140%) scale(1);
+  }
+}
+
+.touch-guide{
+  position:absolute;
+  bottom:35px;
+  width:100%;
+  text-align:center;
+  color:#9d174d;
+  font-size:17px;
+  opacity:0.8;
+  animation: blink 2s infinite;
+}
+
+@keyframes blink{
+  0%,100%{ opacity:0.3; }
+  50%{ opacity:1; }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="title">💐 어버이날 💐</div>
+
+  <div class="flower">
+    <div class="petal p1"></div>
+    <div class="petal p2"></div>
+    <div class="petal p3"></div>
+    <div class="petal p4"></div>
+    <div class="petal p5"></div>
+
+    <div class="center"></div>
+
+    <div class="stem"></div>
+
+    <div class="leaf leaf1"></div>
+    <div class="leaf leaf2"></div>
+  </div>
+
+  <div class="sub">
+    부모님께 마음을 전해보세요
+  </div>
+
+</div>
+
+<div class="touch-guide">
+  화면 아무 곳이나 눌러보세요 ✨
+</div>
+
+<script>
+
+const messages = [
+  "사랑합니다 ❤️",
+  "항상 감사합니다 🌷",
+  "늘 건강하세요 😊",
+  "부모님은 제 자랑입니다 💕",
+  "행복만 가득하세요 ✨",
+  "오래오래 함께해요 💖",
+  "따뜻한 사랑 감사합니다 💐",
+  "언제나 존경합니다 🌸"
+];
+
+/* 반짝이 생성 */
+for(let i=0;i<45;i++){
+  const s = document.createElement("div");
+  s.className = "sparkle";
+  s.style.left = Math.random()*100 + "vw";
+  s.style.top = Math.random()*100 + "vh";
+  s.style.animationDelay = Math.random()*3 + "s";
+  s.style.opacity = Math.random();
+  document.body.appendChild(s);
+}
+
+/* 클릭 시 문구 생성 */
+document.body.addEventListener("click", (e)=>{
+
+  const text = document.createElement("div");
+  text.className = "message";
+
+  const random =
+    messages[Math.floor(Math.random()*messages.length)];
+
+  text.innerText = random;
+
+  text.style.left = e.clientX + "px";
+  text.style.top = e.clientY + "px";
+
+  document.body.appendChild(text);
+
+  setTimeout(()=>{
+    text.remove();
+  },2800);
+
+});
+
+</script>
+
+</body>
+</html>
