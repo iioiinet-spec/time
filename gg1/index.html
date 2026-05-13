@@ -1,0 +1,2093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HEXCHORD // Guitar Performance Simulator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #030509;
+    --bg2: #070c14;
+    --panel: rgba(8,16,32,0.92);
+    --border: rgba(0,200,255,0.18);
+    --cyan: #00e5ff;
+    --magenta: #ff00aa;
+    --gold: #ffd700;
+    --green: #00ff88;
+    --orange: #ff6a00;
+    --purple: #9b59b6;
+    --red: #ff2244;
+    --text: #c8e8ff;
+    --dim: rgba(200,232,255,0.4);
+    --glow-cyan: 0 0 8px #00e5ff, 0 0 24px rgba(0,229,255,0.4);
+    --glow-mag: 0 0 8px #ff00aa, 0 0 24px rgba(255,0,170,0.4);
+    --glow-gold: 0 0 8px #ffd700, 0 0 24px rgba(255,215,0,0.4);
+    --glow-green: 0 0 8px #00ff88, 0 0 24px rgba(0,255,136,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Rajdhani', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    user-select: none;
+  }
+
+  /* ─── SCANLINE OVERLAY ─── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 3px,
+      rgba(0,0,0,0.08) 3px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ─── CANVAS BG ─── */
+  #bgCanvas {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── PARTICLE LAYER ─── */
+  #particleCanvas {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* ─── LAYOUT ─── */
+  #app {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: 200px 1fr 220px;
+    grid-template-areas:
+      "header header header"
+      "left   center right"
+      "bottom bottom bottom";
+    min-height: 100vh;
+    gap: 0;
+    padding: 0;
+  }
+
+  /* ─── HEADER ─── */
+  #header {
+    grid-area: header;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    backdrop-filter: blur(12px);
+  }
+
+  .logo {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 22px;
+    color: var(--cyan);
+    text-shadow: var(--glow-cyan);
+    letter-spacing: 4px;
+  }
+  .logo span { color: var(--magenta); text-shadow: var(--glow-mag); }
+
+  #chord-display {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  #active-chord {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 36px;
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: var(--glow-gold);
+    min-width: 100px;
+    text-align: center;
+    transition: all 0.1s;
+  }
+  #active-technique {
+    font-size: 14px;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--green);
+    text-shadow: var(--glow-green);
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.3);
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+
+  .mode-buttons { display: flex; gap: 8px; }
+  .mode-btn {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--dim);
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .mode-btn.active {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background: rgba(0,229,255,0.08);
+    box-shadow: var(--glow-cyan);
+  }
+  .mode-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+  /* ─── LEFT PANEL ─── */
+  #left-panel {
+    grid-area: left;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    backdrop-filter: blur(8px);
+  }
+
+  .panel-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--cyan);
+    text-transform: uppercase;
+    opacity: 0.7;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .slider-group { display: flex; flex-direction: column; gap: 10px; }
+  .slider-row { display: flex; flex-direction: column; gap: 4px; }
+  .slider-label {
+    font-size: 11px;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--dim);
+    display: flex;
+    justify-content: space-between;
+  }
+  .slider-label span { color: var(--cyan); }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: rgba(0,229,255,0.15);
+    border-radius: 2px;
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: var(--glow-cyan);
+    cursor: pointer;
+  }
+
+  .bpm-display {
+    text-align: center;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 42px;
+    font-weight: 900;
+    color: var(--magenta);
+    text-shadow: var(--glow-mag);
+    line-height: 1;
+  }
+  .bpm-sub { font-size: 10px; color: var(--dim); letter-spacing: 3px; text-align: center; margin-top: 2px; }
+
+  .bpm-controls { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
+  .bpm-btn {
+    width: 36px; height: 36px;
+    background: rgba(255,0,170,0.1);
+    border: 1px solid rgba(255,0,170,0.3);
+    color: var(--magenta);
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .bpm-btn:hover { background: rgba(255,0,170,0.25); box-shadow: var(--glow-mag); }
+
+  #metro-viz {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+  }
+  .beat-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: rgba(255,215,0,0.2);
+    border: 1px solid rgba(255,215,0,0.3);
+    transition: all 0.05s;
+  }
+  .beat-dot.active {
+    background: var(--gold);
+    box-shadow: var(--glow-gold);
+    transform: scale(1.4);
+  }
+  .beat-dot.accent {
+    width: 14px; height: 14px;
+    border-color: var(--magenta);
+    background: rgba(255,0,170,0.2);
+  }
+  .beat-dot.accent.active { background: var(--magenta); box-shadow: var(--glow-mag); }
+
+  #metro-toggle {
+    width: 100%;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 8px;
+    border: 1px solid rgba(255,215,0,0.3);
+    background: rgba(255,215,0,0.05);
+    color: var(--gold);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  #metro-toggle.on {
+    background: rgba(255,215,0,0.15);
+    box-shadow: var(--glow-gold);
+  }
+
+  .time-sig-row { display: flex; gap: 6px; }
+  .ts-btn {
+    flex: 1;
+    padding: 5px 0;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--dim);
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.15s;
+  }
+  .ts-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(255,215,0,0.08); }
+
+  /* FX toggles */
+  .fx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .fx-btn {
+    padding: 6px 4px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--dim);
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .fx-btn.on { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.08); box-shadow: 0 0 6px rgba(0,255,136,0.3); }
+
+  /* ─── CENTER ─── */
+  #center {
+    grid-area: center;
+    display: flex;
+    flex-direction: column;
+    padding: 12px 16px;
+    gap: 12px;
+    overflow: hidden;
+  }
+
+  /* Guitar neck visual */
+  #neck-display {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    height: 80px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+
+  #neck-canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Chord pad grid */
+  #chord-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 7px;
+    flex-shrink: 0;
+  }
+
+  .chord-btn {
+    position: relative;
+    aspect-ratio: 1;
+    background: rgba(8,16,32,0.9);
+    border: 1px solid rgba(0,229,255,0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    transition: all 0.12s;
+    overflow: hidden;
+  }
+  .chord-btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(0,229,255,0.08), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .chord-btn:hover::before, .chord-btn.active::before { opacity: 1; }
+  .chord-btn:hover {
+    border-color: var(--cyan);
+    box-shadow: 0 0 12px rgba(0,229,255,0.3), inset 0 0 8px rgba(0,229,255,0.05);
+    transform: translateY(-2px);
+  }
+  .chord-btn.active {
+    border-color: var(--gold) !important;
+    box-shadow: 0 0 20px rgba(255,215,0,0.5), inset 0 0 12px rgba(255,215,0,0.1) !important;
+    transform: scale(0.96) !important;
+    background: rgba(255,215,0,0.06) !important;
+  }
+  .chord-btn.playing {
+    animation: chord-flash 0.3s ease-out;
+  }
+  @keyframes chord-flash {
+    0% { box-shadow: 0 0 30px rgba(255,215,0,0.8), inset 0 0 20px rgba(255,215,0,0.2); }
+    100% { box-shadow: none; }
+  }
+
+  .chord-name {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1;
+  }
+  .chord-key {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--dim);
+    background: rgba(255,255,255,0.04);
+    padding: 1px 4px;
+    border-radius: 2px;
+  }
+  .chord-dots {
+    display: flex;
+    gap: 2px;
+    margin-top: 2px;
+  }
+  .cdot {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: rgba(0,229,255,0.3);
+  }
+
+  /* Technique pad */
+  #tech-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  #strum-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 8px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .strum-arrow {
+    font-size: 28px;
+    opacity: 0.2;
+    transition: all 0.1s;
+    cursor: pointer;
+    padding: 4px 12px;
+    border-radius: 4px;
+  }
+  .strum-arrow.down { color: var(--cyan); }
+  .strum-arrow.up { color: var(--magenta); }
+  .strum-arrow.active {
+    opacity: 1;
+    transform: scale(1.3);
+    text-shadow: 0 0 16px currentColor;
+  }
+
+  #technique-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 7px;
+  }
+
+  .tech-btn {
+    padding: 10px 6px;
+    background: rgba(8,16,32,0.9);
+    border: 1px solid rgba(255,0,170,0.2);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.12s;
+    position: relative;
+    overflow: hidden;
+  }
+  .tech-btn::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 100%, rgba(255,0,170,0.1), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .tech-btn:hover { border-color: var(--magenta); transform: translateY(-2px); }
+  .tech-btn:hover::after { opacity: 1; }
+  .tech-btn.active {
+    border-color: var(--magenta) !important;
+    background: rgba(255,0,170,0.1) !important;
+    box-shadow: var(--glow-mag) !important;
+  }
+  .tech-btn.locked {
+    border-color: var(--orange) !important;
+    background: rgba(255,106,0,0.1) !important;
+    box-shadow: 0 0 8px rgba(255,106,0,0.4) !important;
+  }
+
+  .tech-icon { font-size: 20px; }
+  .tech-name {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--dim);
+    text-align: center;
+    line-height: 1.2;
+  }
+  .tech-key {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    color: var(--magenta);
+    font-weight: 700;
+  }
+
+  /* ─── RIGHT PANEL ─── */
+  #right-panel {
+    grid-area: right;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    padding: 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    backdrop-filter: blur(8px);
+    overflow: hidden;
+  }
+
+  /* Score / combo */
+  #score-display {
+    text-align: center;
+    padding: 12px;
+    background: rgba(0,229,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  #score-val {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--cyan);
+    text-shadow: var(--glow-cyan);
+  }
+  #score-label { font-size: 9px; letter-spacing: 3px; color: var(--dim); text-transform: uppercase; }
+
+  #combo-display {
+    text-align: center;
+    padding: 8px;
+  }
+  #combo-val {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--magenta);
+    text-shadow: var(--glow-mag);
+    transition: all 0.1s;
+  }
+  #combo-label { font-size: 9px; letter-spacing: 3px; color: var(--dim); }
+
+  #accuracy-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  #accuracy-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green), var(--cyan));
+    border-radius: 3px;
+    transition: width 0.3s;
+    box-shadow: 0 0 8px var(--cyan);
+    width: 100%;
+  }
+
+  /* Judgment popup */
+  #judgment {
+    text-align: center;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #judgment-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+
+  /* Performance log */
+  #perf-log {
+    flex: 1;
+    overflow-y: auto;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  #perf-log::-webkit-scrollbar { width: 3px; }
+  #perf-log::-webkit-scrollbar-track { background: transparent; }
+  #perf-log::-webkit-scrollbar-thumb { background: rgba(0,229,255,0.2); }
+
+  .log-entry {
+    padding: 4px 8px;
+    border-left: 2px solid var(--border);
+    border-radius: 0 3px 3px 0;
+    background: rgba(0,229,255,0.03);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    animation: log-in 0.2s ease-out;
+  }
+  @keyframes log-in {
+    from { opacity: 0; transform: translateX(8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .log-chord { color: var(--gold); font-weight: bold; }
+  .log-tech { color: var(--magenta); }
+  .log-time { color: var(--dim); font-size: 9px; margin-left: auto; }
+
+  /* Recording controls */
+  #rec-controls {
+    display: flex;
+    gap: 6px;
+  }
+  .rec-btn {
+    flex: 1;
+    padding: 7px 4px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    letter-spacing: 1px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid;
+    text-align: center;
+  }
+  #btn-record { border-color: var(--red); color: var(--red); background: rgba(255,34,68,0.06); }
+  #btn-record.recording {
+    background: rgba(255,34,68,0.2);
+    box-shadow: 0 0 10px rgba(255,34,68,0.5);
+    animation: rec-pulse 1s infinite;
+  }
+  @keyframes rec-pulse {
+    0%,100% { box-shadow: 0 0 10px rgba(255,34,68,0.5); }
+    50% { box-shadow: 0 0 20px rgba(255,34,68,0.9); }
+  }
+  #btn-replay { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.06); }
+  #btn-replay:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* ─── BOTTOM: RHYTHM GAME ─── */
+  #bottom {
+    grid-area: bottom;
+    height: 0;
+    overflow: hidden;
+    transition: height 0.4s ease;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+  }
+  #bottom.visible { height: 200px; }
+
+  #rhythm-highway {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #rhythm-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* Rhythm game overlay info */
+  #rhythm-info {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 24px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    pointer-events: none;
+  }
+
+  /* ─── SCREEN SHAKE ─── */
+  @keyframes shake {
+    0%,100% { transform: translate(0,0) rotate(0); }
+    20% { transform: translate(-3px,2px) rotate(-0.5deg); }
+    40% { transform: translate(3px,-2px) rotate(0.5deg); }
+    60% { transform: translate(-2px,1px) rotate(-0.3deg); }
+    80% { transform: translate(2px,-1px) rotate(0.3deg); }
+  }
+  .shake { animation: shake 0.3s ease-out; }
+
+  /* ─── CHORD COLORS ─── */
+  .c-chord { --chord-color: #00e5ff; }
+  .d-chord { --chord-color: #ff6a00; }
+  .e-chord { --chord-color: #ffd700; }
+  .f-chord { --chord-color: #ff00aa; }
+  .g-chord { --chord-color: #00ff88; }
+  .a-chord { --chord-color: #9b59b6; }
+  .b-chord { --chord-color: #e74c3c; }
+
+  .chord-btn[data-color] { border-color: rgba(var(--chord-color-rgb, 0,229,255), 0.25); }
+
+  /* ─── MOBILE ─── */
+  @media (max-width: 900px) {
+    #app {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto 1fr auto auto;
+      grid-template-areas:
+        "header"
+        "left"
+        "center"
+        "right"
+        "bottom";
+    }
+    #left-panel, #right-panel { border: none; border-top: 1px solid var(--border); }
+    #chord-grid { grid-template-columns: repeat(5, 1fr); }
+  }
+
+  /* Custom chord modal */
+  #modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  #modal-overlay.open { display: flex; }
+  #modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    width: 360px;
+    box-shadow: 0 0 40px rgba(0,229,255,0.2);
+  }
+  .modal-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    color: var(--cyan);
+    margin-bottom: 16px;
+    letter-spacing: 2px;
+  }
+  .modal-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+  .modal-label { font-size: 11px; color: var(--dim); font-family: 'Share Tech Mono', monospace; }
+  .modal-input {
+    background: rgba(0,229,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    width: 100%;
+  }
+  .modal-input:focus { border-color: var(--cyan); }
+  .modal-btns { display: flex; gap: 8px; margin-top: 16px; }
+  .modal-btn {
+    flex: 1;
+    padding: 8px;
+    border-radius: 4px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid;
+  }
+  .modal-btn.confirm { border-color: var(--cyan); color: var(--cyan); background: rgba(0,229,255,0.08); }
+  .modal-btn.cancel { border-color: var(--dim); color: var(--dim); background: transparent; }
+
+  .add-chord-btn {
+    aspect-ratio: 1;
+    background: rgba(0,229,255,0.04);
+    border: 1px dashed rgba(0,229,255,0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--dim);
+    font-size: 20px;
+    transition: all 0.2s;
+  }
+  .add-chord-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+  /* Tooltip */
+  .tooltip {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.9);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    padding: 4px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 100;
+  }
+  .chord-btn:hover .tooltip { opacity: 1; }
+
+  #version-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--dim);
+    opacity: 0.4;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+<canvas id="particleCanvas"></canvas>
+
+<div id="app">
+
+  <!-- HEADER -->
+  <header id="header">
+    <div class="logo">HEX<span>CHORD</span></div>
+
+    <div id="chord-display">
+      <div id="active-chord">—</div>
+      <div id="active-technique">FREE PLAY</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+      <div class="mode-buttons">
+        <button class="mode-btn active" id="btn-freeplay" onclick="setMode('free')">FREE PLAY</button>
+        <button class="mode-btn" id="btn-rhythm" onclick="setMode('rhythm')">RHYTHM</button>
+      </div>
+      <div id="version-tag">v1.0 // HEXCHORD ENGINE</div>
+    </div>
+  </header>
+
+  <!-- LEFT PANEL -->
+  <aside id="left-panel">
+
+    <div>
+      <div class="panel-title">// BPM</div>
+      <div class="bpm-display" id="bpm-val">120</div>
+      <div class="bpm-sub">BEATS PER MIN</div>
+      <div class="bpm-controls">
+        <button class="bpm-btn" onclick="adjustBPM(-5)">−</button>
+        <button class="bpm-btn" onclick="adjustBPM(-1)">‹</button>
+        <button class="bpm-btn" onclick="adjustBPM(1)">›</button>
+        <button class="bpm-btn" onclick="adjustBPM(5)">+</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-title">// METRONOME</div>
+      <div id="metro-viz"></div>
+      <div style="margin:8px 0;display:flex;gap:6px">
+        <button id="metro-toggle" onclick="toggleMetronome()">START</button>
+      </div>
+      <div class="panel-title" style="margin-bottom:6px">TIME SIG</div>
+      <div class="time-sig-row">
+        <button class="ts-btn active" onclick="setTimeSig(4,4)">4/4</button>
+        <button class="ts-btn" onclick="setTimeSig(3,4)">3/4</button>
+        <button class="ts-btn" onclick="setTimeSig(6,8)">6/8</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-title">// VOLUME</div>
+      <div class="slider-group">
+        <div class="slider-row">
+          <div class="slider-label">MASTER <span id="vol-master-val">80</span></div>
+          <input type="range" min="0" max="100" value="80" id="vol-master" oninput="updateVolume('master',this.value)">
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">GUITAR <span id="vol-guitar-val">90</span></div>
+          <input type="range" min="0" max="100" value="90" id="vol-guitar" oninput="updateVolume('guitar',this.value)">
+        </div>
+        <div class="slider-row">
+          <div class="slider-label">FX <span id="vol-fx-val">50</span></div>
+          <input type="range" min="0" max="100" value="50" id="vol-fx" oninput="updateVolume('fx',this.value)">
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-title">// EFFECTS</div>
+      <div class="fx-grid">
+        <button class="fx-btn" id="fx-reverb" onclick="toggleFX('reverb')">REVERB</button>
+        <button class="fx-btn" id="fx-delay" onclick="toggleFX('delay')">DELAY</button>
+        <button class="fx-btn" id="fx-distort" onclick="toggleFX('distort')">DISTORT</button>
+        <button class="fx-btn" id="fx-sustain" onclick="toggleFX('sustain')">SUSTAIN</button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- CENTER -->
+  <main id="center">
+
+    <div id="neck-display">
+      <canvas id="neck-canvas"></canvas>
+    </div>
+
+    <div id="chord-grid">
+      <!-- Chord buttons injected by JS -->
+    </div>
+
+    <div id="tech-section">
+      <div id="strum-display">
+        <div class="strum-arrow down" id="arrow-down" title="J key">↓ DOWN</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim)">STRUM</div>
+        <div class="strum-arrow up" id="arrow-up" title="K key">UP ↑</div>
+      </div>
+      <div id="technique-grid">
+        <!-- Tech buttons injected by JS -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside id="right-panel">
+
+    <div id="score-display">
+      <div id="score-label">SCORE</div>
+      <div id="score-val">0</div>
+    </div>
+
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div id="combo-label" style="font-size:9px;letter-spacing:3px;color:var(--dim)">COMBO</div>
+        <div id="combo-val">0×</div>
+      </div>
+      <div id="accuracy-bar"><div id="accuracy-fill"></div></div>
+    </div>
+
+    <div id="judgment"><div id="judgment-text"></div></div>
+
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+      <div class="panel-title" style="margin-bottom:6px">// PERFORMANCE LOG</div>
+      <div id="perf-log"></div>
+    </div>
+
+    <div>
+      <div class="panel-title" style="margin-bottom:6px">// RECORDING</div>
+      <div id="rec-controls">
+        <button class="rec-btn" id="btn-record" onclick="toggleRecord()">⏺ REC</button>
+        <button class="rec-btn" id="btn-replay" onclick="replayRecording()" disabled>▶ PLAY</button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- BOTTOM RHYTHM HIGHWAY -->
+  <div id="bottom">
+    <div id="rhythm-highway">
+      <canvas id="rhythm-canvas"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- Custom Chord Modal -->
+<div id="modal-overlay">
+  <div id="modal">
+    <div class="modal-title">// ADD CUSTOM CHORD</div>
+    <div class="modal-row">
+      <div class="modal-label">CHORD NAME (e.g. E7, Cadd9)</div>
+      <input class="modal-input" id="custom-chord-name" placeholder="Cmaj7">
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">KEY BINDING (single letter)</div>
+      <input class="modal-input" id="custom-chord-key" placeholder="Z" maxlength="1">
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">FRET POSITIONS (6 strings, comma-sep)</div>
+      <input class="modal-input" id="custom-chord-frets" placeholder="0,3,2,0,1,0">
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeModal()">CANCEL</button>
+      <button class="modal-btn confirm" onclick="addCustomChord()">ADD CHORD</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  HEXCHORD ENGINE v1.0
+// ═══════════════════════════════════════════
+
+// ─── AUDIO ENGINE ───────────────────────────
+const AudioEngine = (() => {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  let masterGain, guitarGain, fxGain;
+  let reverb, delay, distortion;
+  const effects = { reverb: false, delay: false, distort: false, sustain: false };
+
+  const volumes = { master: 0.8, guitar: 0.9, fx: 0.5 };
+
+  function init() {
+    masterGain = ctx.createGain();
+    guitarGain = ctx.createGain();
+    fxGain = ctx.createGain();
+
+    masterGain.gain.value = volumes.master;
+    guitarGain.gain.value = volumes.guitar;
+    fxGain.gain.value = volumes.fx;
+
+    // Reverb
+    reverb = ctx.createConvolver();
+    const reverbBuf = createReverbBuffer(2.5);
+    reverb.buffer = reverbBuf;
+
+    // Delay
+    delay = ctx.createDelay(1);
+    delay.delayTime.value = 0.3;
+    const delayFeedback = ctx.createGain();
+    delayFeedback.gain.value = 0.35;
+    delay.connect(delayFeedback);
+    delayFeedback.connect(delay);
+
+    // Distortion
+    distortion = ctx.createWaveShaper();
+    distortion.curve = makeDistortionCurve(200);
+    distortion.oversample = '4x';
+
+    guitarGain.connect(masterGain);
+    masterGain.connect(ctx.destination);
+  }
+
+  function createReverbBuffer(duration) {
+    const rate = ctx.sampleRate;
+    const len = rate * duration;
+    const buf = ctx.createBuffer(2, len, rate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch);
+      for (let i = 0; i < len; i++) {
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+      }
+    }
+    return buf;
+  }
+
+  function makeDistortionCurve(amount) {
+    const n = 256, curve = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const x = (i * 2) / n - 1;
+      curve[i] = ((Math.PI + amount) * x) / (Math.PI + amount * Math.abs(x));
+    }
+    return curve;
+  }
+
+  // Synthesize guitar string tone
+  function synthesizeString(freq, duration, velocity = 1.0, bright = 0.7) {
+    if (ctx.state === 'suspended') ctx.resume();
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const noiseGain = ctx.createGain();
+    const oscGain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    const compressor = ctx.createDynamicsCompressor();
+
+    // Karplus-Strong-like synthesis using filtered noise + oscillator blend
+    osc.type = 'sawtooth';
+    osc.frequency.value = freq;
+    osc.frequency.setValueAtTime(freq * 1.002, now);
+    osc.frequency.exponentialRampToValueAtTime(freq, now + 0.02);
+
+    filter.type = 'lowpass';
+    filter.frequency.value = 3000 * bright + 800;
+    filter.Q.value = 0.8;
+
+    // Attack-decay envelope
+    const attack = 0.003;
+    const decay = effects.sustain ? duration * 1.8 : duration * 0.9;
+
+    oscGain.gain.setValueAtTime(0, now);
+    oscGain.gain.linearRampToValueAtTime(velocity * 0.3, now + attack);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + decay);
+
+    // Add harmonics via gain variation
+    const harmonicOsc = ctx.createOscillator();
+    harmonicOsc.type = 'square';
+    harmonicOsc.frequency.value = freq * 2;
+    const harmonicGain = ctx.createGain();
+    harmonicGain.gain.setValueAtTime(0, now);
+    harmonicGain.gain.linearRampToValueAtTime(velocity * 0.05, now + attack);
+    harmonicGain.gain.exponentialRampToValueAtTime(0.001, now + decay * 0.6);
+
+    compressor.threshold.value = -12;
+    compressor.ratio.value = 4;
+
+    // Signal chain
+    osc.connect(filter);
+    harmonicOsc.connect(harmonicGain);
+    harmonicGain.connect(filter);
+    filter.connect(oscGain);
+    oscGain.connect(compressor);
+
+    let output = compressor;
+
+    if (effects.distort) {
+      const distNode = ctx.createWaveShaper();
+      distNode.curve = makeDistortionCurve(effects.distort ? 300 : 0);
+      output.connect(distNode);
+      output = distNode;
+    }
+
+    if (effects.reverb) {
+      const send = ctx.createGain();
+      send.gain.value = 0.4;
+      output.connect(send);
+      send.connect(reverb);
+      reverb.connect(guitarGain);
+    }
+
+    if (effects.delay) {
+      const send2 = ctx.createGain();
+      send2.gain.value = 0.25;
+      output.connect(send2);
+      send2.connect(delay);
+      delay.connect(guitarGain);
+    }
+
+    output.connect(guitarGain);
+
+    osc.start(now);
+    harmonicOsc.start(now);
+    osc.stop(now + decay + 0.1);
+    harmonicOsc.stop(now + decay * 0.6 + 0.1);
+
+    return now;
+  }
+
+  // Play pick noise
+  function playPickNoise(velocity = 1.0) {
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.03, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const g = ctx.createGain();
+    g.gain.value = velocity * 0.06;
+    const f = ctx.createBiquadFilter();
+    f.type = 'highpass';
+    f.frequency.value = 3000;
+    src.connect(f); f.connect(g); g.connect(guitarGain);
+    src.start();
+  }
+
+  // Chord frequencies (MIDI-based, guitar standard tuning)
+  const chordFreqs = {
+    'C':    [261.63, 329.63, 392.00, 523.25, 659.25, 523.25],
+    'D':    [293.66, 369.99, 440.00, 587.33, 739.99, 587.33],
+    'E':    [164.81, 246.94, 329.63, 415.30, 493.88, 659.25],
+    'F':    [174.61, 220.00, 261.63, 349.23, 440.00, 523.25],
+    'G':    [196.00, 246.94, 293.66, 392.00, 493.88, 587.33],
+    'A':    [220.00, 277.18, 329.63, 440.00, 554.37, 659.25],
+    'B':    [246.94, 311.13, 369.99, 493.88, 622.25, 739.99],
+    'Cm':   [261.63, 311.13, 392.00, 523.25, 622.25, 523.25],
+    'Dm':   [293.66, 349.23, 440.00, 587.33, 698.46, 587.33],
+    'Em':   [164.81, 246.94, 329.63, 392.00, 493.88, 659.25],
+    'Gm':   [196.00, 233.08, 293.66, 392.00, 466.16, 587.33],
+    'Am':   [220.00, 261.63, 329.63, 440.00, 523.25, 659.25],
+    'Bdim': [246.94, 293.66, 349.23, 493.88, 587.33, 739.99],
+    'C7':   [261.63, 329.63, 392.00, 466.16, 523.25, 659.25],
+    'D7':   [293.66, 369.99, 440.00, 523.25, 587.33, 739.99],
+    'G7':   [196.00, 246.94, 293.66, 392.00, 466.16, 587.33],
+    'Asus2':[220.00, 246.94, 329.63, 440.00, 493.88, 659.25],
+    'Csus4':[261.63, 349.23, 392.00, 523.25, 698.46, 523.25],
+    'Fmaj7':[174.61, 220.00, 261.63, 349.23, 440.00, 659.25],
+  };
+
+  function getFreqs(chordName) {
+    return chordFreqs[chordName] || chordFreqs['C'];
+  }
+
+  function addCustomChordFreqs(name, frets) {
+    // Convert fret positions to frequencies (guitar standard tuning)
+    const openStrings = [82.41, 110.00, 146.83, 196.00, 246.94, 329.63];
+    const freqs = frets.map((f, i) => f < 0 ? null : openStrings[i] * Math.pow(2, f / 12));
+    chordFreqs[name] = freqs.filter(f => f !== null);
+  }
+
+  function playChord(chordName, technique, velocity = 0.85) {
+    const freqs = getFreqs(chordName);
+    const now = ctx.currentTime;
+
+    playPickNoise(velocity);
+
+    switch (technique) {
+      case 'down':
+      case 'up': {
+        const reversed = technique === 'up' ? [...freqs].reverse() : freqs;
+        reversed.forEach((freq, i) => {
+          if (!freq) return;
+          const offset = i * 0.012 + (Math.random() * 0.005);
+          setTimeout(() => synthesizeString(freq, 1.4, velocity * (1 - i * 0.04), 0.7), offset * 1000);
+        });
+        break;
+      }
+      case 'arpeggio': {
+        const beat60 = 60 / (state.bpm * 2);
+        freqs.forEach((freq, i) => {
+          if (!freq) return;
+          setTimeout(() => synthesizeString(freq, 2.0, velocity * 0.9, 0.6), i * beat60 * 1000);
+        });
+        break;
+      }
+      case 'palm_mute': {
+        freqs.forEach((freq, i) => {
+          const offset = i * 0.01;
+          setTimeout(() => synthesizeString(freq * 0.99, 0.25, velocity * 0.7, 0.3), offset * 1000);
+        });
+        break;
+      }
+      case 'harmonic': {
+        const harmonicFreqs = freqs.map(f => f * 2);
+        harmonicFreqs.forEach((freq, i) => {
+          const offset = i * 0.01;
+          setTimeout(() => synthesizeString(freq, 2.5, velocity * 0.5, 1.0), offset * 1000);
+        });
+        break;
+      }
+      case 'slap': {
+        playSlap(velocity);
+        freqs.slice(0, 3).forEach((freq, i) => {
+          setTimeout(() => synthesizeString(freq, 0.3, velocity * 0.9, 0.9), i * 20);
+        });
+        break;
+      }
+      case 'mute': {
+        freqs.forEach((freq, i) => {
+          const offset = i * 0.008;
+          setTimeout(() => synthesizeString(freq, 0.08, velocity * 0.6, 0.2), offset * 1000);
+        });
+        break;
+      }
+      case 'tremolo': {
+        const beatMs = (60 / state.bpm) * 250;
+        for (let t = 0; t < 4; t++) {
+          setTimeout(() => {
+            freqs.forEach((freq, i) => {
+              const offset = i * 0.008;
+              setTimeout(() => synthesizeString(freq, 0.2, velocity * (0.9 - t * 0.05), 0.8), offset * 1000);
+            });
+          }, t * beatMs);
+        }
+        break;
+      }
+      default:
+        freqs.forEach((freq, i) => {
+          const offset = i * 0.015;
+          setTimeout(() => synthesizeString(freq, 1.4, velocity, 0.7), offset * 1000);
+        });
+    }
+  }
+
+  function playSlap(vel) {
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.06, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (d.length * 0.2)) * vel;
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const g = ctx.createGain(); g.gain.value = 0.4;
+    const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 300;
+    src.connect(f); f.connect(g); g.connect(guitarGain);
+    src.start();
+  }
+
+  function playMetronomeTick(accent = false) {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.frequency.value = accent ? 1200 : 800;
+    osc.type = 'sine';
+    g.gain.setValueAtTime(accent ? 0.35 : 0.2, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+    osc.connect(g); g.connect(masterGain);
+    osc.start(); osc.stop(ctx.currentTime + 0.05);
+  }
+
+  function setVolume(type, val) {
+    volumes[type] = val / 100;
+    if (type === 'master') masterGain.gain.value = volumes.master;
+    else if (type === 'guitar') guitarGain.gain.value = volumes.guitar;
+    else if (type === 'fx') fxGain.gain.value = volumes.fx;
+  }
+
+  function setEffect(name, on) {
+    effects[name] = on;
+  }
+
+  function resume() { if (ctx.state === 'suspended') ctx.resume(); }
+
+  init();
+  return { playChord, playMetronomeTick, setVolume, setEffect, resume, addCustomChordFreqs };
+})();
+
+// ─── STATE ──────────────────────────────────
+const state = {
+  mode: 'free',
+  selectedChord: null,
+  selectedTechnique: 'down',
+  holdTechnique: null,
+  bpm: 120,
+  metronomeOn: false,
+  timeSig: { beats: 4, noteValue: 4 },
+  currentBeat: 0,
+  metroTimer: null,
+  score: 0,
+  combo: 0,
+  maxCombo: 0,
+  recording: false,
+  recordings: [],
+  currentRecording: [],
+  replayTimer: null,
+  activeKeys: new Set(),
+  chords: [],
+  customChords: [],
+};
+
+// ─── CHORD DEFINITIONS ──────────────────────
+const CHORDS = [
+  { name:'C',     key:'q', color:'#00e5ff', dots:[1,2,3] },
+  { name:'D',     key:'w', color:'#ff6a00', dots:[1,2,3] },
+  { name:'E',     key:'e', color:'#ffd700', dots:[1,2]   },
+  { name:'F',     key:'r', color:'#ff00aa', dots:[1,2,3] },
+  { name:'G',     key:'t', color:'#00ff88', dots:[1,2,3,4] },
+  { name:'A',     key:'y', color:'#9b59b6', dots:[1,2]   },
+  { name:'B',     key:'u', color:'#e74c3c', dots:[1,2,3] },
+  { name:'Am',    key:'a', color:'#c0392b', dots:[1,2,3] },
+  { name:'Em',    key:'s', color:'#f39c12', dots:[1,2]   },
+  { name:'Dm',    key:'d', color:'#2980b9', dots:[1,2,3] },
+  { name:'Cm',    key:'f', color:'#16a085', dots:[1,2,3,4] },
+  { name:'Gm',    key:'g', color:'#8e44ad', dots:[1,2,3,4] },
+  { name:'Bdim',  key:'h', color:'#c0392b', dots:[1,2,3] },
+  { name:'C7',    key:'1', color:'#00bcd4', dots:[1,2]   },
+  { name:'D7',    key:'2', color:'#ff7043', dots:[1,2,3] },
+  { name:'G7',    key:'3', color:'#66bb6a', dots:[1,2,3] },
+  { name:'Asus2', key:'4', color:'#ab47bc', dots:[1,2]   },
+  { name:'Csus4', key:'5', color:'#26c6da', dots:[1,2,3] },
+  { name:'Fmaj7', key:'6', color:'#ef5350', dots:[1,2,3] },
+];
+
+// ─── TECHNIQUE DEFINITIONS ──────────────────
+const TECHNIQUES = [
+  { name:'Down Stroke',    key:'j', icon:'↓',  id:'down',      label:'DOWN' },
+  { name:'Up Stroke',      key:'k', icon:'↑',  id:'up',        label:'UP' },
+  { name:'Arpeggio',       key:'l', icon:'🎸', id:'arpeggio',  label:'ARPEG' },
+  { name:'Palm Mute',      key:'u', icon:'✋', id:'palm_mute', label:'PALM' },
+  { name:'Harmonics',      key:'i', icon:'◇',  id:'harmonic',  label:'HARM' },
+  { name:'Slap',           key:'o', icon:'👋', id:'slap',      label:'SLAP' },
+  { name:'Mute',           key:'p', icon:'✗',  id:'mute',      label:'MUTE' },
+  { name:'Tremolo Pick',   key:'n', icon:'≋',  id:'tremolo',   label:'TREM' },
+];
+
+const CHORD_KEY_MAP = {};
+const TECH_KEY_MAP = {};
+
+CHORDS.forEach(c => CHORD_KEY_MAP[c.key.toLowerCase()] = c);
+TECHNIQUES.forEach(t => TECH_KEY_MAP[t.key.toLowerCase()] = t);
+
+// ─── RENDER UI ──────────────────────────────
+function renderChordGrid() {
+  const grid = document.getElementById('chord-grid');
+  grid.innerHTML = '';
+
+  const allChords = [...CHORDS, ...state.customChords];
+  allChords.forEach(chord => {
+    const btn = document.createElement('div');
+    btn.className = 'chord-btn';
+    btn.id = `chord-${chord.name}`;
+    btn.setAttribute('data-chord', chord.name);
+    btn.style.setProperty('--chord-col', chord.color);
+    btn.style.borderColor = chord.color + '40';
+    btn.innerHTML = `
+      <div class="chord-name" style="color:${chord.color};text-shadow:0 0 8px ${chord.color}88">${chord.name}</div>
+      <div class="chord-key">${chord.key.toUpperCase()}</div>
+      <div class="chord-dots">${(chord.dots||[1,2,3]).map(()=>`<div class="cdot" style="background:${chord.color}66"></div>`).join('')}</div>
+      <div class="tooltip">${chord.name} chord</div>
+    `;
+    btn.addEventListener('mousedown', () => {
+      AudioEngine.resume();
+      triggerChordAction(chord.name);
+    });
+    btn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      AudioEngine.resume();
+      triggerChordAction(chord.name);
+    });
+    grid.appendChild(btn);
+  });
+
+  // Add custom chord button
+  const addBtn = document.createElement('div');
+  addBtn.className = 'add-chord-btn';
+  addBtn.innerHTML = '<div style="font-size:12px">+</div><div style="font-size:9px;font-family:\'Share Tech Mono\',monospace;color:var(--dim)">CUSTOM</div>';
+  addBtn.onclick = () => document.getElementById('modal-overlay').classList.add('open');
+  grid.appendChild(addBtn);
+}
+
+function renderTechGrid() {
+  const grid = document.getElementById('technique-grid');
+  grid.innerHTML = '';
+  TECHNIQUES.forEach(tech => {
+    const btn = document.createElement('div');
+    btn.className = 'tech-btn' + (tech.id === state.selectedTechnique ? ' active' : '');
+    btn.id = `tech-${tech.id}`;
+    btn.innerHTML = `
+      <div class="tech-icon">${tech.icon}</div>
+      <div class="tech-name">${tech.name}</div>
+      <div class="tech-key">[${tech.key.toUpperCase()}]</div>
+    `;
+    btn.addEventListener('mousedown', () => {
+      AudioEngine.resume();
+      selectTechnique(tech.id);
+      if (state.selectedChord) triggerPlay(state.selectedChord, tech.id);
+    });
+    grid.appendChild(btn);
+  });
+}
+
+function renderMetroBeat() {
+  const viz = document.getElementById('metro-viz');
+  viz.innerHTML = '';
+  for (let i = 0; i < state.timeSig.beats; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'beat-dot' + (i === 0 ? ' accent' : '');
+    dot.id = `beat-${i}`;
+    viz.appendChild(dot);
+  }
+}
+
+// ─── ACTIONS ────────────────────────────────
+function triggerChordAction(chordName) {
+  state.selectedChord = chordName;
+  const tech = state.holdTechnique || state.selectedTechnique;
+  triggerPlay(chordName, tech);
+  updateChordDisplay(chordName, tech);
+  highlightChordBtn(chordName);
+  updateStrumArrow(tech);
+  logPerformance(chordName, tech);
+  spawnParticles(chordName);
+  if (tech === 'down' || tech === 'up') screenShake(tech === 'down' ? 'strong' : 'light');
+  if (state.recording) recordEvent(chordName, tech);
+  if (state.mode === 'rhythm') handleRhythmInput(chordName);
+}
+
+function triggerPlay(chord, technique) {
+  const velocity = 0.75 + Math.random() * 0.2;
+  AudioEngine.playChord(chord, technique, velocity);
+  triggerNeckAnimation(chord);
+}
+
+function selectTechnique(id) {
+  state.selectedTechnique = id;
+  document.querySelectorAll('.tech-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById(`tech-${id}`);
+  if (btn) btn.classList.add('active');
+}
+
+function updateChordDisplay(chord, technique) {
+  const el = document.getElementById('active-chord');
+  const techEl = document.getElementById('active-technique');
+  el.textContent = chord;
+  const techObj = TECHNIQUES.find(t => t.id === technique);
+  techEl.textContent = techObj ? techObj.name.toUpperCase() : technique.toUpperCase();
+
+  // Flash animation
+  el.style.transform = 'scale(1.15)';
+  el.style.textShadow = '0 0 20px #ffd700, 0 0 40px rgba(255,215,0,0.6)';
+  setTimeout(() => {
+    el.style.transform = '';
+    el.style.textShadow = '';
+  }, 200);
+}
+
+function highlightChordBtn(chordName) {
+  document.querySelectorAll('.chord-btn').forEach(b => b.classList.remove('playing'));
+  const btn = document.getElementById(`chord-${chordName}`);
+  if (btn) {
+    btn.classList.add('playing');
+    setTimeout(() => btn.classList.remove('playing'), 300);
+  }
+}
+
+function updateStrumArrow(technique) {
+  document.getElementById('arrow-down').classList.toggle('active', technique === 'down');
+  document.getElementById('arrow-up').classList.toggle('active', technique === 'up');
+}
+
+// ─── KEYBOARD HANDLER ───────────────────────
+let keyHeldTech = null;
+
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  const key = e.key.toLowerCase();
+  if (state.activeKeys.has(key)) return;
+  state.activeKeys.add(key);
+
+  AudioEngine.resume();
+
+  const chord = CHORD_KEY_MAP[key];
+  const tech = TECH_KEY_MAP[key];
+
+  if (chord) {
+    state.selectedChord = chord.name;
+    const activeTech = state.holdTechnique || state.selectedTechnique;
+    triggerChordAction(chord.name);
+    highlightActiveKey(chord.name);
+  } else if (tech) {
+    state.holdTechnique = tech.id;
+    keyHeldTech = tech.id;
+    selectTechnique(tech.id);
+    updateStrumArrow(tech.id);
+    // If chord held, play immediately
+    if (state.selectedChord) triggerPlay(state.selectedChord, tech.id);
+    highlightTechKey(tech.id);
+  }
+});
+
+document.addEventListener('keyup', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  const key = e.key.toLowerCase();
+  state.activeKeys.delete(key);
+
+  const tech = TECH_KEY_MAP[key];
+  if (tech && tech.id === state.holdTechnique) {
+    state.holdTechnique = null;
+  }
+});
+
+function highlightActiveKey(chordName) {
+  const chordObj = [...CHORDS, ...state.customChords].find(c => c.name === chordName);
+  if (!chordObj) return;
+}
+
+function highlightTechKey(techId) {
+  document.querySelectorAll('.tech-btn').forEach(b => b.classList.remove('locked'));
+  const btn = document.getElementById(`tech-${techId}`);
+  if (btn) btn.classList.add('locked');
+  setTimeout(() => { if (btn) btn.classList.remove('locked'); }, 150);
+}
+
+// ─── PERFORMANCE LOG ────────────────────────
+let logEntries = [];
+function logPerformance(chord, technique) {
+  const now = new Date();
+  const timeStr = `${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+  const techObj = TECHNIQUES.find(t => t.id === technique);
+  const techName = techObj ? techObj.label : technique.toUpperCase();
+
+  const entry = { chord, technique: techName, time: timeStr };
+  logEntries.unshift(entry);
+  if (logEntries.length > 50) logEntries.pop();
+
+  const log = document.getElementById('perf-log');
+  const el = document.createElement('div');
+  el.className = 'log-entry';
+  el.innerHTML = `<span class="log-chord">${chord}</span><span class="log-tech">${techName}</span><span class="log-time">${timeStr}</span>`;
+  log.insertBefore(el, log.firstChild);
+  if (log.children.length > 20) log.removeChild(log.lastChild);
+
+  updateScore();
+}
+
+// ─── SCORE / COMBO ───────────────────────────
+function updateScore() {
+  state.combo++;
+  if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+
+  const mult = 1 + Math.floor(state.combo / 5) * 0.5;
+  const points = Math.floor(100 * mult);
+  state.score += points;
+
+  document.getElementById('score-val').textContent = state.score.toLocaleString();
+  document.getElementById('combo-val').textContent = `${state.combo}×`;
+
+  const comboEl = document.getElementById('combo-val');
+  comboEl.style.transform = 'scale(1.3)';
+  comboEl.style.color = state.combo > 20 ? 'var(--gold)' : state.combo > 10 ? 'var(--green)' : 'var(--magenta)';
+  setTimeout(() => { comboEl.style.transform = ''; }, 150);
+
+  showJudgment(getJudgment());
+}
+
+function getJudgment() {
+  if (state.combo > 20) return { text: 'LEGENDARY!', color: '#ffd700' };
+  if (state.combo > 10) return { text: 'BLAZING!', color: '#ff6a00' };
+  if (state.combo > 5)  return { text: 'ON FIRE!', color: '#00ff88' };
+  return { text: 'NICE!', color: '#00e5ff' };
+}
+
+function showJudgment({ text, color }) {
+  const el = document.getElementById('judgment-text');
+  el.textContent = text;
+  el.style.color = color;
+  el.style.textShadow = `0 0 12px ${color}`;
+  el.style.opacity = 1;
+  el.style.transform = 'scale(1.1)';
+  setTimeout(() => {
+    el.style.opacity = 0;
+    el.style.transform = '';
+  }, 600);
+}
+
+// ─── METRONOME ───────────────────────────────
+function toggleMetronome() {
+  state.metronomeOn = !state.metronomeOn;
+  const btn = document.getElementById('metro-toggle');
+  btn.textContent = state.metronomeOn ? 'STOP' : 'START';
+  btn.classList.toggle('on', state.metronomeOn);
+
+  if (state.metronomeOn) {
+    state.currentBeat = 0;
+    tickMetronome();
+  } else {
+    if (state.metroTimer) clearTimeout(state.metroTimer);
+  }
+}
+
+function tickMetronome() {
+  if (!state.metronomeOn) return;
+  const beatDuration = 60000 / state.bpm;
+
+  // Highlight beat
+  document.querySelectorAll('.beat-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === state.currentBeat);
+  });
+
+  AudioEngine.playMetronomeTick(state.currentBeat === 0);
+  pulseBPMReactive();
+
+  state.currentBeat = (state.currentBeat + 1) % state.timeSig.beats;
+  state.metroTimer = setTimeout(tickMetronome, beatDuration);
+}
+
+function pulseBPMReactive() {
+  const bpmEl = document.getElementById('bpm-val');
+  bpmEl.style.textShadow = '0 0 30px #ff00aa, 0 0 60px rgba(255,0,170,0.6)';
+  setTimeout(() => { bpmEl.style.textShadow = ''; }, 80);
+}
+
+function adjustBPM(delta) {
+  state.bpm = Math.max(40, Math.min(240, state.bpm + delta));
+  document.getElementById('bpm-val').textContent = state.bpm;
+  if (state.metronomeOn) {
+    clearTimeout(state.metroTimer);
+    tickMetronome();
+  }
+}
+
+function setTimeSig(beats, noteValue) {
+  state.timeSig = { beats, noteValue };
+  document.querySelectorAll('.ts-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderMetroBeat();
+}
+
+// ─── VOLUME / FX ────────────────────────────
+function updateVolume(type, val) {
+  document.getElementById(`vol-${type}-val`).textContent = val;
+  AudioEngine.setVolume(type, parseInt(val));
+}
+
+function toggleFX(name) {
+  const btn = document.getElementById(`fx-${name}`);
+  btn.classList.toggle('on');
+  const on = btn.classList.contains('on');
+  AudioEngine.setEffect(name, on);
+}
+
+// ─── VISUAL EFFECTS ─────────────────────────
+const particleCanvas = document.getElementById('particleCanvas');
+const pCtx = particleCanvas.getContext('2d');
+const particles = [];
+
+function resizeParticleCanvas() {
+  particleCanvas.width = window.innerWidth;
+  particleCanvas.height = window.innerHeight;
+}
+resizeParticleCanvas();
+window.addEventListener('resize', resizeParticleCanvas);
+
+function spawnParticles(chordName) {
+  const chord = [...CHORDS, ...state.customChords].find(c => c.name === chordName);
+  const color = chord ? chord.color : '#00e5ff';
+  const btn = document.getElementById(`chord-${chordName}`);
+  if (!btn) return;
+
+  const rect = btn.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  for (let i = 0; i < 16; i++) {
+    const angle = (Math.PI * 2 * i) / 16 + Math.random() * 0.3;
+    const speed = 2 + Math.random() * 4;
+    particles.push({
+      x: cx, y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 1.0,
+      decay: 0.02 + Math.random() * 0.02,
+      radius: 2 + Math.random() * 3,
+      color
+    });
+  }
+}
+
+function animateParticles() {
+  pCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy;
+    p.vy += 0.1;
+    p.life -= p.decay;
+    if (p.life <= 0) { particles.splice(i, 1); continue; }
+    pCtx.save();
+    pCtx.globalAlpha = p.life;
+    pCtx.beginPath();
+    pCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+    pCtx.fillStyle = p.color;
+    pCtx.shadowColor = p.color;
+    pCtx.shadowBlur = 8;
+    pCtx.fill();
+    pCtx.restore();
+  }
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+function screenShake(intensity) {
+  const el = document.getElementById('app');
+  el.classList.add('shake');
+  setTimeout(() => el.classList.remove('shake'), 300);
+}
+
+// ─── GUITAR NECK ANIMATION ──────────────────
+const neckCanvas = document.getElementById('neck-canvas');
+const nCtx = neckCanvas.getContext('2d');
+let neckAnimFrame = null;
+let stringVibrations = Array(6).fill(0);
+
+function resizeNeckCanvas() {
+  neckCanvas.width = neckCanvas.offsetWidth;
+  neckCanvas.height = neckCanvas.offsetHeight;
+}
+
+function triggerNeckAnimation(chordName) {
+  const chord = [...CHORDS, ...state.customChords].find(c => c.name === chordName);
+  const color = chord ? chord.color : '#00e5ff';
+  stringVibrations = Array(6).fill(0).map((_, i) => ({ amp: 8 + Math.random() * 6, decay: 0.95, phase: Math.random() * Math.PI * 2, color, t: 0 }));
+}
+
+function drawNeck() {
+  const w = neckCanvas.width, h = neckCanvas.height;
+  nCtx.clearRect(0, 0, w, h);
+
+  // Neck background
+  const grad = nCtx.createLinearGradient(0, 0, w, 0);
+  grad.addColorStop(0, '#1a0e06');
+  grad.addColorStop(0.3, '#2d1a0a');
+  grad.addColorStop(1, '#1a0e06');
+  nCtx.fillStyle = grad;
+  nCtx.fillRect(0, 0, w, h);
+
+  // Fret lines
+  nCtx.strokeStyle = 'rgba(200,180,130,0.25)';
+  nCtx.lineWidth = 1;
+  for (let f = 0; f < 12; f++) {
+    const x = (w / 12) * f + (w / 24);
+    nCtx.beginPath(); nCtx.moveTo(x, 0); nCtx.lineTo(x, h); nCtx.stroke();
+  }
+
+  // Fret markers
+  [3,5,7,9].forEach(f => {
+    const x = (w / 12) * f + (w / 24);
+    nCtx.beginPath(); nCtx.arc(x, h / 2, 5, 0, Math.PI * 2);
+    nCtx.fillStyle = 'rgba(200,180,130,0.3)'; nCtx.fill();
+  });
+
+  // Strings
+  const strings = 6;
+  for (let s = 0; s < strings; s++) {
+    const y = (h / (strings + 1)) * (s + 1);
+    const thick = (s / strings) * 2.5 + 0.5;
+    const vib = stringVibrations[s];
+
+    nCtx.beginPath();
+    nCtx.lineWidth = thick;
+
+    if (vib && vib.amp > 0.1) {
+      const color = vib.color || '#888';
+      nCtx.strokeStyle = color;
+      nCtx.shadowColor = color;
+      nCtx.shadowBlur = 6;
+      nCtx.moveTo(0, y);
+      for (let x = 0; x <= w; x += 2) {
+        const wave = Math.sin((x / w) * Math.PI * 4 + vib.phase + vib.t * 0.3) * vib.amp * Math.sin((x / w) * Math.PI);
+        nCtx.lineTo(x, y + wave);
+      }
+      vib.amp *= vib.decay;
+      vib.t++;
+      if (vib.amp < 0.1) stringVibrations[s] = null;
+    } else {
+      nCtx.strokeStyle = `rgba(180,160,120,${0.4 + s * 0.06})`;
+      nCtx.shadowBlur = 0;
+      nCtx.moveTo(0, y); nCtx.lineTo(w, y);
+    }
+    nCtx.stroke();
+  }
+}
+
+function neckLoop() {
+  resizeNeckCanvas();
+  drawNeck();
+  requestAnimationFrame(neckLoop);
+}
+neckLoop();
+
+// ─── BACKGROUND ANIMATION ───────────────────
+const bgCanvas = document.getElementById('bgCanvas');
+const bgCtx = bgCanvas.getContext('2d');
+let bgTime = 0;
+
+function resizeBg() {
+  bgCanvas.width = window.innerWidth;
+  bgCanvas.height = window.innerHeight;
+}
+resizeBg();
+window.addEventListener('resize', resizeBg);
+
+function animateBg() {
+  bgTime += 0.005;
+  const w = bgCanvas.width, h = bgCanvas.height;
+  bgCtx.clearRect(0, 0, w, h);
+
+  // Grid
+  bgCtx.strokeStyle = 'rgba(0,229,255,0.025)';
+  bgCtx.lineWidth = 1;
+  const gridSize = 60;
+  for (let x = 0; x < w; x += gridSize) {
+    bgCtx.beginPath(); bgCtx.moveTo(x, 0); bgCtx.lineTo(x, h); bgCtx.stroke();
+  }
+  for (let y = 0; y < h; y += gridSize) {
+    bgCtx.beginPath(); bgCtx.moveTo(0, y); bgCtx.lineTo(w, y); bgCtx.stroke();
+  }
+
+  // Pulse rings
+  for (let i = 0; i < 3; i++) {
+    const r = ((bgTime * 0.3 + i * 0.33) % 1) * 300;
+    const alpha = (1 - r / 300) * 0.04;
+    bgCtx.beginPath();
+    bgCtx.arc(w / 2, h / 2, r, 0, Math.PI * 2);
+    bgCtx.strokeStyle = `rgba(0,229,255,${alpha})`;
+    bgCtx.lineWidth = 1;
+    bgCtx.stroke();
+  }
+
+  requestAnimationFrame(animateBg);
+}
+animateBg();
+
+// ─── RECORDING ───────────────────────────────
+function toggleRecord() {
+  state.recording = !state.recording;
+  const btn = document.getElementById('btn-record');
+  btn.classList.toggle('recording', state.recording);
+  btn.textContent = state.recording ? '⏹ STOP' : '⏺ REC';
+
+  if (!state.recording && state.currentRecording.length > 0) {
+    state.recordings = [...state.currentRecording];
+    state.currentRecording = [];
+    document.getElementById('btn-replay').disabled = false;
+  }
+}
+
+let recordStartTime = null;
+function recordEvent(chord, technique) {
+  const now = Date.now();
+  if (!recordStartTime) recordStartTime = now;
+  state.currentRecording.push({ chord, technique, t: now - recordStartTime });
+}
+
+function replayRecording() {
+  if (!state.recordings.length) return;
+  state.recordings.forEach(event => {
+    setTimeout(() => {
+      triggerPlay(event.chord, event.technique);
+      updateChordDisplay(event.chord, event.technique);
+      highlightChordBtn(event.chord);
+      spawnParticles(event.chord);
+    }, event.t);
+  });
+}
+
+// ─── RHYTHM GAME ────────────────────────────
+const rhythmCanvas = document.getElementById('rhythm-canvas');
+const rCtx = rhythmCanvas.getContext('2d');
+const rhythmNotes = [];
+let rhythmTime = 0;
+let rhythmMode = false;
+
+const NOTE_COLORS = ['#00e5ff','#ff00aa','#ffd700','#00ff88','#ff6a00','#9b59b6','#e74c3c'];
+const NOTE_CHORDS = ['C','G','Am','F','D','Em','E'];
+
+function spawnRhythmNote() {
+  const idx = Math.floor(Math.random() * NOTE_CHORDS.length);
+  rhythmNotes.push({
+    chord: NOTE_CHORDS[idx],
+    color: NOTE_COLORS[idx],
+    x: 100 + idx * 80,
+    y: -30,
+    speed: 2.5 + Math.random() * 1,
+    hit: false,
+    miss: false,
+  });
+}
+
+function animateRhythm() {
+  if (!rhythmMode) return;
+  const w = rhythmCanvas.width = rhythmCanvas.offsetWidth;
+  const h = rhythmCanvas.height = rhythmCanvas.offsetHeight;
+
+  rCtx.clearRect(0, 0, w, h);
+
+  // Background lanes
+  for (let i = 0; i < NOTE_CHORDS.length; i++) {
+    const x = 100 + i * 80;
+    rCtx.fillStyle = `rgba(255,255,255,0.015)`;
+    rCtx.fillRect(x - 28, 0, 56, h);
+    rCtx.fillStyle = NOTE_COLORS[i] + '20';
+    rCtx.fillRect(x - 28, 0, 56, h);
+
+    // Lane label
+    rCtx.fillStyle = NOTE_COLORS[i] + '80';
+    rCtx.font = "bold 10px 'Orbitron'";
+    rCtx.textAlign = 'center';
+    rCtx.fillText(NOTE_CHORDS[i], x, h - 16);
+  }
+
+  // Hit zone
+  const hitY = h - 50;
+  rCtx.strokeStyle = 'rgba(255,255,255,0.2)';
+  rCtx.lineWidth = 2;
+  rCtx.setLineDash([6, 4]);
+  rCtx.beginPath(); rCtx.moveTo(60, hitY); rCtx.lineTo(w - 20, hitY); rCtx.stroke();
+  rCtx.setLineDash([]);
+
+  rhythmTime++;
+  if (rhythmTime % 60 === 0) spawnRhythmNote();
+
+  for (let i = rhythmNotes.length - 1; i >= 0; i--) {
+    const note = rhythmNotes[i];
+    if (note.miss || note.hit) {
+      note.y += note.speed * 3;
+      if (note.y > h + 50) { rhythmNotes.splice(i, 1); continue; }
+    } else {
+      note.y += note.speed;
+    }
+
+    if (!note.miss && !note.hit && note.y > hitY + 40) {
+      note.miss = true;
+      state.combo = 0;
+      document.getElementById('combo-val').textContent = '0×';
+    }
+
+    const alpha = note.miss ? 0.2 : note.hit ? 0 : 1;
+    rCtx.globalAlpha = alpha;
+
+    // Note circle
+    rCtx.beginPath();
+    rCtx.arc(note.x, note.y, 22, 0, Math.PI * 2);
+    rCtx.fillStyle = note.color + '33';
+    rCtx.fill();
+    rCtx.strokeStyle = note.color;
+    rCtx.lineWidth = 2;
+    rCtx.shadowColor = note.color;
+    rCtx.shadowBlur = 10;
+    rCtx.stroke();
+    rCtx.shadowBlur = 0;
+
+    rCtx.fillStyle = note.color;
+    rCtx.font = "bold 10px 'Orbitron'";
+    rCtx.textAlign = 'center';
+    rCtx.fillText(note.chord, note.x, note.y + 4);
+
+    rCtx.globalAlpha = 1;
+  }
+
+  requestAnimationFrame(animateRhythm);
+}
+
+function handleRhythmInput(chordName) {
+  const hitY = rhythmCanvas.offsetHeight - 50;
+  for (let i = 0; i < rhythmNotes.length; i++) {
+    const note = rhythmNotes[i];
+    if (note.chord === chordName && !note.hit && !note.miss) {
+      const dist = Math.abs(note.y - hitY);
+      if (dist < 40) {
+        note.hit = true;
+        const j = dist < 10 ? { text: 'PERFECT!', color: '#ffd700' }
+                 : dist < 25 ? { text: 'GREAT!', color: '#00ff88' }
+                 : { text: 'GOOD', color: '#00e5ff' };
+        showJudgment(j);
+        break;
+      }
+    }
+  }
+}
+
+// ─── MODE SWITCH ────────────────────────────
+function setMode(mode) {
+  state.mode = mode;
+  document.getElementById('btn-freeplay').classList.toggle('active', mode === 'free');
+  document.getElementById('btn-rhythm').classList.toggle('active', mode === 'rhythm');
+
+  const bottom = document.getElementById('bottom');
+  bottom.classList.toggle('visible', mode === 'rhythm');
+
+  if (mode === 'rhythm') {
+    rhythmMode = true;
+    rhythmTime = 0;
+    animateRhythm();
+  } else {
+    rhythmMode = false;
+  }
+}
+
+// ─── CUSTOM CHORD ────────────────────────────
+function addCustomChord() {
+  const name = document.getElementById('custom-chord-name').value.trim();
+  const key = document.getElementById('custom-chord-key').value.trim().toLowerCase();
+  const fretStr = document.getElementById('custom-chord-frets').value.trim();
+
+  if (!name || !key) return;
+
+  const frets = fretStr.split(',').map(f => parseInt(f.trim()) || 0);
+  if (frets.length < 6) while (frets.length < 6) frets.push(0);
+
+  const colors = ['#e91e63','#9c27b0','#3f51b5','#009688','#ff5722'];
+  const color = colors[state.customChords.length % colors.length];
+
+  const chord = { name, key, color, dots: [1, 2, 3], custom: true };
+  state.customChords.push(chord);
+
+  if (key) CHORD_KEY_MAP[key] = chord;
+  AudioEngine.addCustomChordFreqs(name, frets);
+
+  renderChordGrid();
+  closeModal();
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.getElementById('custom-chord-name').value = '';
+  document.getElementById('custom-chord-key').value = '';
+  document.getElementById('custom-chord-frets').value = '';
+}
+
+document.getElementById('modal-overlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+
+// ─── STRUM DIRECTION CLICK ──────────────────
+document.getElementById('arrow-down').addEventListener('click', () => {
+  selectTechnique('down');
+  if (state.selectedChord) triggerPlay(state.selectedChord, 'down');
+});
+document.getElementById('arrow-up').addEventListener('click', () => {
+  selectTechnique('up');
+  if (state.selectedChord) triggerPlay(state.selectedChord, 'up');
+});
+
+// ─── INIT ────────────────────────────────────
+renderChordGrid();
+renderTechGrid();
+renderMetroBeat();
+
+// Default selection
+selectTechnique('down');
+
+// Welcome flash
+setTimeout(() => {
+  showJudgment({ text: 'HEXCHORD READY', color: '#00e5ff' });
+}, 500);
+
+console.log('%cHEXCHORD ENGINE LOADED', 'font-family:monospace;font-size:16px;color:#00e5ff;text-shadow:0 0 8px #00e5ff');
+console.log('%cChord keys: Q W E R T Y U / A S D F G H | Tech keys: J K L U I O P N', 'font-family:monospace;font-size:11px;color:#666');
+</script>
+</body>
+</html>
