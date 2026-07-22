@@ -1,0 +1,2044 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>포켓몬 배틀</title>
+    
+    <!-- Tailwind CSS (디자인용) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React (게임 엔진용) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel (브라우저에서 React 코드를 읽게 해주는 도구) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        /* 도트 그래픽이 깨지지 않고 선명하게 보이도록 설정 */
+        .rendering-pixelated {
+            image-rendering: pixelated;
+        }
+        /* 드래그 방지 */
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-800">
+    <!-- 게임이 그려질 도화지 -->
+    <div id="root"></div>
+
+    <!-- 게임 핵심 로직 -->
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- 유틸리티 함수 ---
+        const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+        // 18가지 속성의 모든 상성 관계를 완벽하게 정의한 매트릭스
+        const typeMatchup = {
+          normal: { rock: 0.5, ghost: 0, steel: 0.5 },
+          fire: { fire: 0.5, water: 0.5, grass: 2, ice: 2, bug: 2, rock: 0.5, dragon: 0.5, steel: 2 },
+          water: { fire: 2, water: 0.5, grass: 0.5, ground: 2, rock: 2, dragon: 0.5 },
+          grass: { fire: 0.5, water: 2, grass: 0.5, poison: 0.5, ground: 2, flying: 0.5, bug: 0.5, rock: 2, dragon: 0.5, steel: 0.5 },
+          electric: { water: 2, grass: 0.5, electric: 0.5, ground: 0, flying: 2, dragon: 0.5 },
+          ice: { fire: 0.5, water: 0.5, grass: 2, ice: 0.5, ground: 2, flying: 2, dragon: 2, steel: 0.5 },
+          fighting: { normal: 2, ice: 2, poison: 0.5, flying: 0.5, psychic: 0.5, bug: 0.5, rock: 2, ghost: 0, dark: 2, steel: 2, fairy: 0.5 },
+          poison: { grass: 2, poison: 0.5, ground: 0.5, rock: 0.5, ghost: 0.5, steel: 0, fairy: 2 },
+          ground: { fire: 2, grass: 0.5, electric: 2, poison: 2, flying: 0, bug: 0.5, rock: 2, steel: 2 },
+          flying: { grass: 2, electric: 0.5, fighting: 2, bug: 2, rock: 0.5, steel: 0.5 },
+          psychic: { fighting: 2, poison: 2, psychic: 0.5, dark: 0, steel: 0.5 },
+          bug: { fire: 0.5, grass: 2, fighting: 0.5, poison: 0.5, flying: 0.5, psychic: 2, ghost: 0.5, dark: 2, steel: 0.5, fairy: 0.5 },
+          rock: { fire: 2, ice: 2, fighting: 0.5, ground: 0.5, flying: 2, bug: 2, steel: 0.5 },
+          ghost: { normal: 0, psychic: 2, ghost: 2, dark: 0.5 },
+          dragon: { dragon: 2, steel: 0.5, fairy: 0 },
+          dark: { fighting: 0.5, psychic: 2, ghost: 2, dark: 0.5, fairy: 0.5 },
+          steel: { fire: 0.5, water: 0.5, electric: 0.5, ice: 2, rock: 2, steel: 0.5, fairy: 2 },
+          fairy: { fire: 0.5, fighting: 2, poison: 0.5, dragon: 2, dark: 2, steel: 0.5 }
+        };
+
+        const getEffectiveness = (moveType, targetType) => {
+          if (typeMatchup[moveType] && typeMatchup[moveType][targetType] !== undefined) {
+            return typeMatchup[moveType][targetType];
+          }
+          return 1;
+        };
+
+        const typeKoreanMap = {
+          normal: '노말', fire: '불꽃', water: '물', grass: '풀', electric: '전기',
+          ice: '얼음', fighting: '격투', poison: '독', ground: '땅', flying: '비행',
+          psychic: '에스퍼', bug: '벌레', rock: '바위', ghost: '고스트', dragon: '드래곤',
+          dark: '악', steel: '강철', fairy: '페어리'
+        };
+
+        const getTypeColor = (type) => {
+          const colors = {
+            normal: 'bg-gray-400 border-gray-500 text-white', fire: 'bg-red-500 border-red-600 text-white',
+            water: 'bg-blue-500 border-blue-600 text-white', grass: 'bg-green-500 border-green-600 text-white',
+            electric: 'bg-yellow-400 border-yellow-500 text-gray-900', ice: 'bg-cyan-300 border-cyan-400 text-gray-900',
+            fighting: 'bg-orange-700 border-orange-800 text-white', poison: 'bg-purple-500 border-purple-600 text-white',
+            ground: 'bg-yellow-600 border-yellow-700 text-white', flying: 'bg-indigo-300 border-indigo-400 text-gray-900',
+            psychic: 'bg-pink-500 border-pink-600 text-white', bug: 'bg-lime-500 border-lime-600 text-white',
+            rock: 'bg-yellow-700 border-yellow-800 text-white', ghost: 'bg-indigo-700 border-indigo-800 text-white',
+            dragon: 'bg-indigo-600 border-indigo-800 text-white', dark: 'bg-gray-800 border-gray-900 text-white',
+            steel: 'bg-slate-400 border-slate-500 text-gray-900', fairy: 'bg-pink-300 border-pink-400 text-gray-900'
+          };
+          return colors[type] || 'bg-gray-400 border-gray-500 text-white';
+        };
+
+        const effectVisuals = {
+          normal: '💢', fire: '🔥', water: '🌊', grass: '🍃', electric: '⚡',
+          ice: '❄️', fighting: '👊', poison: '☠️', ground: '🪨', flying: '🌪️',
+          psychic: '🔮', bug: '🐛', rock: '🪨', ghost: '👻', dragon: '🐉',
+          dark: '🌑', steel: '⚙️', fairy: '✨'
+        };
+
+        const getTrainerInfo = (stage) => {
+          const baseUrl = 'https://play.pokemonshowdown.com/sprites/trainers/';
+          if (stage === 46) return { name: '진정한 마스터 지우', type: 'true_master', color: 'text-red-600 text-xl', sprite: baseUrl + 'ash.png' };
+          if (stage === 45) return { name: '가라르 챔피언 단델', type: 'final_boss', color: 'text-purple-900 text-xl', sprite: baseUrl + 'leon.png' };
+          if (stage === 44) return { name: '호연 챔피언 성호', type: 'champion', color: 'text-blue-800 text-lg', sprite: baseUrl + 'steven.png' };
+          if (stage === 43) return { name: '칼로스 챔피언 카르네', type: 'champion', color: 'text-pink-800 text-lg', sprite: baseUrl + 'diantha.png' };
+          if (stage === 42) return { name: '신오 챔피언 난천', type: 'champion', color: 'text-gray-900 text-lg', sprite: baseUrl + 'cynthia.png' };
+          if (stage === 41) return { name: '관동 챔피언 목호', type: 'champion', color: 'text-red-800 text-lg', sprite: baseUrl + 'lance.png' };
+          if (stage === 40) return { name: '로켓단 보스 비주기', type: 'boss', color: 'text-red-900 text-lg', sprite: baseUrl + 'giovanni.png' };
+          if (stage % 10 === 0) {
+            const isJessie = Math.random() < 0.5;
+            return { 
+                name: isJessie ? '로켓단 간부 로사' : '로켓단 간부 로이', 
+                type: 'boss', 
+                color: 'text-red-700', 
+                sprite: baseUrl + (isJessie ? 'jessie.png' : 'james.png') 
+            };
+          }
+          if (stage % 5 === 0) return { name: '로켓단 조무래기', type: 'midboss', color: 'text-purple-700', sprite: baseUrl + 'rocketgrunt.png' };
+          
+          const normalTrainers = [
+            { name: '반바지 꼬마', sprite: 'youngster.png' }, 
+            { name: '곤충채집 소년', sprite: 'bugcatcher.png' }, 
+            { name: '미니스커트', sprite: 'lass.png' }, 
+            { name: '캠프보이', sprite: 'camper.png' }, 
+            { name: '등산객', sprite: 'hiker.png' }, 
+            { name: '엘리트 트레이너', sprite: 'acetrainer.png' }
+          ];
+          const tInfo = normalTrainers[(stage - 1) % normalTrainers.length];
+          return { name: tInfo.name, type: 'normal', color: 'text-gray-700', sprite: baseUrl + tInfo.sprite };
+        };
+
+        const checkIsFloating = (pokemon) => {
+          if (!pokemon) return false;
+          if (['flying', 'ghost'].includes(pokemon.type)) return true;
+          const floatingIds = [6, 150, 151, 251, 282, 380, 381, 382, 384, 385, 484, 494, 646, 720, 785, 792, 887, 890, 'M6X', 'M6Y', 'M150Y', 'M380', 'M381', 'M384', 'P382', 'L800', 'U720', 'O487', 'U800'];
+          return floatingIds.includes(pokemon.baseId) || floatingIds.includes(pokemon.id);
+        };
+
+        const legendaryByGen = {
+          1: [144, 145, 146, 150], 2: [243, 244, 245, 249, 250], 3: [380, 381, 382, 383, 384], 
+          4: [483, 484, 487], 5: [643, 644, 646], 6: [716, 717, 718], 
+          7: [785, 791, 792, 800], 8: [888, 889, 890], 
+        };
+
+        const drainMoves = ['데스윙', '드레인키스', '기가드레인', '메가드레인', '흡수'];
+
+        const pokemonData = {
+          1: { id: 1, name: '이상해씨', type: 'grass', unlockLevel: 1, unlockStage: 1, hp: 120, attack: 35, defense: 25, speed: 45, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/1.png', moves: [{ name: '몸통박치기', power: 35, type: 'normal' }, { name: '덩굴채찍', power: 50, type: 'grass' }], evolution: { level: 5, targetId: 2 } },
+          2: { id: 2, name: '이상해풀', type: 'grass', unlockLevel: 999, unlockStage: 999, hp: 140, attack: 50, defense: 35, speed: 60, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/2.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/2.png', moves: [{ name: '덩굴채찍', power: 50, type: 'grass' }, { name: '기가드레인', power: 75, type: 'grass' }], evolution: { level: 10, targetId: 3 } },
+          3: { id: 3, name: '이상해꽃', type: 'grass', unlockLevel: 999, unlockStage: 999, hp: 180, attack: 75, defense: 55, speed: 80, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/3.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/3.png', moves: [{ name: '기가드레인', power: 75, type: 'grass' }, { name: '솔라빔', power: 100, type: 'grass' }], megaEvolutions: ['M3'] },
+          4: { id: 4, name: '파이리', type: 'fire', unlockLevel: 1, unlockStage: 1, hp: 110, attack: 40, defense: 20, speed: 65, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/4.png', moves: [{ name: '할퀴기', power: 35, type: 'normal' }, { name: '불꽃세례', power: 50, type: 'fire' }], evolution: { level: 5, targetId: 5 } },
+          5: { id: 5, name: '리자드', type: 'fire', unlockLevel: 999, unlockStage: 999, hp: 130, attack: 55, defense: 30, speed: 80, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/5.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/5.png', moves: [{ name: '불꽃세례', power: 50, type: 'fire' }, { name: '화염방사', power: 70, type: 'fire' }], evolution: { level: 10, targetId: 6 } },
+          6: { id: 6, name: '리자몽', type: 'fire', unlockLevel: 999, unlockStage: 999, hp: 160, attack: 80, defense: 45, speed: 100, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/6.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/6.png', moves: [{ name: '화염방사', power: 70, type: 'fire' }, { name: '불대문자', power: 100, type: 'fire' }], megaEvolutions: ['M6X', 'M6Y'] },
+          7: { id: 7, name: '꼬부기', type: 'water', unlockLevel: 1, unlockStage: 1, hp: 115, attack: 38, defense: 30, speed: 43, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/7.png', moves: [{ name: '몸통박치기', power: 35, type: 'normal' }, { name: '물대포', power: 50, type: 'water' }], evolution: { level: 5, targetId: 8 } },
+          8: { id: 8, name: '어니부기', type: 'water', unlockLevel: 999, unlockStage: 999, hp: 135, attack: 52, defense: 40, speed: 58, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/8.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/8.png', moves: [{ name: '물대포', power: 50, type: 'water' }, { name: '물의파동', power: 70, type: 'water' }], evolution: { level: 10, targetId: 9 } },
+          9: { id: 9, name: '거북왕', type: 'water', unlockLevel: 999, unlockStage: 999, hp: 170, attack: 72, defense: 65, speed: 78, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/9.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/9.png', moves: [{ name: '물의파동', power: 70, type: 'water' }, { name: '하이드로펌프', power: 100, type: 'water' }], megaEvolutions: ['M9'] },
+          25: { id: 25, name: '피카츄', type: 'electric', unlockLevel: 1, unlockStage: 1, hp: 100, attack: 45, defense: 15, speed: 90, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/25.png', moves: [{ name: '전광석화', power: 40, type: 'normal' }, { name: '10만볼트', power: 90, type: 'electric' }], evolution: { level: 7, targetId: 26 } },
+          26: { id: 26, name: '라이츄', type: 'electric', unlockLevel: 999, unlockStage: 999, hp: 130, attack: 65, defense: 30, speed: 110, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/26.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/26.png', moves: [{ name: '전기쇼크', power: 55, type: 'electric' }, { name: '번개', power: 110, type: 'electric' }] },
+          133: { id: 133, name: '이브이', type: 'normal', unlockLevel: 1, unlockStage: 1, hp: 130, attack: 40, defense: 28, speed: 55, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/133.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/133.png', moves: [{ name: '몸통박치기', power: 35, type: 'normal' }, { name: '물기', power: 45, type: 'normal' }], evolution: { level: 7, targetId: 134 } },
+          134: { id: 134, name: '샤미드', type: 'water', unlockLevel: 999, unlockStage: 999, hp: 170, attack: 65, defense: 45, speed: 65, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/134.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/134.png', moves: [{ name: '파도타기', power: 70, type: 'water' }, { name: '하이드로펌프', power: 100, type: 'water' }] },
+          16: { id: 16, name: '구구', type: 'flying', unlockLevel: 2, unlockStage: 2, hp: 100, attack: 25, defense: 20, speed: 56, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/16.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/16.png', moves: [{ name: '몸통박치기', power: 20, type: 'normal' }, { name: '바람일으키기', power: 35, type: 'flying' }], evolution: { level: 5, targetId: 17 } },
+          17: { id: 17, name: '피죤', type: 'flying', unlockLevel: 999, unlockStage: 999, hp: 120, attack: 40, defense: 35, speed: 71, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/17.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/17.png', moves: [{ name: '바람일으키기', power: 35, type: 'flying' }, { name: '제비반환', power: 60, type: 'flying' }], evolution: { level: 10, targetId: 18 } },
+          18: { id: 18, name: '피죤투', type: 'flying', unlockLevel: 999, unlockStage: 999, hp: 160, attack: 65, defense: 60, speed: 101, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/18.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/18.png', moves: [{ name: '제비반환', power: 60, type: 'flying' }, { name: '폭풍', power: 100, type: 'flying' }], megaEvolutions: ['M18'] },
+          74: { id: 74, name: '꼬마돌', type: 'rock', unlockLevel: 3, unlockStage: 3, hp: 140, attack: 40, defense: 50, speed: 20, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/74.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/74.png', moves: [{ name: '돌떨구기', power: 30, type: 'rock' }, { name: '몸통박치기', power: 20, type: 'normal' }], evolution: { level: 5, targetId: 75 } },
+          75: { id: 75, name: '데구리', type: 'rock', unlockLevel: 999, unlockStage: 999, hp: 160, attack: 60, defense: 75, speed: 35, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/75.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/75.png', moves: [{ name: '돌떨구기', power: 30, type: 'rock' }, { name: '매그니튜드', power: 70, type: 'ground' }], evolution: { level: 10, targetId: 76 } },
+          76: { id: 76, name: '딱구리', type: 'rock', unlockLevel: 999, unlockStage: 999, hp: 190, attack: 95, defense: 100, speed: 45, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/76.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/76.png', moves: [{ name: '지진', power: 100, type: 'ground' }, { name: '스톤에지', power: 100, type: 'rock' }] },
+          94: { id: 94, name: '팬텀', type: 'ghost', unlockLevel: 4, unlockStage: 5, hp: 120, attack: 45, defense: 30, speed: 70, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/94.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/94.png', moves: [{ name: '핥기', power: 30, type: 'ghost' }, { name: '섀도볼', power: 50, type: 'ghost' }], megaEvolutions: ['M94'] },
+          149: { id: 149, name: '망나뇽', type: 'dragon', unlockLevel: 6, unlockStage: 7, hp: 180, attack: 60, defense: 45, speed: 60, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/149.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/149.png', moves: [{ name: '용의분노', power: 40, type: 'dragon' }, { name: '파괴광선', power: 70, type: 'normal' }] },
+          155: { id: 155, name: '브케인', type: 'fire', unlockLevel: 1, unlockStage: 1, hp: 110, attack: 45, defense: 25, speed: 65, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/155.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/155.png', moves: [{ name: '불꽃세례', power: 50, type: 'fire' }, { name: '전광석화', power: 40, type: 'normal' }], evolution: { level: 5, targetId: 156 } },
+          156: { id: 156, name: '마그케인', type: 'fire', unlockLevel: 999, unlockStage: 999, hp: 130, attack: 60, defense: 35, speed: 80, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/156.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/156.png', moves: [{ name: '불꽃세례', power: 50, type: 'fire' }, { name: '화염방사', power: 70, type: 'fire' }], evolution: { level: 10, targetId: 157 } },
+          157: { id: 157, name: '블레이범', type: 'fire', unlockLevel: 999, unlockStage: 999, hp: 170, attack: 85, defense: 55, speed: 100, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/157.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/157.png', moves: [{ name: '화염방사', power: 70, type: 'fire' }, { name: '분화', power: 100, type: 'fire' }] },
+          258: { id: 258, name: '물짱이', type: 'water', unlockLevel: 1, unlockStage: 1, hp: 120, attack: 50, defense: 35, speed: 40, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/258.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/258.png', moves: [{ name: '물대포', power: 50, type: 'water' }, { name: '몸통박치기', power: 35, type: 'normal' }], evolution: { level: 5, targetId: 259 } },
+          259: { id: 259, name: '늪짱이', type: 'water', unlockLevel: 999, unlockStage: 999, hp: 140, attack: 65, defense: 45, speed: 50, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/259.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/259.png', moves: [{ name: '물대포', power: 50, type: 'water' }, { name: '머드샷', power: 60, type: 'ground' }], evolution: { level: 10, targetId: 260 } },
+          260: { id: 260, name: '대짱이', type: 'water', unlockLevel: 999, unlockStage: 999, hp: 180, attack: 95, defense: 65, speed: 60, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/260.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/260.png', moves: [{ name: '탁류', power: 80, type: 'water' }, { name: '지진', power: 100, type: 'ground' }], megaEvolutions: ['M260'] },
+          393: { id: 393, name: '팽도리', type: 'water', unlockLevel: 1, unlockStage: 1, hp: 125, attack: 45, defense: 35, speed: 40, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/393.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/393.png', moves: [{ name: '거품광선', power: 65, type: 'water' }, { name: '쪼기', power: 35, type: 'flying' }], evolution: { level: 5, targetId: 394 } },
+          394: { id: 394, name: '팽태자', type: 'water', unlockLevel: 999, unlockStage: 999, hp: 145, attack: 55, defense: 45, speed: 50, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/394.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/394.png', moves: [{ name: '거품광선', power: 65, type: 'water' }, { name: '메탈크로우', power: 50, type: 'steel' }], evolution: { level: 10, targetId: 395 } },
+          395: { id: 395, name: '엠페르트', type: 'water', unlockLevel: 999, unlockStage: 999, hp: 185, attack: 75, defense: 65, speed: 60, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/395.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/395.png', moves: [{ name: '하이드로펌프', power: 100, type: 'water' }, { name: '러스터캐논', power: 80, type: 'steel' }] },
+          495: { id: 495, name: '주리비얀', type: 'grass', unlockLevel: 1, unlockStage: 1, hp: 115, attack: 45, defense: 35, speed: 63, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/495.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/495.png', moves: [{ name: '덩굴채찍', power: 50, type: 'grass' }, { name: '몸통박치기', power: 35, type: 'normal' }], evolution: { level: 5, targetId: 496 } },
+          496: { id: 496, name: '샤비', type: 'grass', unlockLevel: 999, unlockStage: 999, hp: 135, attack: 55, defense: 45, speed: 83, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/496.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/496.png', moves: [{ name: '덩굴채찍', power: 50, type: 'grass' }, { name: '리프블레이드', power: 75, type: 'grass' }], evolution: { level: 10, targetId: 497 } },
+          497: { id: 497, name: '샤로다', type: 'grass', unlockLevel: 999, unlockStage: 999, hp: 175, attack: 65, defense: 65, speed: 113, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/497.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/497.png', moves: [{ name: '리프블레이드', power: 75, type: 'grass' }, { name: '리프스톰', power: 100, type: 'grass' }] },
+          656: { id: 656, name: '개구마르', type: 'water', unlockLevel: 1, unlockStage: 1, hp: 110, attack: 45, defense: 30, speed: 71, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/656.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/656.png', moves: [{ name: '물의파동', power: 60, type: 'water' }, { name: '할퀴기', power: 35, type: 'normal' }], evolution: { level: 5, targetId: 657 } },
+          657: { id: 657, name: '개굴반장', type: 'water', unlockLevel: 999, unlockStage: 999, hp: 130, attack: 60, defense: 45, speed: 97, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/657.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/657.png', moves: [{ name: '물의파동', power: 60, type: 'water' }, { name: '깜짝베기', power: 70, type: 'dark' }], evolution: { level: 10, targetId: 658 } },
+          658: { id: 658, name: '개굴닌자', type: 'water', unlockLevel: 999, unlockStage: 999, hp: 170, attack: 95, defense: 65, speed: 122, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/658.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/658.png', moves: [{ name: '물수리검', power: 85, type: 'water' }, { name: '깜짝베기', power: 70, type: 'dark' }] },
+          722: { id: 722, name: '나몰빼미', type: 'grass', unlockLevel: 1, unlockStage: 1, hp: 135, attack: 55, defense: 45, speed: 42, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/722.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/722.png', moves: [{ name: '나뭇잎', power: 40, type: 'grass' }, { name: '쪼기', power: 35, type: 'flying' }], evolution: { level: 5, targetId: 723 } },
+          723: { id: 723, name: '빼미스로우', type: 'grass', unlockLevel: 999, unlockStage: 999, hp: 155, attack: 70, defense: 55, speed: 52, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/723.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/723.png', moves: [{ name: '잎날가르기', power: 55, type: 'grass' }, { name: '쪼기', power: 35, type: 'flying' }], evolution: { level: 10, targetId: 724 } },
+          724: { id: 724, name: '모크나이퍼', type: 'grass', unlockLevel: 999, unlockStage: 999, hp: 195, attack: 95, defense: 70, speed: 70, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/724.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/724.png', moves: [{ name: '그림자꿰매기', power: 80, type: 'ghost' }, { name: '리프블레이드', power: 75, type: 'grass' }] },
+          813: { id: 813, name: '염버니', type: 'fire', unlockLevel: 1, unlockStage: 1, hp: 125, attack: 71, defense: 40, speed: 60, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/813.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/813.png', moves: [{ name: '불꽃세례', power: 50, type: 'fire' }, { name: '두번치기', power: 60, type: 'fighting' }], evolution: { level: 5, targetId: 814 } },
+          814: { id: 814, name: '래비풋', type: 'fire', unlockLevel: 999, unlockStage: 999, hp: 145, attack: 85, defense: 55, speed: 85, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/814.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/814.png', moves: [{ name: '니트로차지', power: 50, type: 'fire' }, { name: '두번치기', power: 60, type: 'fighting' }], evolution: { level: 10, targetId: 815 } },
+          815: { id: 815, name: '에이스번', type: 'fire', unlockLevel: 999, unlockStage: 999, hp: 185, attack: 116, defense: 75, speed: 119, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/815.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/815.png', moves: [{ name: '화염볼', power: 100, type: 'fire' }, { name: '무릎차기', power: 100, type: 'fighting' }] },
+          197: { id: 197, name: '블래키', type: 'dark', unlockLevel: 4, unlockStage: 4, hp: 160, attack: 50, defense: 80, speed: 65, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/197.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/197.png', moves: [{ name: '속임수', power: 70, type: 'dark' }, { name: '전광석화', power: 40, type: 'normal' }] },
+          282: { id: 282, name: '가디안', type: 'fairy', unlockLevel: 6, unlockStage: 6, hp: 140, attack: 65, defense: 45, speed: 80, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/282.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/282.png', moves: [{ name: '사이코키네시스', power: 90, type: 'psychic' }, { name: '매지컬샤인', power: 80, type: 'fairy' }] },
+          376: { id: 376, name: '메타그로스', type: 'steel', unlockLevel: 20, unlockStage: 20, hp: 160, attack: 135, defense: 130, speed: 70, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/376.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/376.png', moves: [{ name: '코멧펀치', power: 90, type: 'steel' }, { name: '사념의박치기', power: 80, type: 'psychic' }] },
+          448: { id: 448, name: '루카리오', type: 'fighting', unlockLevel: 8, unlockStage: 8, hp: 145, attack: 90, defense: 50, speed: 90, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/448.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/448.png', moves: [{ name: '파동탄', power: 90, type: 'fighting' }, { name: '신속', power: 80, type: 'normal' }], megaEvolutions: ['M448'] },
+          445: { id: 445, name: '한카리아스', type: 'dragon', unlockLevel: 12, unlockStage: 12, hp: 180, attack: 110, defense: 75, speed: 102, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/445.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/445.png', moves: [{ name: '드래곤크루', power: 80, type: 'dragon' }, { name: '지진', power: 100, type: 'ground' }], megaEvolutions: ['M445'] },
+          570: { id: 570, name: '조로아', type: 'dark', unlockLevel: 14, unlockStage: 14, hp: 110, attack: 55, defense: 30, speed: 65, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/570.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/570.png', moves: [{ name: '깜짝베기', power: 70, type: 'dark' }, { name: '할퀴기', power: 40, type: 'normal' }], evolution: { level: 18, targetId: 571 } },
+          571: { id: 571, name: '조로아크', type: 'dark', unlockLevel: 999, unlockStage: 999, hp: 160, attack: 105, defense: 60, speed: 105, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/571.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/571.png', moves: [{ name: '깜짝베기', power: 70, type: 'dark' }, { name: '악의파동', power: 80, type: 'dark' }] },
+          609: { id: 609, name: '샹델라', type: 'ghost', unlockLevel: 16, unlockStage: 16, hp: 135, attack: 120, defense: 60, speed: 80, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/609.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/609.png', moves: [{ name: '섀도볼', power: 80, type: 'ghost' }, { name: '화염방사', power: 90, type: 'fire' }] },
+          700: { id: 700, name: '님피아', type: 'fairy', unlockLevel: 18, unlockStage: 18, hp: 170, attack: 65, defense: 65, speed: 60, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/700.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/700.png', moves: [{ name: '문포스', power: 95, type: 'fairy' }, { name: '드레인키스', power: 60, type: 'fairy' }] },
+          778: { id: 778, name: '따라큐', type: 'ghost', unlockLevel: 22, unlockStage: 22, hp: 130, attack: 90, defense: 65, speed: 96, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/778.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/778.png', moves: [{ name: '치근거리기', power: 90, type: 'fairy' }, { name: '섀도크루', power: 70, type: 'ghost' }], ability: '탈' },
+          887: { id: 887, name: '드래펄트', type: 'dragon', unlockLevel: 24, unlockStage: 24, hp: 160, attack: 120, defense: 75, speed: 142, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/887.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/887.png', moves: [{ name: '드래곤애로', power: 100, type: 'dragon' }, { name: '고스트다이브', power: 90, type: 'ghost' }] },
+          144: { id: 144, name: '프리져', type: 'ice', isLegendary: true, hp: 180, attack: 65, defense: 50, speed: 85, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/144.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/144.png', moves: [{ name: '바람일으키기', power: 40, type: 'flying' }, { name: '냉동빔', power: 80, type: 'ice' }], ability: '프레셔' },
+          145: { id: 145, name: '썬더', type: 'electric', isLegendary: true, hp: 180, attack: 90, defense: 85, speed: 100, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/145.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/145.png', moves: [{ name: '회전부리', power: 80, type: 'flying' }, { name: '번개', power: 100, type: 'electric' }], ability: '정전기' },
+          146: { id: 146, name: '파이어', type: 'fire', isLegendary: true, hp: 180, attack: 100, defense: 90, speed: 90, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/146.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/146.png', moves: [{ name: '날개치기', power: 60, type: 'flying' }, { name: '불대문자', power: 100, type: 'fire' }], ability: '불꽃몸' },
+          150: { id: 150, name: '뮤츠', type: 'psychic', isLegendary: true, hp: 200, attack: 80, defense: 50, speed: 80, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/150.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/150.png', moves: [{ name: '염동력', power: 50, type: 'psychic' }, { name: '사이코키네시스', power: 80, type: 'psychic' }], megaEvolutions: ['M150X', 'M150Y'], ability: '프레셔' },
+          243: { id: 243, name: '라이코', type: 'electric', isLegendary: true, hp: 180, attack: 85, defense: 75, speed: 115, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/243.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/243.png', moves: [{ name: '스파크', power: 65, type: 'electric' }, { name: '번개', power: 100, type: 'electric' }], ability: '프레셔' },
+          244: { id: 244, name: '앤테이', type: 'fire', isLegendary: true, hp: 200, attack: 115, defense: 85, speed: 100, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/244.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/244.png', moves: [{ name: '불꽃엄니', power: 65, type: 'fire' }, { name: '화염방사', power: 90, type: 'fire' }], ability: '프레셔' },
+          245: { id: 245, name: '스이쿤', type: 'water', isLegendary: true, hp: 190, attack: 75, defense: 115, speed: 85, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/245.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/245.png', moves: [{ name: '오로라빔', power: 65, type: 'ice' }, { name: '하이드로펌프', power: 100, type: 'water' }], ability: '프레셔' },
+          249: { id: 249, name: '루기아', type: 'flying', isLegendary: true, hp: 190, attack: 70, defense: 60, speed: 90, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/249.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/249.png', moves: [{ name: '에어로블라스트', power: 85, type: 'flying' }, { name: '신통력', power: 60, type: 'psychic' }], ability: '멀티스케일' },
+          250: { id: 250, name: '칠색조', type: 'fire', isLegendary: true, hp: 190, attack: 85, defense: 50, speed: 90, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/250.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/250.png', moves: [{ name: '성스러운불꽃', power: 85, type: 'fire' }, { name: '불대문자', power: 90, type: 'fire' }], ability: '재생력' },
+          380: { id: 380, name: '라티아스', type: 'dragon', isLegendary: true, hp: 160, attack: 80, defense: 90, speed: 110, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/380.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/380.png', moves: [{ name: '용의파동', power: 85, type: 'dragon' }, { name: '미스트볼', power: 70, type: 'psychic' }], megaEvolutions: ['M380'], ability: '부유' },
+          381: { id: 381, name: '라티오스', type: 'dragon', isLegendary: true, hp: 160, attack: 90, defense: 80, speed: 110, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/381.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/381.png', moves: [{ name: '용의파동', power: 85, type: 'dragon' }, { name: '러스터퍼지', power: 70, type: 'psychic' }], megaEvolutions: ['M381'], ability: '부유' },
+          382: { id: 382, name: '가이오가', type: 'water', isLegendary: true, hp: 200, attack: 100, defense: 90, speed: 90, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/382.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/382.png', moves: [{ name: '파도타기', power: 90, type: 'water' }, { name: '해수스파우팅', power: 100, type: 'water' }], primalEvolutions: ['P382'], ability: '잔비' },
+          383: { id: 383, name: '그란돈', type: 'ground', isLegendary: true, hp: 200, attack: 90, defense: 70, speed: 80, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/383.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/383.png', moves: [{ name: '지진', power: 85, type: 'ground' }, { name: '단애의칼', power: 100, type: 'ground' }], primalEvolutions: ['P383'], ability: '가뭄' },
+          384: { id: 384, name: '레쿠쟈', type: 'dragon', isLegendary: true, hp: 190, attack: 100, defense: 50, speed: 95, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/384.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/384.png', moves: [{ name: '용의파동', power: 80, type: 'dragon' }, { name: '화룡점정', power: 100, type: 'flying' }], megaEvolutions: ['M384'], ability: '에어록' },
+          483: { id: 483, name: '디아루가', type: 'steel', isLegendary: true, hp: 200, attack: 90, defense: 70, speed: 90, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/483.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/483.png', moves: [{ name: '러스터캐논', power: 80, type: 'steel' }, { name: '시간의포효', power: 100, type: 'dragon' }], ability: '프레셔', originEvolutions: ['O483'] },
+          484: { id: 484, name: '펄기아', type: 'water', isLegendary: true, hp: 190, attack: 90, defense: 60, speed: 100, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/484.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/484.png', moves: [{ name: '파도타기', power: 80, type: 'water' }, { name: '공간절단', power: 100, type: 'dragon' }], ability: '프레셔', originEvolutions: ['O484'] },
+          487: { id: 487, name: '기라티나', type: 'ghost', isLegendary: true, hp: 220, attack: 100, defense: 120, speed: 90, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/487.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/487.png', moves: [{ name: '섀도다이브', power: 90, type: 'ghost' }, { name: '용의파동', power: 90, type: 'dragon' }], ability: '프레셔', originEvolutions: ['O487'] },
+          643: { id: 643, name: '레시라무', type: 'fire', isLegendary: true, hp: 200, attack: 90, defense: 60, speed: 90, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/643.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/643.png', moves: [{ name: '크로스플레임', power: 85, type: 'fire' }, { name: '푸른불꽃', power: 100, type: 'fire' }], ability: '터보블레이즈' },
+          644: { id: 644, name: '제크로무', type: 'electric', isLegendary: true, hp: 200, attack: 100, defense: 70, speed: 90, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/644.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/644.png', moves: [{ name: '크로스썬더', power: 85, type: 'electric' }, { name: '뇌격', power: 100, type: 'electric' }], ability: '테라볼티지' },
+          646: { id: 646, name: '큐레무', type: 'dragon', isLegendary: true, hp: 200, attack: 130, defense: 90, speed: 95, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/646.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/646.png', moves: [{ name: '얼어붙은세계', power: 65, type: 'ice' }, { name: '용의파동', power: 90, type: 'dragon' }], ability: '프레셔' },
+          716: { id: 716, name: '제르네아스', type: 'fairy', isLegendary: true, hp: 220, attack: 95, defense: 60, speed: 95, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/716.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/716.png', moves: [{ name: '문포스', power: 90, type: 'fairy' }, { name: '지오컨트롤', power: 100, type: 'fairy' }], ability: '페어리오라' },
+          717: { id: 717, name: '이벨타르', type: 'dark', isLegendary: true, hp: 220, attack: 95, defense: 60, speed: 95, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/717.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/717.png', moves: [{ name: '악의파동', power: 80, type: 'dark' }, { name: '데스윙', power: 90, type: 'dark' }], ability: '다크오라' },
+          718: { id: 718, name: '지가르데', type: 'dragon', isLegendary: true, hp: 200, attack: 100, defense: 121, speed: 95, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/718.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/718.png', moves: [{ name: '그랜드포스', power: 90, type: 'ground' }, { name: '용의파동', power: 90, type: 'dragon' }], ability: '오라브레이크' },
+          785: { id: 785, name: '카푸꼬꼬꼭', type: 'electric', isLegendary: true, hp: 160, attack: 115, defense: 85, speed: 130, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/785.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/785.png', moves: [{ name: '와일드볼트', power: 90, type: 'electric' }, { name: '매지컬샤인', power: 80, type: 'fairy' }], ability: '일렉트릭메이커' },
+          791: { id: 791, name: '솔가레오', type: 'steel', isLegendary: true, hp: 220, attack: 105, defense: 70, speed: 95, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/791.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/791.png', moves: [{ name: '사념의박치기', power: 80, type: 'psychic' }, { name: '메테오드라이브', power: 100, type: 'steel' }], ability: '메탈프로텍트' },
+          792: { id: 792, name: '루나아라', type: 'ghost', isLegendary: true, hp: 220, attack: 95, defense: 60, speed: 95, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/792.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/792.png', moves: [{ name: '섀도볼', power: 80, type: 'ghost' }, { name: '섀도레이', power: 100, type: 'ghost' }], ability: '스펙터가드' },
+          800: { id: 800, name: '네크로즈마', type: 'psychic', isLegendary: true, hp: 190, attack: 107, defense: 101, speed: 79, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/800.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/800.png', moves: [{ name: '프리즘레이저', power: 100, type: 'psychic' }, { name: '포톤가이저', power: 100, type: 'psychic' }], ability: '프리즘아머' },
+          888: { id: 888, name: '자시안', type: 'fairy', isLegendary: true, hp: 190, attack: 120, defense: 80, speed: 110, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/888.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/888.png', moves: [{ name: '치근거리기', power: 90, type: 'fairy' }, { name: '거수참', power: 100, type: 'steel' }], ability: '불요의검', crownedEvolutions: ['C888'] },
+          889: { id: 889, name: '자마젠타', type: 'fighting', isLegendary: true, hp: 190, attack: 95, defense: 100, speed: 100, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/889.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/889.png', moves: [{ name: '인파이트', power: 100, type: 'fighting' }, { name: '거수탄', power: 100, type: 'steel' }], ability: '불굴의방패', crownedEvolutions: ['C889'] },
+          890: { id: 890, name: '무한다이노', type: 'poison', isLegendary: true, hp: 230, attack: 85, defense: 95, speed: 130, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/890.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/890.png', moves: [{ name: '다이맥스포', power: 100, type: 'dragon' }, { name: '크로스포이즌', power: 70, type: 'poison' }], ability: '프레셔' },
+
+          'M3': { id: 'M3', name: '메가이상해꽃', type: 'grass', unlockLevel: 999, unlockStage: 999, hp: 220, attack: 100, defense: 80, speed: 80, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10033.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10033.png', moves: [{ name: '솔라빔', power: 100, type: 'grass' }, { name: '오물폭탄', power: 90, type: 'poison' }] },
+          'M380': { id: 'M380', name: '메가라티아스', type: 'dragon', unlockLevel: 999, unlockStage: 999, hp: 180, attack: 100, defense: 120, speed: 110, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10062.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10062.png', moves: [{ name: '용의파동', power: 90, type: 'dragon' }, { name: '사이코키네시스', power: 90, type: 'psychic' }], ability: '부유' },
+          'M381': { id: 'M381', name: '메가라티오스', type: 'dragon', unlockLevel: 999, unlockStage: 999, hp: 180, attack: 130, defense: 100, speed: 110, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10063.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10063.png', moves: [{ name: '용의파동', power: 90, type: 'dragon' }, { name: '사이코키네시스', power: 90, type: 'psychic' }], ability: '부유' },
+          'M6X': { id: 'M6X', name: '메가리자몽X', type: 'dragon', unlockLevel: 999, unlockStage: 999, hp: 190, attack: 120, defense: 75, speed: 100, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10034.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10034.png', moves: [{ name: '역린', power: 120, type: 'dragon' }, { name: '플레어드라이브', power: 100, type: 'fire' }] },
+          'M6Y': { id: 'M6Y', name: '메가리자몽Y', type: 'fire', unlockLevel: 999, unlockStage: 999, hp: 190, attack: 130, defense: 60, speed: 100, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10035.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10035.png', moves: [{ name: '불대문자', power: 110, type: 'fire' }, { name: '에어슬래시', power: 75, type: 'flying' }] },
+          'M9': { id: 'M9', name: '메가거북왕', type: 'water', unlockLevel: 999, unlockStage: 999, hp: 210, attack: 110, defense: 100, speed: 78, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10036.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10036.png', moves: [{ name: '하이드로펌프', power: 110, type: 'water' }, { name: '파동탄', power: 90, type: 'fighting' }] },
+          'M94': { id: 'M94', name: '메가팬텀', type: 'ghost', unlockLevel: 999, unlockStage: 999, hp: 150, attack: 120, defense: 70, speed: 130, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10038.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10038.png', moves: [{ name: '섀도볼', power: 90, type: 'ghost' }, { name: '오물웨이브', power: 95, type: 'poison' }] },
+          'M150X': { id: 'M150X', name: '메가뮤츠X', type: 'fighting', unlockLevel: 999, unlockStage: 999, hp: 240, attack: 140, defense: 80, speed: 100, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10043.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10043.png', moves: [{ name: '사이코키네시스', power: 90, type: 'psychic' }, { name: '인파이트', power: 120, type: 'fighting' }], ability: '불굴의마음' },
+          'M150Y': { id: 'M150Y', name: '메가뮤츠Y', type: 'psychic', unlockLevel: 999, unlockStage: 999, hp: 240, attack: 150, defense: 60, speed: 120, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10044.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10044.png', moves: [{ name: '사이코브레이크', power: 110, type: 'psychic' }, { name: '파동탄', power: 90, type: 'fighting' }], ability: '프레셔' },
+          'M384': { id: 'M384', name: '메가레쿠쟈', type: 'dragon', unlockLevel: 999, unlockStage: 999, hp: 230, attack: 180, defense: 100, speed: 115, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10079.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10079.png', moves: [{ name: '화룡점정', power: 120, type: 'flying' }, { name: '역린', power: 120, type: 'dragon' }], ability: '델타스트림' },
+          'M448': { id: 'M448', name: '메가루카리오', type: 'fighting', unlockLevel: 999, unlockStage: 999, hp: 145, attack: 145, defense: 88, speed: 112, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10059.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10059.png', moves: [{ name: '파동탄', power: 90, type: 'fighting' }, { name: '인파이트', power: 120, type: 'fighting' }], ability: '적응력' },
+          'M445': { id: 'M445', name: '메가한카리아스', type: 'dragon', unlockLevel: 999, unlockStage: 999, hp: 180, attack: 170, defense: 115, speed: 92, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10058.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10058.png', moves: [{ name: '역린', power: 120, type: 'dragon' }, { name: '지진', power: 100, type: 'ground' }], ability: '모래의힘' },
+          'M18': { id: 'M18', name: '메가피죤투', type: 'flying', unlockLevel: 999, unlockStage: 999, hp: 180, attack: 85, defense: 75, speed: 121, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10073.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10073.png', moves: [{ name: '폭풍', power: 100, type: 'flying' }, { name: '파괴광선', power: 150, type: 'normal' }], ability: '노가드' },
+          'M260': { id: 'M260', name: '메가대짱이', type: 'water', unlockLevel: 999, unlockStage: 999, hp: 200, attack: 135, defense: 95, speed: 70, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10064.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10064.png', moves: [{ name: '지진', power: 100, type: 'ground' }, { name: '폭포오르기', power: 80, type: 'water' }], ability: '쓱쓱' },
+          'P382': { id: 'P382', name: '원시가이오가', type: 'water', unlockLevel: 999, unlockStage: 999, hp: 240, attack: 150, defense: 100, speed: 90, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10077.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10077.png', moves: [{ name: '근원의파동', power: 110, type: 'water' }, { name: '번개', power: 110, type: 'electric' }], ability: '시원의바다' },
+          'P383': { id: 'P383', name: '원시그란돈', type: 'ground', unlockLevel: 999, unlockStage: 999, hp: 240, attack: 150, defense: 100, speed: 90, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10078.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10078.png', moves: [{ name: '단애의칼', power: 120, type: 'ground' }, { name: '불대문자', power: 110, type: 'fire' }], ability: '끝의대지' },
+          'B646': { id: 'B646', name: '블랙큐레무', type: 'dragon', unlockLevel: 999, unlockStage: 999, hp: 200, attack: 170, defense: 100, speed: 95, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10022.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10022.png', moves: [{ name: '크로스썬더', power: 85, type: 'electric' }, { name: '프리즈볼트', power: 140, type: 'ice' }], ability: '테라볼티지' },
+          'W646': { id: 'W646', name: '화이트큐레무', type: 'dragon', unlockLevel: 999, unlockStage: 999, hp: 200, attack: 120, defense: 90, speed: 95, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10023.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10023.png', moves: [{ name: '크로스플레임', power: 85, type: 'fire' }, { name: '콜드플레어', power: 140, type: 'ice' }], ability: '터보블레이즈' },
+          'D800': { id: 'D800', name: '황혼의갈기', type: 'steel', unlockLevel: 999, unlockStage: 999, hp: 190, attack: 157, defense: 127, speed: 77, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10155.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10155.png', moves: [{ name: '메테오드라이브', power: 100, type: 'steel' }, { name: '포톤가이저', power: 100, type: 'psychic' }], ability: '프리즘아머' },
+          'L800': { id: 'L800', name: '새벽의날개', type: 'ghost', unlockLevel: 999, unlockStage: 999, hp: 190, attack: 113, defense: 109, speed: 77, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10156.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10156.png', moves: [{ name: '섀도레이', power: 100, type: 'ghost' }, { name: '포톤가이저', power: 100, type: 'psychic' }], ability: '프리즘아머' },
+          'C888': { id: 'C888', name: '자시안(검왕)', type: 'steel', unlockLevel: 999, unlockStage: 999, hp: 190, attack: 170, defense: 115, speed: 148, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10188.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10188.png', moves: [{ name: '거수참', power: 100, type: 'steel' }, { name: '치근거리기', power: 90, type: 'fairy' }], ability: '불요의검' },
+          'C889': { id: 'C889', name: '자마젠타(방패왕)', type: 'steel', unlockLevel: 999, unlockStage: 999, hp: 190, attack: 130, defense: 145, speed: 128, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10189.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10189.png', moves: [{ name: '거수탄', power: 100, type: 'steel' }, { name: '인파이트', power: 100, type: 'fighting' }], ability: '불굴의방패' },
+          151: { id: 151, name: '뮤', type: 'psychic', isLegendary: true, hp: 100, attack: 100, defense: 100, speed: 100, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/151.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/151.png', moves: [{ name: '사이코키네시스', power: 90, type: 'psychic' }, { name: '파동탄', power: 90, type: 'fighting' }], ability: '싱크로' },
+          251: { id: 251, name: '세레비', type: 'grass', isLegendary: true, hp: 100, attack: 100, defense: 100, speed: 100, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/251.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/251.png', moves: [{ name: '기가드레인', power: 75, type: 'grass' }, { name: '사이코키네시스', power: 90, type: 'psychic' }], ability: '자연회복' },
+          385: { id: 385, name: '지라치', type: 'steel', isLegendary: true, hp: 100, attack: 100, defense: 100, speed: 100, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/385.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/385.png', moves: [{ name: '파멸의소원', power: 140, type: 'steel' }, { name: '사념의박치기', power: 80, type: 'psychic' }], ability: '하늘의은총' },
+          494: { id: 494, name: '비크티니', type: 'fire', isLegendary: true, hp: 100, attack: 100, defense: 100, speed: 100, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/494.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/494.png', moves: [{ name: 'V제너레이트', power: 130, type: 'fire' }, { name: '사념의박치기', power: 80, type: 'psychic' }], ability: '승리의별' },
+          647: { id: 647, name: '케르디오', type: 'water', isLegendary: true, hp: 140, attack: 110, defense: 90, speed: 108, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/647.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/647.png', moves: [{ name: '파도타기', power: 90, type: 'water' }, { name: '성스러운칼', power: 90, type: 'fighting' }], ability: '정의의마음', awakened: ['R647'] },
+          648: { id: 648, name: '메로엣타(보이스폼)', type: 'normal', isLegendary: true, hp: 150, attack: 77, defense: 77, speed: 90, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/648.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/648.png', moves: [{ name: '하이퍼보이스', power: 90, type: 'normal' }, { name: '사이코키네시스', power: 90, type: 'psychic' }], ability: '하늘의은총', awakened: ['P648'] },
+          720: { id: 720, name: '후파(굴레에빠진)', type: 'psychic', isLegendary: true, hp: 130, attack: 110, defense: 60, speed: 70, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/720.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/720.png', moves: [{ name: '환상빔', power: 65, type: 'psychic' }, { name: '섀도볼', power: 80, type: 'ghost' }], ability: '매지션', awakened: ['U720'] },
+          'R647': { id: 'R647', name: '케르디오(각오의모습)', type: 'fighting', unlockLevel: 999, unlockStage: 999, hp: 140, attack: 129, defense: 90, speed: 108, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10024.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10024.png', moves: [{ name: '신비의칼', power: 85, type: 'fighting' }, { name: '하이드로펌프', power: 110, type: 'water' }], ability: '정의의마음' },
+          'P648': { id: 'P648', name: '메로엣타(스텝폼)', type: 'fighting', unlockLevel: 999, unlockStage: 999, hp: 150, attack: 128, defense: 90, speed: 128, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10018.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10018.png', moves: [{ name: '인파이트', power: 120, type: 'fighting' }, { name: '객기', power: 70, type: 'normal' }], ability: '하늘의은총' },
+          'U720': { id: 'U720', name: '후파(굴레를벗어난)', type: 'dark', unlockLevel: 999, unlockStage: 999, hp: 130, attack: 160, defense: 60, speed: 80, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10086.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10086.png', moves: [{ name: '이차원러시', power: 100, type: 'dark' }, { name: '사이코키네시스', power: 90, type: 'psychic' }], ability: '매지션' },
+          'O483': { id: 'O483', name: '디아루가(오리진폼)', type: 'steel', unlockLevel: 999, unlockStage: 999, hp: 200, attack: 100, defense: 120, speed: 90, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10245.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10245.png', moves: [{ name: '러스터캐논', power: 80, type: 'steel' }, { name: '시간의포효', power: 100, type: 'dragon' }], ability: '프레셔' },
+          'O484': { id: 'O484', name: '펄기아(오리진폼)', type: 'water', unlockLevel: 999, unlockStage: 999, hp: 190, attack: 100, defense: 100, speed: 120, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10246.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10246.png', moves: [{ name: '파도타기', power: 80, type: 'water' }, { name: '공간절단', power: 100, type: 'dragon' }], ability: '프레셔' },
+          'O487': { id: 'O487', name: '기라티나(오리진폼)', type: 'ghost', unlockLevel: 999, unlockStage: 999, hp: 220, attack: 120, defense: 100, speed: 90, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10007.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10007.png', moves: [{ name: '섀도다이브', power: 90, type: 'ghost' }, { name: '용의파동', power: 90, type: 'dragon' }], ability: '부유' },
+          'U800': { id: 'U800', name: '울트라네크로즈마', type: 'dragon', unlockLevel: 999, unlockStage: 999, hp: 210, attack: 167, defense: 97, speed: 129, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10157.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10157.png', moves: [{ name: '포톤가이저', power: 100, type: 'psychic' }, { name: '역린', power: 120, type: 'dragon' }], ability: '브레인포스' },
+          493: { id: 493, name: '아르세우스', type: 'normal', isLegendary: true, hp: 120, attack: 120, defense: 120, speed: 120, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/493.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/493.png', moves: [{ name: '심판의뭉치', power: 100, type: 'normal' }, { name: '파괴광선', power: 150, type: 'normal' }], ability: '멀티타입' },
+          
+          'A25': { id: 'A25', name: '지우의 피카츄', type: 'electric', unlockLevel: 999, unlockStage: 999, hp: 180, attack: 130, defense: 80, speed: 140, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10094.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10094.png', moves: [{ name: '10만볼트', power: 120, type: 'electric' }, { name: '아이언테일', power: 100, type: 'steel' }], ability: '정전기' },
+          'A658': { id: 'A658', name: '지우개굴닌자', type: 'water', unlockLevel: 999, unlockStage: 999, hp: 210, attack: 160, defense: 90, speed: 150, front: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10116.png', back: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/10116.png', moves: [{ name: '거대물수리검', power: 120, type: 'water' }, { name: '깜짝베기', power: 70, type: 'dark' }], ability: '유대변화' }
+        };
+
+        const HealthBar = ({ current, max }) => {
+          const percentage = Math.max(0, Math.min(100, (current / max) * 100));
+          let colorClass = 'bg-green-500';
+          if (percentage <= 20) colorClass = 'bg-red-500';
+          else if (percentage <= 50) colorClass = 'bg-yellow-400';
+
+          return (
+            <div className="w-full bg-gray-700 h-3 rounded-full border-2 border-gray-900 overflow-hidden mt-1">
+              <div 
+                className={`h-full ${colorClass} transition-all duration-500 ease-out`} 
+                style={{ width: `${percentage}%` }}
+              ></div>
+            </div>
+          );
+        };
+
+        function App() {
+          const [gameState, setGameState] = useState('start');
+          const [player, setPlayer] = useState(null);
+          const [enemy, setEnemy] = useState(null);
+          const [currentTrainer, setCurrentTrainer] = useState({ name: '', type: '', color: '' });
+          
+          const [enemyParty, setEnemyParty] = useState([]);
+          const [enemyIndex, setEnemyIndex] = useState(0);
+
+          const [playerHp, setPlayerHp] = useState(0);
+          const [enemyHp, setEnemyHp] = useState(0);
+          const [potions, setPotions] = useState(3);
+
+          const playerHpRef = useRef(0);
+          const enemyHpRef = useRef(0);
+
+          const updatePlayerHp = (val) => { playerHpRef.current = val; setPlayerHp(val); };
+          const updateEnemyHp = (val) => { enemyHpRef.current = val; setEnemyHp(val); };
+          
+          const [stage, setStage] = useState(1);
+          const [playerLevel, setPlayerLevel] = useState(1);
+          const [playerExp, setPlayerExp] = useState(0);
+          
+          const [ownedLegendaries, setOwnedLegendaries] = useState([]);
+          const [pendingLegendaryGen, setPendingLegendaryGen] = useState(null);
+          const [legendaryOptions, setLegendaryOptions] = useState([]);
+          const [shinyList, setShinyList] = useState([]); 
+          const [masterPokemonIds, setMasterPokemonIds] = useState([]); 
+          
+          const [unlockedEvolutions, setUnlockedEvolutions] = useState([]);
+          const [evolvedAway, setEvolvedAway] = useState([]);
+          const [partyHpPct, setPartyHpPct] = useState({});
+          const [faintedPokemonIds, setFaintedPokemonIds] = useState([]);
+          
+          const [ashHats, setAshHats] = useState(0); // 지우의 모자 (회차를 넘나드는 영구 아이템)
+          
+          const [inventory, setInventory] = useState({ keystones: 0, megaStones: {}, orbs: {}, splicers: 0, necropluses: 0, rustedSwords: 0, rustedShields: 0, secretSwords: 0, relicSongs: 0, prisonBottles: 0, adamantCrystals: 0, lustrousGlobes: 0, griseousOrbs: 0, ultraCrystals: 0 });
+          const [clearRewards, setClearRewards] = useState({ keystones: 0, megaStones: [], orbs: [], splicers: 0, necropluses: 0, rustedSwords: 0, rustedShields: 0, secretSwords: 0, relicSongs: 0, prisonBottles: 0, adamantCrystals: 0, lustrousGlobes: 0, griseousOrbs: 0, ultraCrystals: 0 });
+          const [megaSelectOptions, setMegaSelectOptions] = useState([]);
+          const [fusionSelectOptions, setFusionSelectOptions] = useState([]);
+
+          const [bp, setBp] = useState(0);
+          const [statUpgrades, setStatUpgrades] = useState({});
+          const [selectedUpgradePokemonId, setSelectedUpgradePokemonId] = useState(null);
+
+          const [battleField, setBattleField] = useState(null);
+
+          const [pendingHiddenStage, setPendingHiddenStage] = useState(null); 
+          const [isHiddenBattle, setIsHiddenBattle] = useState(false);
+          const [lastClearedWasHidden, setLastClearedWasHidden] = useState(false);
+
+          const [dialogue, setDialogue] = useState('');
+          const [isAnimating, setIsAnimating] = useState(false);
+          const [menuView, setMenuView] = useState('main'); 
+          
+          const [playerAnim, setPlayerAnim] = useState('');
+          const [enemyAnim, setEnemyAnim] = useState('');
+          
+          const [zoom, setZoom] = useState(1);
+          const [bgmOn, setBgmOn] = useState(false);
+          const [activeEffect, setActiveEffect] = useState(null);
+
+          const [tutorialRead, setTutorialRead] = useState(false);
+          const tutorialScrollRef = useRef(null);
+
+          const bgmRef = useRef(null);
+
+          const getBgmSrc = (currentStage) => {
+            if (currentStage === 46) return "./1-27. Battle! (Lorekeeper Zinnia).mp3"; // 지우 전투 웅장한 브금
+            if (currentStage > 30) return "./1-17. N's Castle.mp3";
+            if (currentStage > 20) return "./1-27. Battle! (Lorekeeper Zinnia).mp3";
+            if (currentStage > 15) return "./1-07. Pokémon Red  -  Pokémon Blue Medley.mp3";
+            if (currentStage > 10) return "./1-08. Pokémon Gold  -  Pokémon Silver Medley.mp3";
+            return "./1-02. Main Theme - Pokémon Red & Blue (Melee).mp3"; 
+          };
+
+          const currentBgmSrc = getBgmSrc(stage);
+
+          useEffect(() => {
+            if (bgmRef.current) {
+              bgmRef.current.load();
+              if (bgmOn) {
+                bgmRef.current.volume = 0.4;
+                const playPromise = bgmRef.current.play();
+                if (playPromise !== undefined) {
+                  playPromise.catch(e => console.log('BGM 재생 대기:', e));
+                }
+              }
+            }
+          }, [currentBgmSrc]);
+
+          useEffect(() => {
+            if (bgmRef.current) {
+              if (bgmOn) {
+                bgmRef.current.volume = 0.4;
+                const playPromise = bgmRef.current.play();
+                if (playPromise !== undefined) {
+                  playPromise.catch(e => console.log('BGM 재생 대기:', e));
+                }
+              } else {
+                bgmRef.current.pause();
+              }
+            }
+          }, [bgmOn]);
+
+          useEffect(() => {
+            if (gameState === 'tutorial') {
+              setTutorialRead(false);
+              setTimeout(() => {
+                if (tutorialScrollRef.current) {
+                  const { scrollHeight, clientHeight } = tutorialScrollRef.current;
+                  if (scrollHeight <= clientHeight + 10) {
+                    setTutorialRead(true);
+                  }
+                }
+              }, 100);
+            }
+          }, [gameState]);
+
+          const handleTutorialScroll = (e) => {
+            const { scrollTop, scrollHeight, clientHeight } = e.target;
+            if (scrollHeight - scrollTop - clientHeight < 20) {
+              setTutorialRead(true);
+            }
+          };
+
+          const playClickSound = () => {
+            try {
+              const audio = new Audio('./tmpq91k5v_6.mp3');
+              audio.volume = 0.5;
+              const playPromise = audio.play();
+              if (playPromise !== undefined) {
+                playPromise.catch(e => console.log('SFX 재생 대기:', e));
+              }
+            } catch (e) {
+              console.log('오디오 에러:', e);
+            }
+          };
+
+          const playLevelUpSound = () => {
+            try {
+              const audio = new Audio('./12_3.mp3');
+              audio.volume = 0.8;
+              
+              if (bgmRef.current && bgmOn) {
+                bgmRef.current.volume = 0.1; 
+                audio.onended = () => {
+                  if (bgmRef.current && bgmOn) bgmRef.current.volume = 0.4; 
+                };
+              }
+
+              const playPromise = audio.play();
+              if (playPromise !== undefined) {
+                playPromise.catch(e => console.log('레벨업 SFX 재생 대기:', e));
+              }
+            } catch (e) {
+              console.log('오디오 에러:', e);
+            }
+          };
+
+          const toggleBgm = () => {
+            setBgmOn(!bgmOn);
+          };
+
+          const propagateMasterStatus = (oldId, newId) => {
+            setMasterPokemonIds(prev => {
+                if (prev.includes(oldId) && !prev.includes(newId)) {
+                    return [...prev, newId];
+                }
+                return prev;
+            });
+          };
+
+          const getScaledStats = (pokemon, level, forceShiny = null) => {
+            const scale = 1 + (level - 1) * 0.15; 
+            let isShiny = forceShiny;
+            if (isShiny === null) {
+              isShiny = shinyList.includes(pokemon.id);
+            }
+            const front = isShiny ? pokemon.front.replace('/pokemon/', '/pokemon/shiny/') : pokemon.front;
+            const back = isShiny ? pokemon.back.replace('/pokemon/back/', '/pokemon/back/shiny/') : pokemon.back;
+
+            const upgrade = statUpgrades[pokemon.id] || { hp: 0, attack: 0, defense: 0 };
+
+            let finalName = pokemon.name;
+            if (masterPokemonIds.includes(pokemon.id)) {
+              finalName = `[포켓몬 마스터] ${finalName}`;
+            }
+            if (isShiny) {
+              finalName = `✨${finalName}`;
+            }
+
+            return {
+              ...pokemon,
+              maxHp: Math.floor(pokemon.hp * scale) + upgrade.hp,
+              attack: Math.floor(pokemon.attack * scale) + upgrade.attack,
+              defense: Math.floor(pokemon.defense * scale) + upgrade.defense,
+              level: level,
+              isShiny: isShiny,
+              front: front,
+              back: back,
+              name: finalName
+            };
+          };
+
+          const handleSelectStarter = (pokemonId) => {
+            setPlayer({ baseId: pokemonId });
+            setBgmOn(true); 
+            setGameState('tutorial');
+          };
+
+          const executeStart = () => {
+            const pokemonId = player.baseId;
+            const baseSelected = pokemonData[pokemonId];
+            
+            const isShiny = Math.random() < 0.1; 
+            
+            const preservedShinies = shinyList.filter(id => masterPokemonIds.includes(id));
+            if (isShiny) preservedShinies.push(pokemonId);
+            setShinyList([...new Set(preservedShinies)]);
+
+            setBp(0);
+            setStatUpgrades({});
+            setSelectedUpgradePokemonId(pokemonId);
+
+            const scaledPlayer = getScaledStats(baseSelected, 1, isShiny);
+
+            setPlayer({ ...scaledPlayer, baseId: pokemonId });
+            updatePlayerHp(scaledPlayer.maxHp);
+            
+            setStage(1);
+            setPlayerLevel(1);
+            setPlayerExp(0);
+            setPotions(3);
+            setOwnedLegendaries([...masterPokemonIds]); 
+            setPendingLegendaryGen(null);
+            setLegendaryOptions([]);
+            setUnlockedEvolutions([]);
+            setEvolvedAway([]);
+            setPartyHpPct({});
+            setFaintedPokemonIds([]);
+            
+            // 지우의 모자는 회차를 넘나들며 유지되므로 초기화하지 않음.
+            setInventory({ keystones: 0, megaStones: {}, orbs: {}, splicers: 0, necropluses: 0, rustedSwords: 0, rustedShields: 0, secretSwords: 0, relicSongs: 0, prisonBottles: 0, adamantCrystals: 0, lustrousGlobes: 0, griseousOrbs: 0, ultraCrystals: 0 });
+            setClearRewards({ keystones: 0, megaStones: [], orbs: [], splicers: 0, necropluses: 0, rustedSwords: 0, rustedShields: 0, secretSwords: 0, relicSongs: 0, prisonBottles: 0, adamantCrystals: 0, lustrousGlobes: 0, griseousOrbs: 0, ultraCrystals: 0 });
+            
+            setEnemyParty([]);
+            setEnemyIndex(0);
+            setBattleField(null);
+            setPendingHiddenStage(null);
+            setIsHiddenBattle(false);
+            setLastClearedWasHidden(false);
+
+            startBattle({ ...scaledPlayer, baseId: pokemonId }, 1);
+          };
+
+          const startBattle = (currentPlayer, currentStage) => {
+            const trainerInfo = getTrainerInfo(currentStage);
+            setCurrentTrainer(trainerInfo);
+
+            let eligibleEnemies = Object.keys(pokemonData).filter(id => 
+              pokemonData[id].unlockStage <= currentStage && !pokemonData[id].isLegendary && Number(id) !== currentPlayer.baseId && !String(id).startsWith('M') && !String(id).startsWith('P') && !String(id).startsWith('B') && !String(id).startsWith('W') && !String(id).startsWith('D') && !String(id).startsWith('L') && !String(id).startsWith('C') && !String(id).startsWith('A')
+            );
+
+            if (currentPlayer.level <= 3 && trainerInfo.type === 'normal') {
+              const weakEnemies = eligibleEnemies.filter(id => 
+                typeMatchup[currentPlayer.type] && typeMatchup[currentPlayer.type][pokemonData[id].type] === 2
+              );
+              if (weakEnemies.length > 0) eligibleEnemies = weakEnemies;
+            }
+
+            const enemies = eligibleEnemies.length > 0 ? eligibleEnemies : [Object.keys(pokemonData)[0]];
+            let generatedEnemies = [];
+            
+            if (currentStage === 46) {
+                // 시크릿 최종전 : 진정한 마스터 지우 (지우의 피카츄, 망나뇽, 팬텀, 루카리오, 지우개굴닌자)
+                const ashTeamIds = ['A25', 149, 94, 448, 'A658']; 
+                generatedEnemies = ashTeamIds.map(id => getScaledStats(pokemonData[id], currentStage + 10, false));
+            } else if (currentStage === 45) {
+                const leonTeamIds = [813, 887, 'M6Y']; 
+                generatedEnemies = leonTeamIds.map(id => getScaledStats(pokemonData[id], currentStage + 3, false));
+            } else if (currentStage === 44) {
+                const stevenTeamIds = [74, 376, 791]; 
+                generatedEnemies = stevenTeamIds.map(id => getScaledStats(pokemonData[id], currentStage + 1, false));
+            } else if (currentStage === 43) {
+                const dianthaTeamIds = [282, 700, 716]; 
+                generatedEnemies = dianthaTeamIds.map(id => getScaledStats(pokemonData[id], currentStage + 1, false));
+            } else if (currentStage === 42) {
+                const cynthiaTeamIds = [197, 448, 445]; 
+                generatedEnemies = cynthiaTeamIds.map(id => getScaledStats(pokemonData[id], currentStage + 1, false));
+            } else if (currentStage === 41) {
+                const lanceTeamIds = [6, 149, 384]; 
+                generatedEnemies = lanceTeamIds.map(id => getScaledStats(pokemonData[id], currentStage + 1, false));
+            } else if (currentStage === 40) {
+                const giovanniTeamIds = [94, 445, 150]; 
+                generatedEnemies = giovanniTeamIds.map(id => getScaledStats(pokemonData[id], Math.max(1, currentStage - 1), false));
+            } else {
+                const enemyCount = currentStage >= 30 ? 2 : 1;
+                for (let i = 0; i < enemyCount; i++) {
+                    const randomEnemyId = enemies[Math.floor(Math.random() * enemies.length)];
+                    const baseEnemy = pokemonData[randomEnemyId];
+                    const enemyLevel = Math.max(1, currentStage - 1);
+                    const enemyIsShiny = Math.random() < 0.1;
+                    generatedEnemies.push(getScaledStats(baseEnemy, enemyLevel, enemyIsShiny));
+                }
+            }
+            
+            setEnemyParty(generatedEnemies);
+            setEnemyIndex(0);
+            setEnemy(generatedEnemies[0]);
+            updateEnemyHp(generatedEnemies[0].maxHp);
+
+            let selectedField = null;
+            if (currentStage >= 30 && currentStage !== 46) {
+              const fields = [
+                { name: '🔥 가뭄 필드', effect: 'fire_up', desc: '불꽃 타입 기술 위력 1.5배! 물 타입 위력 반감!' },
+                { name: '🌊 폭우 필드', effect: 'water_up', desc: '물 타입 기술 위력 1.5배! 불꽃 타입 위력 반감!' },
+                { name: '⚡ 일렉트릭필드', effect: 'electric_up', desc: '전기 타입 기술 위력 1.5배!' },
+                { name: '🪨 모래바람 필드', effect: 'sandstorm', desc: '매 턴 종료 시 바위/땅/강철 이외의 포켓몬 지속 피해!' },
+                { name: '❄️ 설원 필드', effect: 'snow', desc: '얼음 타입 포켓몬의 방어력 1.5배 증가!' }
+              ];
+              selectedField = fields[Math.floor(Math.random() * fields.length)];
+            }
+            setBattleField(selectedField);
+            
+            setGameState('battle');
+            setMenuView('hidden');
+            
+            (async () => {
+              setIsAnimating(true);
+              if (currentStage === 46) {
+                 setDialogue(`지우: "기다리고 있었어! 우리들의 전력을 보여줄게!"`); await sleep(2000);
+                 setDialogue(`진정한 포켓몬 마스터 지우가 승부를 걸어왔다!`); await sleep(1500);
+              } else {
+                 setDialogue(`[스테이지 ${currentStage}] ${trainerInfo.name}(이)가 승부를 걸어왔다!`); await sleep(1500);
+              }
+
+              if (selectedField) {
+                setDialogue(`야생의 배틀 필드에 [${selectedField.name}] 환경이 가동되었다!`);
+                await sleep(1500);
+              }
+
+              setDialogue(`${trainerInfo.name}(은)는 ${generatedEnemies[0].name}(을)를 내보냈다!`);
+              await sleep(1200);
+              setDialogue(`가라! ${currentPlayer.name}!`);
+              await sleep(800);
+              setDialogue(`무엇을 할까?`);
+              setMenuView('main');
+              setIsAnimating(false);
+            })();
+          };
+
+          const startHiddenBattle = (mythicalId) => {
+            setIsHiddenBattle(true);
+            setCurrentTrainer({ name: '미지의 시공간', type: 'hidden', color: 'text-purple-500 font-black text-xl' });
+
+            const mythicalBase = pokemonData[mythicalId];
+            const isShiny = Math.random() < 0.1;
+            const enemyLevel = stage; 
+            const scaledEnemy = getScaledStats(mythicalBase, enemyLevel, isShiny);
+
+            setEnemyParty([scaledEnemy]);
+            setEnemyIndex(0);
+            setEnemy(scaledEnemy);
+            updateEnemyHp(scaledEnemy.maxHp);
+
+            setBattleField({ name: '🌌 시공간의 균열', effect: 'space_time', desc: '미지의 차원 에너지가 충만합니다!' });
+
+            setGameState('battle');
+            setMenuView('hidden');
+
+            (async () => {
+              setIsAnimating(true);
+              setDialogue(`시공간의 틈새로 빨려들어갔다...!`);
+              await sleep(1500);
+              setDialogue(`야생의 환상의 포켓몬 ${scaledEnemy.name}(이)가 나타났다!`);
+              await sleep(1500);
+              setDialogue(`가라! ${player.name}!`);
+              await sleep(800);
+              setDialogue(`무엇을 할까?`);
+              setMenuView('main');
+              setIsAnimating(false);
+            })();
+          };
+
+          const calculateDamage = (attacker, defender, move, attackerHp, defenderHp) => {
+            const isCrit = Math.random() < 0.1 ? true : false; 
+            let effectiveness = getEffectiveness(move.type, defender.type);
+            
+            let dmgMultiplier = 1;
+            let attackerMsg = null, defenderMsg = null;
+            let recoil = 0, heal = 0;
+
+            if (attacker.ability) {
+              if (attacker.ability === '잔비' && move.type === 'water') { dmgMultiplier *= 1.5; attackerMsg = '[잔비] 물타입 위력이 올랐다!'; }
+              if (attacker.ability === '가뭄' && move.type === 'fire') { dmgMultiplier *= 1.5; attackerMsg = '[가뭄] 불꽃타입 위력이 올랐다!'; }
+              if (attacker.ability === '시원의바다' && move.type === 'water') { dmgMultiplier *= 1.5; attackerMsg = '[시원의바다] 물타입 위력이 올랐다!'; }
+              if (attacker.ability === '끝의대지' && move.type === 'fire') { dmgMultiplier *= 1.5; attackerMsg = '[끝의대지] 불꽃타입 위력이 올랐다!'; }
+              if (attacker.ability === '페어리오라' && move.type === 'fairy') { dmgMultiplier *= 1.5; attackerMsg = '[페어리오라] 페어리 위력이 올랐다!'; }
+              if (attacker.ability === '다크오라' && move.type === 'dark') { dmgMultiplier *= 1.5; attackerMsg = '[다크오라] 악타입 위력이 올랐다!'; }
+              if (attacker.ability === '일렉트릭메이커' && move.type === 'electric') { dmgMultiplier *= 1.5; attackerMsg = '[일렉트릭메이커] 전기 위력이 올랐다!'; }
+              if (attacker.ability === '델타스트림' && (move.type === 'flying' || move.type === 'dragon')) { dmgMultiplier *= 1.2; attackerMsg = '[델타스트림] 강력한 난기류가 기술의 위력을 높였다!'; }
+              if (attacker.ability === '적응력') { dmgMultiplier *= 1.2; attackerMsg = '[적응력] 자속 기술의 위력이 올라갔다!'; }
+              if (attacker.ability === '모래의힘' && (move.type === 'ground' || move.type === 'rock' || move.type === 'steel')) { dmgMultiplier *= 1.5; attackerMsg = '[모래의힘] 모래바람의 힘으로 위력이 올랐다!'; }
+              if (attacker.ability === '불요의검') { dmgMultiplier *= 1.3; attackerMsg = '[불요의검] 검이 빛나며 공격력이 증가했다!'; }
+              if (attacker.ability === '에어록') { dmgMultiplier *= 1.2; attackerMsg = '[에어록] 날씨를 무효화하고 위력을 높였다!'; }
+              if ((attacker.ability === '터보블레이즈' || attacker.ability === '테라볼티지') && effectiveness < 1) { 
+                dmgMultiplier *= 1.3; attackerMsg = `[${attacker.ability}] 상대방의 특성을 돌파하여 무시무시한 힘을 냈다!`; 
+              }
+              if (attacker.ability === '재생력' && Math.random() < 0.4) {
+                heal = Math.floor(attacker.maxHp * 0.15); attackerMsg = '[재생력] 체력을 조금 회복했다!';
+              }
+              if (attacker.ability === '하늘의은총') {
+                dmgMultiplier *= 1.2; attackerMsg = '[하늘의은총] 기술의 기운이 증폭되어 위력이 올랐다!';
+              }
+              if (attacker.ability === '승리의별') {
+                dmgMultiplier *= 1.3; attackerMsg = '[승리의별] 승리의 기운으로 파괴력이 강화된다!';
+              }
+              if (attacker.ability === '정의의마음') {
+                dmgMultiplier *= 1.2; attackerMsg = '[정의의마음] 투지가 타올라 공격력이 상승했다!';
+              }
+              if (attacker.ability === '매지션') {
+                dmgMultiplier *= 1.2; attackerMsg = '[매지션] 신비한 마력으로 위력이 올랐다!';
+              }
+              if (attacker.ability === '브레인포스' && effectiveness >= 2) { 
+                dmgMultiplier *= 1.25; attackerMsg = '[브레인포스] 약점을 찔러 위력이 더욱 상승했다!'; 
+              }
+              if (attacker.ability === '유대변화') {
+                dmgMultiplier *= 1.3; attackerMsg = '[유대변화] 지우와의 깊은 유대로 전력을 다한다!';
+              }
+            }
+
+            if (battleField) {
+              if (battleField.effect === 'fire_up') {
+                if (move.type === 'fire') { dmgMultiplier *= 1.5; attackerMsg = '🔥 가뭄 필드 속에서 불꽃의 위력이 폭증했다!'; }
+                if (move.type === 'water') { dmgMultiplier *= 0.5; attackerMsg = '🔥 가뭄의 뜨거운 열기로 물의 힘이 억제되었다...'; }
+              } else if (battleField.effect === 'water_up') {
+                if (move.type === 'water') { dmgMultiplier *= 1.5; attackerMsg = '🌊 폭우 필드 속에서 폭발적인 수압이 몰아쳤다!'; }
+                if (move.type === 'fire') { dmgMultiplier *= 0.5; attackerMsg = '🌊 폭우로 인해 불꽃의 불씨가 사그라들었다...'; }
+              } else if (battleField.effect === 'electric_up') {
+                if (move.type === 'electric') { dmgMultiplier *= 1.5; attackerMsg = '⚡ 일렉트릭필드의 대전 에너지로 정전기 위력이 격상했다!'; }
+              } else if (battleField.effect === 'space_time') {
+                if (Math.random() < 0.25) { dmgMultiplier *= 1.4; attackerMsg = '🌌 시공간의 에너지가 흡수되어 위력이 폭발적으로 상승했다!'; }
+              }
+            }
+
+            let defenseVal = defender.defense || 10;
+            if (defender.ability) {
+              if (defender.ability === '잔비' && move.type === 'fire') { dmgMultiplier *= 0.5; defenderMsg = '[잔비] 불꽃 피해가 약화되었다!'; }
+              if (defender.ability === '가뭄' && move.type === 'water') { dmgMultiplier *= 0.5; defenderMsg = '[가뭄] 물 피해가 약화되었다!'; }
+              if (defender.ability === '시원의바다' && move.type === 'fire') { dmgMultiplier *= 0; defenderMsg = '[시원의바다] 불꽃 기술이 완전히 증발했다!'; }
+              if (defender.ability === '끝의대지' && move.type === 'water') { dmgMultiplier *= 0; defenderMsg = '[끝의대지] 물 기술이 완전히 증발했다!'; }
+              if ((defender.ability === '멀티스케일' || defender.ability === '스펙터가드') && defenderHp === defender.maxHp) {
+                dmgMultiplier *= 0.5; defenderMsg = `[${defender.ability}] 피해를 반감시켰다!`;
+              }
+              if (defender.ability === '델타스트림' && effectiveness >= 2) { dmgMultiplier *= 0.5; defenderMsg = '[델타스트림] 난기류가 약점 피해를 반감시켰다!'; }
+              if (defender.ability === '불굴의방패') { dmgMultiplier *= 0.7; defenderMsg = '[불굴의방패] 방패로 피해를 줄였다!'; }
+              if (defender.ability === '프레셔' || defender.ability === '메탈프로텍트') { dmgMultiplier *= 0.9; }
+              if (defender.ability === '오라브레이크' && (move.type === 'fairy' || move.type === 'dark')) { dmgMultiplier *= 0.5; defenderMsg = '[오라브레이크] 기술의 오라가 역전되었다!'; }
+              if (defender.ability === '부유' && move.type === 'ground') { dmgMultiplier *= 0; defenderMsg = '[부유] 공중에 떠 있어 땅 타입 기술이 닿지 않는다!'; }
+              if (defender.ability === '불굴의마음') { dmgMultiplier *= 0.8; }
+              if (defender.ability === '탈' && Math.random() < 0.25) { dmgMultiplier *= 0; defenderMsg = '[탈] 인형이 공격을 대신 받아 피해가 없다!'; }
+              if (defender.ability === '정전기' && Math.random() < 0.3) { recoil = Math.floor(attackerHp * 0.15); defenderMsg = '[정전기] 공격자가 마비성 피해를 입었다!'; }
+              if (defender.ability === '불꽃몸' && Math.random() < 0.3) { recoil = Math.floor(attackerHp * 0.15); defenderMsg = '[불꽃몸] 공격자가 화상 피해를 입었다!'; }
+              if (defender.ability === '멀티타입') { dmgMultiplier *= 0.8; defenderMsg = '[멀티타입] 아르세우스가 모든 타입의 데미지를 경감시켰다!'; }
+              if (defender.ability === '프리즘아머' && effectiveness >= 2) { dmgMultiplier *= 0.75; defenderMsg = '[프리즘아머] 약점 피해를 줄여서 받았다!'; }
+            }
+
+            if (battleField && battleField.effect === 'snow' && defender.type === 'ice') {
+              defenseVal = Math.floor(defenseVal * 1.5);
+              defenderMsg = '❄️ 설원 필드 효과로 인해 얼음 타입 방어력이 올랐다!';
+            }
+
+            const levelFactor = (2 * attacker.level) / 5 + 2;
+            const attackVal = attacker.attack || 10;
+            const statRatio = attackVal / defenseVal;
+            const movePower = move.power || 40;
+            
+            const baseDamage = ((levelFactor * movePower * statRatio) / 5) + 2;
+            const randomMultiplier = 0.85 + Math.random() * 0.15;
+            
+            let finalDamage = Math.floor(baseDamage * randomMultiplier * effectiveness * dmgMultiplier);
+
+            if (isCrit && finalDamage > 0) {
+              finalDamage = Math.floor(finalDamage * 1.15);
+            }
+
+            if (drainMoves.includes(move.name) && finalDamage > 0) {
+              let drainRatio = 0.5;
+              if (move.name === '데스윙') drainRatio = 0.75; 
+              if (move.name === '기가드레인') drainRatio = 0.25;
+              heal = Math.floor(finalDamage * drainRatio);
+              attackerMsg = `[${move.name}] 상대로부터 체력을 흡수했다!`;
+            }
+
+            return { damage: Math.max(0, finalDamage), isCrit, effectiveness, attackerMsg, defenderMsg, recoil, heal };
+          };
+
+          const applyFieldEndTurnEffects = async (playerCurrentHp, enemyCurrentHp) => {
+            if (playerCurrentHp <= 0 || enemyCurrentHp <= 0) return { pHP: playerCurrentHp, eHP: enemyCurrentHp };
+            if (!battleField || battleField.effect !== 'sandstorm') return { pHP: playerCurrentHp, eHP: enemyCurrentHp };
+
+            let pDamage = 0, eDamage = 0, effectTriggered = false;
+            const immuneTypes = ['rock', 'ground', 'steel'];
+
+            if (!immuneTypes.includes(player.type)) { pDamage = Math.floor(player.maxHp * 0.06); effectTriggered = true; }
+            if (!immuneTypes.includes(enemy.type)) { eDamage = Math.floor(enemy.maxHp * 0.06); effectTriggered = true; }
+
+            if (effectTriggered) {
+              setDialogue('🪨 모래바람이 거세게 불어 포켓몬들이 데미지를 입는다!');
+              await sleep(1000);
+            }
+            return { pHP: Math.max(pDamage > 0 ? 1 : 0, playerCurrentHp - pDamage), eHP: Math.max(eDamage > 0 ? 1 : 0, enemyCurrentHp - eDamage) };
+          };
+
+          const enemyTurn = async () => {
+            setIsAnimating(true);
+            setMenuView('hidden');
+            
+            const randomMove = enemy.moves[Math.floor(Math.random() * enemy.moves.length)];
+            setDialogue(`${currentTrainer.name}의 ${enemy.name}의 ${randomMove.name}!`);
+            
+            setEnemyAnim('-translate-x-6 translate-y-6 scale-110 transition-transform duration-200');
+            await sleep(250);
+            setEnemyAnim('transition-transform duration-300');
+            
+            setActiveEffect({ type: randomMove.type, target: 'player' });
+            await sleep(400);
+            setActiveEffect(null);
+
+            setPlayerAnim('animate-pulse opacity-50 drop-shadow-[0_0_15px_rgba(255,0,0,0.8)]');
+            
+            const { damage, isCrit, effectiveness, attackerMsg, defenderMsg, recoil, heal } = calculateDamage(enemy, player, randomMove, enemyHpRef.current, playerHpRef.current);
+            
+            if (attackerMsg) { setDialogue(attackerMsg); await sleep(800); }
+            let newHp = Math.max(0, playerHpRef.current - damage);
+            updatePlayerHp(newHp);
+            
+            let tempEnemyHp = enemyHpRef.current;
+            if (recoil > 0) { tempEnemyHp = Math.max(1, tempEnemyHp - recoil); updateEnemyHp(tempEnemyHp); }
+            if (heal > 0) { tempEnemyHp = Math.min(enemy.maxHp, tempEnemyHp + heal); updateEnemyHp(tempEnemyHp); }
+            if (defenderMsg) { setDialogue(defenderMsg); await sleep(800); }
+            
+            await sleep(300);
+            setPlayerAnim('');
+            
+            if (effectiveness === 0) {
+              setDialogue('효과가 없는 것 같다...'); await sleep(800);
+            } else if (damage > 0) {
+              if (isCrit) { setDialogue('급소에 맞았다!'); await sleep(800); }
+              if (effectiveness >= 2) { setDialogue('효과가 굉장했다!'); await sleep(800); }
+              else if (effectiveness <= 0.5) { setDialogue('효과가 별로인 듯하다...'); await sleep(800); }
+            }
+
+            const afterField = await applyFieldEndTurnEffects(newHp, tempEnemyHp);
+            newHp = afterField.pHP;
+            updatePlayerHp(newHp);
+            updateEnemyHp(afterField.eHP);
+
+            if (newHp <= 0) {
+              setDialogue(`${player.name}(은)는 쓰러졌다...`);
+              await sleep(1000);
+              const newFainted = [...faintedPokemonIds, player.baseId];
+              setFaintedPokemonIds(newFainted);
+              setPartyHpPct(prev => ({...prev, [player.baseId]: 0}));
+
+              const alivePokemon = Object.values(pokemonData).filter(p => 
+                ((!p.isLegendary && p.unlockLevel <= playerLevel && !evolvedAway.includes(p.id) && !String(p.id).startsWith('M') && !String(p.id).startsWith('P') && !String(p.id).startsWith('B') && !String(p.id).startsWith('W') && !String(p.id).startsWith('D') && !String(p.id).startsWith('L') && !String(p.id).startsWith('C') && !String(p.id).startsWith('A')) || 
+                ownedLegendaries.includes(p.id) || unlockedEvolutions.includes(p.id)) && !newFainted.includes(p.id)
+              );
+
+              if (alivePokemon.length === 0) setGameState('gameover');
+              else { setDialogue('다음 포켓몬을 내보내야 한다!'); setGameState('pokemon_switch'); }
+            } else {
+              setDialogue(`무엇을 할까?`); setMenuView('main');
+            }
+            setIsAnimating(false);
+          };
+
+          const handleAttack = async (move) => {
+            if (isAnimating) return; 
+            setIsAnimating(true); setMenuView('hidden');
+            
+            setDialogue(`${player.name}(이)의 ${move.name}!`);
+            setPlayerAnim('translate-x-6 -translate-y-6 scale-110 transition-transform duration-200');
+            await sleep(250);
+            setPlayerAnim('transition-transform duration-300');
+            
+            setActiveEffect({ type: move.type, target: 'enemy' });
+            await sleep(400);
+            setActiveEffect(null);
+            
+            setEnemyAnim('animate-pulse opacity-50 drop-shadow-[0_0_15px_rgba(255,0,0,0.8)]');
+            
+            const { damage, isCrit, effectiveness, attackerMsg, defenderMsg, recoil, heal } = calculateDamage(player, enemy, move, playerHpRef.current, enemyHpRef.current);
+            
+            if (attackerMsg) { setDialogue(attackerMsg); await sleep(800); }
+            let newHp = Math.max(0, enemyHpRef.current - damage);
+            updateEnemyHp(newHp);
+            
+            let tempPlayerHp = playerHpRef.current;
+            if (recoil > 0) { tempPlayerHp = Math.max(1, tempPlayerHp - recoil); updatePlayerHp(tempPlayerHp); }
+            if (heal > 0) { tempPlayerHp = Math.min(player.maxHp, tempPlayerHp + heal); updatePlayerHp(tempPlayerHp); }
+            if (defenderMsg) { setDialogue(defenderMsg); await sleep(800); }
+
+            await sleep(300);
+            setEnemyAnim('');
+            
+            if (effectiveness === 0) {
+              setDialogue('효과가 없는 것 같다...'); await sleep(800);
+            } else if (damage > 0) {
+              if (isCrit) { setDialogue('급소에 맞았다!'); await sleep(800); }
+              if (effectiveness >= 2) { setDialogue('효과가 굉장했다!'); await sleep(800); }
+              else if (effectiveness <= 0.5) { setDialogue('효과가 별로인 듯하다...'); await sleep(800); }
+            }
+
+            const afterField = await applyFieldEndTurnEffects(tempPlayerHp, newHp);
+            updatePlayerHp(afterField.pHP);
+            newHp = afterField.eHP;
+            updateEnemyHp(newHp);
+
+            if (newHp <= 0) {
+              setDialogue(`${currentTrainer.name}의 ${enemy.name}(이)가 쓰러졌다!`);
+              await sleep(1000);
+
+              if (enemyIndex + 1 < enemyParty.length) {
+                  const nextEnemy = enemyParty[enemyIndex + 1];
+                  setEnemyIndex(prev => prev + 1);
+                  setEnemy(nextEnemy);
+                  updateEnemyHp(nextEnemy.maxHp);
+                  setEnemyAnim('');
+                  
+                  setDialogue(`${currentTrainer.name}(은)는 다음 포켓몬으로 ${nextEnemy.name}(을)를 내보냈다!`);
+                  await sleep(1500);
+                  
+                  setDialogue(`무엇을 할까?`); setMenuView('main'); setIsAnimating(false);
+                  return; 
+              }
+
+              setDialogue(`${currentTrainer.name}과의 승부에서 이겼다!`);
+              await sleep(1200);
+
+              if (currentTrainer.type === 'true_master') {
+                  setDialogue(`지우: "정말 대단한 배틀이었어! 너야말로 진정한 포켓몬 마스터야!"`); await sleep(2500);
+                  setDialogue(`피카츄: "피카피카!!"`); await sleep(2000);
+                  setAshHats(prev => prev + 1);
+                  setDialogue(`지우가 자신의 분신과도 같은 [지우의 모자]를 선물로 주었다!`); await sleep(2000);
+                  setGameState('game_clear'); setIsAnimating(false); return;
+              }
+
+              if (currentTrainer.type === 'final_boss') {
+                  setDialogue(`단델: "최고의 배틀이었다! 네가 새로운 무패의 챔피언이다!!"`); await sleep(2000);
+                  setDialogue(`모든 지역의 챔피언을 꺾고 갈라르의 정점에 섰습니다!`); await sleep(2000);
+                  setGameState('game_clear_choice'); setIsAnimating(false); return;
+              }
+
+              if (currentTrainer.type === 'champion') {
+                  setDialogue(`${currentTrainer.name}(을)를 쓰러뜨렸다! 다음 챔피언이 기다린다!`); await sleep(1500);
+              } else if (currentTrainer.type === 'boss' && stage === 40) {
+                  setDialogue(`비주기: "...크윽, 로켓단은 해산이다...! 하지만 진정한 시련은 이제부터다!"`); await sleep(1500);
+              } else if (currentTrainer.type === 'boss' || currentTrainer.type === 'midboss') {
+                  setDialogue(`${currentTrainer.name}(이)가 황급히 도망쳤다!`); await sleep(1200);
+              }
+              
+              const gainedExp = enemyParty.reduce((sum, e) => sum + (e.level * 40), 0);
+              setDialogue(`${player.name}(은)는 ${gainedExp}의 경험치를 얻었다!`);
+              await sleep(800);
+
+              let gainedBp = 10;
+              if (currentTrainer.type === 'boss') gainedBp = 25;
+              if (currentTrainer.type === 'midboss') gainedBp = 15;
+              if (currentTrainer.type === 'champion') gainedBp = 30;
+              if (currentTrainer.type === 'hidden') gainedBp = 50;
+              setBp(prev => prev + gainedBp);
+              setDialogue(`배틀 성과 포인트 ${gainedBp} BP를 획득했다! (소지 BP: ${bp + gainedBp} BP)`);
+              await sleep(1000);
+              
+              let newExp = playerExp + gainedExp;
+              let newLevel = playerLevel;
+              let tempPlayer = player;
+              let earnedLegendaryGen = null;
+              let traceId = player.baseId;
+              
+              while (newExp >= newLevel * 30) {
+                newExp -= newLevel * 30; newLevel++;
+                if (newLevel % 5 === 0) earnedLegendaryGen = newLevel / 5;
+              }
+              
+              if (newLevel > playerLevel) {
+                playLevelUpSound();
+                setDialogue(`축하합니다! ${player.name}(은)는 레벨 ${newLevel}(으)로 올랐다!`);
+                await sleep(1500);
+
+                const awayList = [];
+                while (pokemonData[traceId].evolution && newLevel >= pokemonData[traceId].evolution.level) {
+                  awayList.push(traceId); traceId = pokemonData[traceId].evolution.targetId;
+                }
+
+                if (awayList.length > 0) {
+                  propagateMasterStatus(player.baseId, traceId); 
+                  const evolvedData = pokemonData[traceId];
+                  setPlayerAnim('brightness-200 animate-pulse drop-shadow-[0_0_20px_rgba(255,255,255,1)]');
+                  setDialogue(`오잉!? ${player.name}의 상태가...!`); await sleep(2000); setPlayerAnim('');
+                  
+                  let evolvedName = evolvedData.name;
+                  if (masterPokemonIds.includes(player.baseId) || masterPokemonIds.includes(traceId)) {
+                    evolvedName = `[포켓몬 마스터] ${evolvedName}`;
+                  }
+                  if (player.isShiny) { setShinyList(prev => [...new Set([...prev, traceId])]); evolvedName = `✨${evolvedName}`; }
+                  
+                  setDialogue(`축하합니다! ${player.name}(은)는 ${evolvedName}(으)로 진화했다!`); await sleep(2000);
+                  setEvolvedAway(prev => [...new Set([...prev, ...awayList])]);
+                  setUnlockedEvolutions(prev => [...new Set([...prev, traceId])]);
+                }
+                
+                tempPlayer = getScaledStats(pokemonData[traceId], newLevel, player.isShiny);
+                setPlayer({ ...tempPlayer, baseId: traceId });
+                setPlayerLevel(newLevel);
+                updatePlayerHp(tempPlayer.maxHp); 
+                if (awayList.length > 0) setPartyHpPct(prev => ({...prev, [traceId]: 1.0}));
+              }
+
+              const checkOwns = (id) => ownedLegendaries.includes(id) || player.baseId === id || unlockedEvolutions.includes(id);
+              let earnedKeystone = 0; let earnedMegaStones = []; let earnedOrbs = [];
+              let earnedSplicer = 0; let earnedNecroplus = 0;
+              let earnedRustedSword = 0; let earnedRustedShield = 0;
+              let earnedSecretSword = 0; let earnedRelicSong = 0; let earnedPrisonBottle = 0;
+              let earnedAdamantCrystal = 0; let earnedLustrousGlobe = 0; let earnedGriseousOrb = 0;
+              let earnedUltraCrystal = 0;
+
+              if (stage % 5 === 0) earnedKeystone = 1; 
+              if (pokemonData[traceId].megaEvolutions) earnedMegaStones = pokemonData[traceId].megaEvolutions;
+              if (pokemonData[traceId].primalEvolutions) earnedOrbs = pokemonData[traceId].primalEvolutions;
+
+              if (checkOwns(646) && Math.random() < 0.6) earnedSplicer = 1; 
+              if (checkOwns(800) && Math.random() < 0.6) earnedNecroplus = 1; 
+              if (checkOwns(888) && Math.random() < 0.6) earnedRustedSword = 1; 
+              if (checkOwns(889) && Math.random() < 0.6) earnedRustedShield = 1; 
+              
+              if (checkOwns(647) && Math.random() < 0.6) earnedSecretSword = 1; 
+              if (checkOwns(648) && Math.random() < 0.6) earnedRelicSong = 1; 
+              if (checkOwns(720) && Math.random() < 0.6) earnedPrisonBottle = 1; 
+
+              if (checkOwns(483) && Math.random() < 0.6) earnedAdamantCrystal = 1; 
+              if (checkOwns(484) && Math.random() < 0.6) earnedLustrousGlobe = 1; 
+              if (checkOwns(487) && Math.random() < 0.6) earnedGriseousOrb = 1; 
+              
+              if ((checkOwns('D800') || checkOwns('L800')) && Math.random() < 0.6) earnedUltraCrystal = 1; 
+
+              if (earnedKeystone > 0 || earnedMegaStones.length > 0 || earnedOrbs.length > 0 || earnedSplicer > 0 || earnedNecroplus > 0 || earnedRustedSword > 0 || earnedRustedShield > 0 || earnedSecretSword > 0 || earnedRelicSong > 0 || earnedPrisonBottle > 0 || earnedAdamantCrystal > 0 || earnedLustrousGlobe > 0 || earnedGriseousOrb > 0 || earnedUltraCrystal > 0) {
+                  setInventory(prev => {
+                      const newMega = { ...prev.megaStones }; const newOrbs = { ...prev.orbs };
+                      earnedMegaStones.forEach(mId => newMega[mId] = (newMega[mId] || 0) + 1);
+                      earnedOrbs.forEach(pId => newOrbs[pId] = (newOrbs[pId] || 0) + 1);
+                      return { keystones: prev.keystones + earnedKeystone, megaStones: newMega, orbs: newOrbs, splicers: prev.splicers + earnedSplicer, necropluses: prev.necropluses + earnedNecroplus, rustedSwords: prev.rustedSwords + earnedRustedSword, rustedShields: prev.rustedShields + earnedRustedShield, secretSwords: prev.secretSwords + earnedSecretSword, relicSongs: prev.relicSongs + earnedRelicSong, prisonBottles: prev.prisonBottles + earnedPrisonBottle, adamantCrystals: prev.adamantCrystals + earnedAdamantCrystal, lustrousGlobes: prev.lustrousGlobes + earnedLustrousGlobe, griseousOrbs: prev.griseousOrbs + earnedGriseousOrb, ultraCrystals: prev.ultraCrystals + earnedUltraCrystal };
+                  });
+              }
+              setClearRewards({ keystones: earnedKeystone, megaStones: earnedMegaStones, orbs: earnedOrbs, splicers: earnedSplicer, necropluses: earnedNecroplus, rustedSwords: earnedRustedSword, rustedShields: earnedRustedShield, secretSwords: earnedSecretSword, relicSongs: earnedRelicSong, prisonBottles: earnedPrisonBottle, adamantCrystals: earnedAdamantCrystal, lustrousGlobes: earnedLustrousGlobe, griseousOrbs: earnedGriseousOrb, ultraCrystals: earnedUltraCrystal });
+              
+              setPlayerExp(newExp);
+              if (earnedLegendaryGen) setPendingLegendaryGen(earnedLegendaryGen);
+
+              if (isHiddenBattle) {
+                  setDialogue(`신비한 차원의 에너지가 걷히며, ${enemy.name}(을)를 포획했다!`); await sleep(1500);
+                  setDialogue(`환상의 포켓몬 ${enemy.name}(이)가 든든한 파티에 합류했다!`); await sleep(1500);
+                  setOwnedLegendaries(prev => [...prev, enemy.id]);
+                  if (enemy.isShiny) {
+                      setShinyList(prev => [...new Set([...prev, enemy.id])]);
+                  }
+                  setIsHiddenBattle(false); setLastClearedWasHidden(true);
+              } else {
+                  setLastClearedWasHidden(false);
+                  if (stage === 40) {
+                      setPendingHiddenStage(493); 
+                  } else if (stage >= 5 && Math.random() < 0.1) {
+                      const mythicals = [151, 251, 385, 494, 647, 648, 720].filter(m => !ownedLegendaries.includes(m));
+                      if (mythicals.length > 0) { setPendingHiddenStage(mythicals[Math.floor(Math.random() * mythicals.length)]); }
+                  }
+              }
+              
+              setDialogue(`스테이지 클리어!`); await sleep(800);
+              setGameState('stage_clear'); setIsAnimating(false);
+            } else {
+              await enemyTurn();
+            }
+          };
+
+          const handleItem = async () => {
+            if (isAnimating) return; 
+            if (potions <= 0) { setDialogue('상처약이 없다!'); await sleep(800); setMenuView('main'); return; }
+            if (playerHpRef.current === player.maxHp) { setDialogue('HP가 이미 가득 차 있다!'); await sleep(800); setMenuView('main'); return; }
+            setIsAnimating(true); setMenuView('hidden'); setPotions(p => p - 1);
+            const healAmount = Math.floor(player.maxHp * 0.5);
+            updatePlayerHp(Math.min(player.maxHp, playerHpRef.current + healAmount));
+            setDialogue(`상처약을 사용했다! ${player.name}의 체력이 크게 회복되었다.`);
+            setPlayerAnim('brightness-150 drop-shadow-[0_0_15px_rgba(74,222,128,1)]');
+            await sleep(800); setPlayerAnim('');
+            await enemyTurn();
+          };
+
+          const handleRun = async () => {
+            if (isAnimating) return; 
+            if (isHiddenBattle || currentTrainer.type === 'boss' || currentTrainer.type === 'champion' || currentTrainer.type === 'final_boss' || currentTrainer.type === 'true_master') {
+                setIsAnimating(true); setMenuView('hidden');
+                setDialogue('강력한 기운에 억눌려 도망칠 수 없다!'); await sleep(1000);
+                setMenuView('main'); setIsAnimating(false); return;
+            }
+            if (stage > 1) {
+                setDialogue('지금 여기서 도망치면 처음부터 다시 시작해야합니다.');
+                setMenuView('run_confirm');
+                return;
+            }
+            executeRunConfirmed();
+          };
+
+          const executeRunConfirmed = async () => {
+            setIsAnimating(true); setMenuView('hidden');
+            setDialogue('무사히 도망쳤다!'); await sleep(1000);
+            setGameState('start'); setIsAnimating(false);
+          };
+
+          // 지우의 모자를 사용한 유대변화
+          const executeAshTransform = async (targetId) => {
+              setMenuView('hidden'); setIsAnimating(true);
+              setDialogue(`[지우의 모자]를 포켓몬에게 씌워주었다!`); await sleep(1500);
+              
+              if (targetId === 'A658') {
+                  setDialogue(`${player.name}와(과)의 유대가 한계돌파했다!!`);
+              } else {
+                  setDialogue(`${player.name}가 모자를 푹 눌러쓰고 전력을 다한다!!`);
+              }
+              
+              const shadowColor = targetId === 'A658' ? 'rgba(0,100,255,1)' : 'rgba(255,255,0,1)';
+              setPlayerAnim(`brightness-200 animate-pulse drop-shadow-[0_0_30px_${shadowColor}] scale-110`); await sleep(2000);
+
+              setAshHats(prev => prev - 1); // 지우의 모자 소모
+              
+              const transformData = pokemonData[targetId];
+              if (player.isShiny) setShinyList(prev => [...new Set([...prev, targetId])]);
+              
+              propagateMasterStatus(player.baseId, targetId); 
+
+              const scaledTransform = getScaledStats(transformData, playerLevel, player.isShiny);
+              const hpPct = playerHpRef.current / player.maxHp;
+              const newHp = Math.max(1, Math.floor(scaledTransform.maxHp * hpPct));
+              
+              setPlayer({ ...scaledTransform, baseId: targetId }); 
+              updatePlayerHp(newHp);
+              setUnlockedEvolutions(prev => [...new Set([...prev, targetId])]);
+              setEvolvedAway(prev => [...new Set([...prev, player.baseId])]);
+              setPartyHpPct(prev => ({...prev, [targetId]: hpPct}));
+
+              setPlayerAnim('');
+              
+              if (targetId === 'A658') {
+                  setDialogue(`지우개굴닌자로 폼체인지했다!!`);
+              } else {
+                  setDialogue(`지우의 피카츄로 폼체인지했다!!`);
+              }
+              
+              await sleep(1500);
+              setMenuView('main'); setIsAnimating(false);
+          };
+
+          const handleMegaEvolveClick = () => {
+              const availableMegas = pokemonData[player.baseId].megaEvolutions.filter(mId => inventory.megaStones[mId] > 0);
+              if (availableMegas.length === 1) executeMegaEvolution(availableMegas[0]);
+              else if (availableMegas.length > 1) { setMegaSelectOptions(availableMegas); setMenuView('mega_select'); }
+          };
+
+          const executeMegaEvolution = async (megaId) => {
+              setMenuView('hidden'); setIsAnimating(true);
+              setDialogue(`키스톤이 강하게 빛나고 있다!`); await sleep(1500);
+              setDialogue(`${player.name}의 메가진화!!`);
+              setPlayerAnim('brightness-200 animate-pulse drop-shadow-[0_0_20px_rgba(255,0,255,1)] scale-110'); await sleep(2000);
+
+              setInventory(prev => ({ ...prev, keystones: prev.keystones - 1, megaStones: { ...prev.megaStones, [megaId]: prev.megaStones[megaId] - 1 } }));
+              const megaData = pokemonData[megaId];
+              if (player.isShiny) setShinyList(prev => [...new Set([...prev, megaId])]);
+              
+              propagateMasterStatus(player.baseId, megaId); 
+
+              const scaledMega = getScaledStats(megaData, playerLevel, player.isShiny);
+              const hpPct = playerHpRef.current / player.maxHp;
+              const newHp = Math.max(1, Math.floor(scaledMega.maxHp * hpPct));
+              
+              setPlayer({ ...scaledMega, baseId: megaId }); 
+              updatePlayerHp(newHp);
+              setUnlockedEvolutions(prev => [...new Set([...prev, megaId])]);
+              setEvolvedAway(prev => [...new Set([...prev, player.baseId])]);
+              setPartyHpPct(prev => ({...prev, [megaId]: hpPct}));
+
+              setPlayerAnim('');
+              setDialogue(`${scaledMega.name}(으)로 메가진화했다!!`); await sleep(1500);
+              setMenuView('main'); setIsAnimating(false);
+          };
+
+          const handlePrimalRevertClick = () => {
+              const availablePrimals = pokemonData[player.baseId].primalEvolutions.filter(pId => inventory.orbs && inventory.orbs[pId] > 0);
+              if (availablePrimals.length > 0) executePrimalReversion(availablePrimals[0]);
+          };
+
+          const executePrimalReversion = async (primalId) => {
+              setMenuView('hidden'); setIsAnimating(true);
+              const orbName = primalId === 'P382' ? '쪽빛구슬' : '주홍구슬';
+              setDialogue(`${orbName}이(가) 자연의 에너지를 뿜어낸다!`); await sleep(1500);
+              setDialogue(`${player.name}의 원시회귀!!`);
+              const shadowColor = primalId === 'P382' ? 'rgba(0,100,255,1)' : 'rgba(255,50,0,1)';
+              setPlayerAnim(`brightness-200 animate-pulse drop-shadow-[0_0_20px_${shadowColor}] scale-110`); await sleep(2000);
+
+              setInventory(prev => ({ ...prev, orbs: { ...prev.orbs, [primalId]: prev.orbs[primalId] - 1 } }));
+              const primalData = pokemonData[primalId];
+              if (player.isShiny) setShinyList(prev => [...new Set([...prev, primalId])]);
+              
+              propagateMasterStatus(player.baseId, primalId); 
+
+              const scaledPrimal = getScaledStats(primalData, playerLevel, player.isShiny);
+              const hpPct = playerHpRef.current / player.maxHp;
+              const newHp = Math.max(1, Math.floor(scaledPrimal.maxHp * hpPct));
+
+              setPlayer({ ...scaledPrimal, baseId: primalId }); 
+              updatePlayerHp(newHp);
+              setUnlockedEvolutions(prev => [...new Set([...prev, primalId])]);
+              setEvolvedAway(prev => [...new Set([...prev, player.baseId])]);
+              setPartyHpPct(prev => ({...prev, [primalId]: hpPct}));
+
+              setPlayerAnim('');
+              setDialogue(`${scaledPrimal.name}(으)로 원시회귀했다!!`); await sleep(1500);
+              setMenuView('main'); setIsAnimating(false);
+          };
+
+          const handleFusionClick = async (type) => {
+              const checkOwns = (id) => ownedLegendaries.includes(id) || unlockedEvolutions.includes(id);
+              if (type === 'kyurem') {
+                  const options = [];
+                  if (checkOwns(644)) options.push('B646'); 
+                  if (checkOwns(643)) options.push('W646'); 
+                  
+                  if (options.length === 0) {
+                      setDialogue('합체할 포켓몬(제크로무 혹은 레시라무)이 없습니다!');
+                      return;
+                  }
+                  setFusionSelectOptions(options);
+                  setMenuView('fusion_select');
+              } else if (type === 'necrozma') {
+                  const options = [];
+                  if (checkOwns(791)) options.push('D800'); 
+                  if (checkOwns(792)) options.push('L800'); 
+                  
+                  if (options.length === 0) {
+                      setDialogue('합체할 포켓몬(솔가레오 혹은 루나아라)이 없습니다!');
+                      return;
+                  }
+                  setFusionSelectOptions(options);
+                  setMenuView('fusion_select');
+              }
+          };
+
+          const executeFusion = async (fusionId) => {
+              setMenuView('hidden'); setIsAnimating(true);
+              let itemName = fusionId.includes('646') ? '유전자쐐기' : '네크로플러스';
+              setDialogue(`${itemName}가 빛나며 포켓몬이 융합하기 시작했다!`); await sleep(1500);
+              setDialogue(`${player.name}의 압도적인 폼체인지!!`);
+              
+              const shadowColor = 'rgba(255,255,255,1)';
+              setPlayerAnim(`brightness-200 animate-pulse drop-shadow-[0_0_20px_${shadowColor}] scale-110`); await sleep(2000);
+
+              if (fusionId.includes('646')) {
+                  setInventory(prev => ({ ...prev, splicers: prev.splicers - 1 }));
+              } else {
+                  setInventory(prev => ({ ...prev, necropluses: prev.necropluses - 1 }));
+              }
+              
+              const fusionData = pokemonData[fusionId];
+              if (player.isShiny) setShinyList(prev => [...new Set([...prev, fusionId])]);
+              
+              propagateMasterStatus(player.baseId, fusionId); 
+
+              const scaledFusion = getScaledStats(fusionData, playerLevel, player.isShiny);
+              const hpPct = playerHpRef.current / player.maxHp;
+              const newHp = Math.max(1, Math.floor(scaledFusion.maxHp * hpPct));
+              
+              setPlayer({ ...scaledFusion, baseId: fusionId }); 
+              updatePlayerHp(newHp);
+              setUnlockedEvolutions(prev => [...new Set([...prev, fusionId])]);
+              setEvolvedAway(prev => [...new Set([...prev, player.baseId])]);
+              setPartyHpPct(prev => ({...prev, [fusionId]: hpPct}));
+
+              setPlayerAnim('');
+              setDialogue(`${scaledFusion.name}(으)로 합체했다!!`); await sleep(1500);
+              setMenuView('main'); setIsAnimating(false);
+          };
+
+          const executeCrowned = async (crownedId) => {
+              setMenuView('hidden'); setIsAnimating(true);
+              const itemName = crownedId === 'C888' ? '녹슨 검' : '녹슨 방패';
+              setDialogue(`${itemName}이(가) 빛을 내며 포켓몬과 공명한다!`); await sleep(1500);
+              setDialogue(`${player.name}의 진정한 힘이 깨어난다!!`);
+
+              const shadowColor = crownedId === 'C888' ? 'rgba(0,191,255,1)' : 'rgba(255,20,147,1)';
+              setPlayerAnim(`brightness-200 animate-pulse drop-shadow-[0_0_20px_${shadowColor}] scale-110`); await sleep(2000);
+
+              if (crownedId === 'C888') {
+                  setInventory(prev => ({ ...prev, rustedSwords: prev.rustedSwords - 1 }));
+              } else {
+                  setInventory(prev => ({ ...prev, rustedShields: prev.rustedShields - 1 }));
+              }
+              
+              const crownedData = pokemonData[crownedId];
+              if (player.isShiny) setShinyList(prev => [...new Set([...prev, crownedId])]);
+              
+              propagateMasterStatus(player.baseId, crownedId); 
+
+              const scaledCrowned = getScaledStats(crownedData, playerLevel, player.isShiny);
+              const hpPct = playerHpRef.current / player.maxHp;
+              const newHp = Math.max(1, Math.floor(scaledCrowned.maxHp * hpPct));
+              
+              setPlayer({ ...scaledCrowned, baseId: crownedId }); 
+              updatePlayerHp(newHp);
+              setUnlockedEvolutions(prev => [...new Set([...prev, crownedId])]);
+              setEvolvedAway(prev => [...new Set([...prev, player.baseId])]);
+              setPartyHpPct(prev => ({...prev, [crownedId]: hpPct}));
+
+              setPlayerAnim('');
+              setDialogue(`${scaledCrowned.name}(으)로 폼체인지했다!!`); await sleep(1500);
+              setMenuView('main'); setIsAnimating(false);
+          };
+
+          const executeAwaken = async (awakenId) => {
+              setMenuView('hidden'); setIsAnimating(true);
+              let itemName = ''; let dialogMsg = ''; let shadowColor = 'rgba(255,255,255,1)';
+              
+              if (awakenId === 'R647') {
+                  itemName = '신비의칼'; dialogMsg = `${itemName}의 가르침을 깨우쳤다!`; shadowColor = 'rgba(0,191,255,1)';
+                  setInventory(prev => ({ ...prev, secretSwords: prev.secretSwords - 1 }));
+              } else if (awakenId === 'P648') {
+                  itemName = '옛노래'; dialogMsg = `${itemName}의 선율에 맞춰 스텝을 밟는다!`; shadowColor = 'rgba(255,105,180,1)';
+                  setInventory(prev => ({ ...prev, relicSongs: prev.relicSongs - 1 }));
+              } else if (awakenId === 'U720') {
+                  itemName = '굴레의항아리'; dialogMsg = `${itemName}가 해방되어 본래의 힘을 되찾았다!`; shadowColor = 'rgba(138,43,226,1)';
+                  setInventory(prev => ({ ...prev, prisonBottles: prev.prisonBottles - 1 }));
+              }
+
+              setDialogue(dialogMsg); await sleep(1500);
+              setDialogue(`${player.name}의 각성 폼체인지!!`);
+
+              setPlayerAnim(`brightness-200 animate-pulse drop-shadow-[0_0_20px_${shadowColor}] scale-110`); await sleep(2000);
+
+              const awakenData = pokemonData[awakenId];
+              if (player.isShiny) setShinyList(prev => [...new Set([...prev, awakenId])]);
+              
+              propagateMasterStatus(player.baseId, awakenId);
+
+              const scaledAwaken = getScaledStats(awakenData, playerLevel, player.isShiny);
+              const hpPct = playerHpRef.current / player.maxHp;
+              const newHp = Math.max(1, Math.floor(scaledAwaken.maxHp * hpPct));
+              
+              setPlayer({ ...scaledAwaken, baseId: awakenId }); 
+              updatePlayerHp(newHp);
+              setUnlockedEvolutions(prev => [...new Set([...prev, awakenId])]);
+              setEvolvedAway(prev => [...new Set([...prev, player.baseId])]);
+              setPartyHpPct(prev => ({...prev, [awakenId]: hpPct}));
+
+              setPlayerAnim('');
+              setDialogue(`${scaledAwaken.name}(으)로 폼체인지했다!!`); await sleep(1500);
+              setMenuView('main'); setIsAnimating(false);
+          };
+
+          const executeOriginRevert = async (originId) => {
+              setMenuView('hidden'); setIsAnimating(true);
+              let itemName = ''; let dialogMsg = ''; let shadowColor = 'rgba(255,255,255,1)';
+              
+              if (originId === 'O483') {
+                  itemName = '큰금강옥'; dialogMsg = `${itemName}이(가) 빛을 내며 시공간을 흔든다!`; shadowColor = 'rgba(0,191,255,1)';
+                  setInventory(prev => ({ ...prev, adamantCrystals: prev.adamantCrystals - 1 }));
+              } else if (originId === 'O484') {
+                  itemName = '큰백옥'; dialogMsg = `${itemName}이(가) 빛을 내며 시공간을 왜곡한다!`; shadowColor = 'rgba(255,105,180,1)';
+                  setInventory(prev => ({ ...prev, lustrousGlobes: prev.lustrousGlobes - 1 }));
+              } else if (originId === 'O487') {
+                  itemName = '백금옥'; dialogMsg = `${itemName}이(가) 빛을 내며 깨어진 세계와 연결된다!`; shadowColor = 'rgba(138,43,226,1)';
+                  setInventory(prev => ({ ...prev, griseousOrbs: prev.griseousOrbs - 1 }));
+              }
+
+              setDialogue(dialogMsg); await sleep(1500);
+              setDialogue(`${player.name}의 오리진폼 체인지!!`);
+
+              setPlayerAnim(`brightness-200 animate-pulse drop-shadow-[0_0_20px_${shadowColor}] scale-110`); await sleep(2000);
+
+              const originData = pokemonData[originId];
+              if (player.isShiny) setShinyList(prev => [...new Set([...prev, originId])]);
+              
+              propagateMasterStatus(player.baseId, originId);
+
+              const scaledOrigin = getScaledStats(originData, playerLevel, player.isShiny);
+              const hpPct = playerHpRef.current / player.maxHp;
+              const newHp = Math.max(1, Math.floor(scaledOrigin.maxHp * hpPct));
+              
+              setPlayer({ ...scaledOrigin, baseId: originId }); 
+              updatePlayerHp(newHp);
+              setUnlockedEvolutions(prev => [...new Set([...prev, originId])]);
+              setEvolvedAway(prev => [...new Set([...prev, player.baseId])]);
+              setPartyHpPct(prev => ({...prev, [originId]: hpPct}));
+
+              setPlayerAnim('');
+              setDialogue(`${scaledOrigin.name}(으)로 본래의 힘을 되찾았다!!`); await sleep(1500);
+              setMenuView('main'); setIsAnimating(false);
+          };
+
+          const executeUltraBurst = async (ultraId) => {
+              setMenuView('hidden'); setIsAnimating(true);
+              setDialogue(`울트라네크로지움Z가 눈부시게 빛난다!`); await sleep(1500);
+              setDialogue(`${player.name}의 빛이 넘쳐흐른다!!`);
+
+              const shadowColor = 'rgba(255,255,0,1)';
+              setPlayerAnim(`brightness-200 animate-pulse drop-shadow-[0_0_30px_${shadowColor}] scale-110`); await sleep(2000);
+
+              setInventory(prev => ({ ...prev, ultraCrystals: prev.ultraCrystals - 1 }));
+
+              const ultraData = pokemonData[ultraId];
+              if (player.isShiny) setShinyList(prev => [...new Set([...prev, ultraId])]);
+              
+              propagateMasterStatus(player.baseId, ultraId);
+
+              const scaledUltra = getScaledStats(ultraData, playerLevel, player.isShiny);
+              const hpPct = playerHpRef.current / player.maxHp;
+              const newHp = Math.max(1, Math.floor(scaledUltra.maxHp * hpPct));
+              
+              setPlayer({ ...scaledUltra, baseId: ultraId }); 
+              updatePlayerHp(newHp);
+              setUnlockedEvolutions(prev => [...new Set([...prev, ultraId])]);
+              setEvolvedAway(prev => [...new Set([...prev, player.baseId])]);
+              setPartyHpPct(prev => ({...prev, [ultraId]: hpPct}));
+
+              setPlayerAnim('');
+              setDialogue(`${scaledUltra.name}(으)로 울트라버스트했다!!`); await sleep(1500);
+              setMenuView('main'); setIsAnimating(false);
+          };
+
+          const handleBuyUpgrade = (type) => {
+            let cost = 15;
+            if (type === 'potion') cost = 10;
+            if (bp < cost) return;
+
+            setBp(prev => prev - cost);
+
+            if (type === 'potion') {
+              setPotions(prev => Math.min(5, prev + 1));
+            } else {
+              setStatUpgrades(prev => {
+                const target = prev[selectedUpgradePokemonId] || { hp: 0, attack: 0, defense: 0 };
+                if (type === 'hp') target.hp += 20;
+                if (type === 'attack') target.attack += 5;
+                if (type === 'defense') target.defense += 5;
+                return { ...prev, [selectedUpgradePokemonId]: target };
+              });
+              
+              if (player.id === selectedUpgradePokemonId) {
+                const originalBase = pokemonData[player.baseId];
+                const scaled = getScaledStats(originalBase, playerLevel);
+                const hpPct = playerHpRef.current / player.maxHp;
+                setPlayer({ ...scaled, baseId: player.baseId });
+                updatePlayerHp(Math.max(1, Math.floor(scaled.maxHp * hpPct)));
+              }
+            }
+          };
+
+          const buttonClass = "w-full py-3 px-4 bg-white border-4 border-gray-800 rounded-lg hover:bg-gray-200 font-bold text-lg text-gray-800 transition-colors shadow-[4px_4px_0_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 active:translate-x-1";
+
+          const canMegaEvolve = pokemonData[player?.baseId]?.megaEvolutions && inventory.keystones > 0 && pokemonData[player.baseId].megaEvolutions.some(mId => inventory.megaStones[mId] > 0);
+          const canPrimalRevert = pokemonData[player?.baseId]?.primalEvolutions && pokemonData[player.baseId].primalEvolutions.some(pId => inventory.orbs && inventory.orbs[pId] > 0);
+          const canFuseKyurem = player?.baseId === 646 && inventory.splicers > 0;
+          const canFuseNecrozma = player?.baseId === 800 && inventory.necropluses > 0;
+          const canCrownedZacian = player?.baseId === 888 && inventory.rustedSwords > 0;
+          const canCrownedZamazenta = player?.baseId === 889 && inventory.rustedShields > 0;
+          const canAwakenKeldeo = player?.baseId === 647 && inventory.secretSwords > 0;
+          const canAwakenMeloetta = player?.baseId === 648 && inventory.relicSongs > 0;
+          const canAwakenHoopa = player?.baseId === 720 && inventory.prisonBottles > 0;
+          const canOriginDialga = player?.baseId === 483 && inventory.adamantCrystals > 0;
+          const canOriginPalkia = player?.baseId === 484 && inventory.lustrousGlobes > 0;
+          const canOriginGiratina = player?.baseId === 487 && inventory.griseousOrbs > 0;
+          const canUltraBurst = (player?.baseId === 'D800' || player?.baseId === 'L800') && inventory.ultraCrystals > 0;
+          const canAshTransform = (player?.baseId === 25 || player?.baseId === 658) && ashHats > 0;
+
+          const renderGameScreen = () => {
+            if (gameState === 'start') {
+              return (
+                <div className="min-h-screen bg-blue-100 flex items-center justify-center p-4 font-mono">
+                  <div className="max-w-xl w-full bg-white border-8 border-gray-800 rounded-xl p-6 shadow-2xl">
+                    <h1 className="text-3xl font-black text-center mb-6 text-yellow-500 drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">포켓몬 배틀</h1>
+                    <p className="text-center text-gray-700 font-bold mb-6">모험을 함께할 파트너를 선택하세요!</p>
+                    {ashHats > 0 && <p className="text-center text-red-500 font-black mb-4 animate-bounce">🧢 소지중인 [지우의 모자] : {ashHats}개</p>}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-96 overflow-y-auto p-2">
+                      {Object.values(pokemonData).filter(p => p.unlockStage === 1 && !p.isLegendary && !String(p.id).startsWith('M') && !String(p.id).startsWith('B') && !String(p.id).startsWith('W') && !String(p.id).startsWith('D') && !String(p.id).startsWith('L') && !String(p.id).startsWith('A')).map(poke => (
+                        <button 
+                          key={poke.id} 
+                          onClick={() => { playClickSound(); handleSelectStarter(poke.id); }}
+                          className="flex flex-col items-center p-4 border-4 border-gray-300 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all"
+                        >
+                          <img src={poke.front} alt={poke.name} className="w-20 h-20 rendering-pixelated" />
+                          <span className="font-bold text-gray-800 text-sm">{poke.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            if (gameState === 'tutorial') {
+              return (
+                <div className="min-h-screen bg-blue-100 flex items-center justify-center p-4 font-mono text-gray-800">
+                  <div className="max-w-lg w-full bg-white border-8 border-gray-800 rounded-xl p-6 shadow-2xl">
+                    <h1 className="text-2xl font-black mb-4 text-center border-b-4 border-gray-800 pb-2">새내기 트레이너 튜토리얼</h1>
+                    
+                    <div 
+                      ref={tutorialScrollRef}
+                      onScroll={handleTutorialScroll}
+                      className="space-y-3 mb-6 font-bold text-sm h-72 overflow-y-auto pr-2"
+                    >
+                      <div className="bg-gray-100 p-3 border-2 border-gray-300 rounded-lg shadow-sm">
+                        <span className="text-red-500 text-lg block mb-1">⚔️ 상성과 배틀의 기초</span>
+                        포켓몬 배틀의 핵심은 <strong>속성 상성</strong>입니다! 물은 불에 강하고, 불은 풀에 강합니다. 적의 약점을 찌르면 무려 <strong>2배의 피해</strong>를 입히지만, 불리한 상성일 경우 <strong>피해량이 절반(0.5배)</strong>으로 줄어들거나 아예 <strong>피해를 주지 못하는(0배)</strong> 경우도 있습니다. 배틀 중 상대 포켓몬 이름 옆에 표시된 속성을 잘 파악하여 공격하세요!
+                      </div>
+                      <div className="bg-gray-100 p-3 border-2 border-gray-300 rounded-lg shadow-sm">
+                        <span className="text-blue-600 text-lg block mb-1">🧪 끝없는 스탯 성장과 진화</span>
+                        승리 시 얻는 <strong>BP(배틀 포인트)</strong>로 상점에서 도핑 약을 구매해 포켓몬의 <strong>최대 체력, 공격력, 방어력</strong>을 영구적으로 올릴 수 있습니다! (상처약 10BP, 스탯 15BP) 보스 처치 시 더 많은 BP를 획득합니다. 전투를 거듭해 경험치를 쌓아 특정 레벨이 오르면 포켓몬은 더욱 강력한 모습으로 <strong>진화</strong>합니다!
+                      </div>
+                      <div className="bg-gray-100 p-3 border-2 border-gray-300 rounded-lg shadow-sm">
+                        <span className="text-purple-600 text-lg block mb-1">🌟 전설의 포켓몬과 특수 폼체인지</span>
+                        일정 레벨(5, 10, 15...)에 도달할 때마다 <strong>전설의 포켓몬</strong>이 동료로 합류합니다! 특정 전설 포켓몬을 보유하고 승리 시 높은 확률로 <strong>메가스톤, 유전자쐐기, 녹슨 검/방패, Z크리스탈</strong> 등 특수 아이템을 획득합니다. 이를 배틀 메뉴에서 사용하여 <strong>메가진화, 원시회귀, 합체, 울트라버스트</strong> 등 압도적인 힘을 개방하세요!
+                      </div>
+                      <div className="bg-gray-100 p-3 border-2 border-gray-300 rounded-lg shadow-sm">
+                        <span className="text-teal-600 text-lg block mb-1">🏔️ 특수 필드와 히든 스테이지</span>
+                        <strong>30스테이지</strong> 돌파 시 날씨와 환경이 변하여 타입 스킬을 1.5배 강화하거나 약화시키는 <strong>특수 필드</strong>가 무작위로 등장하며, 이때부터 <strong>두 마리의 적</strong>이 동시에 등장하기 시작합니다! 또한 5스테이지 이후부터 낮은 확률로 시공간의 균열이 발생하여 <strong>환상의 포켓몬</strong>이 숨겨진 <strong>히든 차원</strong>이 등장하니 이 포획 기회를 절대 놓치지 마세요!
+                      </div>
+                      <div className="bg-gray-100 p-3 border-2 border-gray-300 rounded-lg shadow-sm">
+                        <span className="text-yellow-600 text-lg block mb-1">👑 포켓몬 마스터 (다회차 전승)</span>
+                        마지막 45스테이지 챔피언을 꺾으면 영광의 <strong>전당 등록</strong>을 통해 현재 파티 중 <strong>단 한 마리</strong>를 다음 모험(새 게임)으로 데려갈 수 있습니다! 선택된 포켓몬은 <strong>[포켓몬 마스터]</strong> 칭호를 얻게 되며, 강력한 능력치와 특수 폼체인지 권한까지 1스테이지부터 유지한 채 무한한 성장이 가능합니다! <br/> 더 나아가, 마지막 시련에서 진정한 최강자를 꺾으면 특별한 영구 아이템을 보상으로 얻습니다!
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-4">
+                      <button 
+                        onClick={() => { if(tutorialRead) { playClickSound(); executeStart(); } }} 
+                        disabled={!tutorialRead}
+                        className={`flex-1 py-3 border-4 rounded-lg font-black transition-all duration-300 ${
+                          tutorialRead 
+                            ? 'bg-yellow-400 border-gray-800 hover:bg-yellow-500 shadow-[2px_2px_0_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 text-gray-900' 
+                            : 'bg-gray-300 border-gray-400 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        {tutorialRead ? '모험 시작!' : '내용을 끝까지 읽어주세요 (스크롤 ⬇️)'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            if (gameState === 'stage_clear') {
+              const expNeeded = playerLevel * 30;
+              const expPercent = Math.min(100, (playerExp / expNeeded) * 100);
+              return (
+                <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 font-mono text-white select-none">
+                  <div className="max-w-md w-full bg-gray-800 border-4 border-gray-600 rounded-xl p-6 shadow-2xl text-center relative overflow-hidden">
+                    {pendingHiddenStage && <div className="absolute inset-0 bg-purple-900 opacity-20 animate-pulse pointer-events-none"></div>}
+                    <h2 className={`text-3xl font-bold mb-6 ${lastClearedWasHidden ? 'text-purple-400' : 'text-yellow-400'} relative z-10`}>
+                      {lastClearedWasHidden ? '히든 스테이지 제압 완료!' : `스테이지 ${stage} 클리어!`}
+                    </h2>
+                    <div className="mb-6 flex flex-col items-center bg-gray-900 p-4 rounded-lg border-2 border-gray-700 relative z-10">
+                      <img src={player.front} alt={player.name} className="w-28 h-28 rendering-pixelated mb-4 animate-bounce" />
+                      <p className="text-xl font-bold mb-2">{player.name} <span className="text-yellow-300 text-lg">Lv.{playerLevel}</span></p>
+                      <div className="w-full bg-gray-700 h-4 rounded-full border-2 border-gray-900 mt-2 overflow-hidden relative">
+                        <div className="bg-blue-500 h-full transition-all duration-1000" style={{ width: `${expPercent}%` }}></div>
+                      </div>
+                      <p className="text-sm mt-2 text-gray-400">다음 레벨까지: {expNeeded - playerExp} EXP</p>
+                    </div>
+                    
+                    <div className="text-sm text-gray-300 mb-6 bg-gray-700 p-3 rounded text-left space-y-1 relative z-10">
+                      <p className="text-green-400 font-bold">• 보유 배틀 포인트: {bp} BP</p>
+                      <p>• 체력이 모두 회복되었습니다.</p>
+                      <p>• 상처약을 1개 획득했습니다. (현재 {potions + 1 > 5 ? 5 : potions + 1}개)</p>
+                      {clearRewards.keystones > 0 && <p className="text-purple-400 font-bold animate-pulse">• 로켓단이 떨어뜨린 키스톤 1개 획득!</p>}
+                      {clearRewards.megaStones.map(mId => <p key={mId} className="text-pink-400 font-bold animate-pulse">• {pokemonData[mId].name.replace('메가', '')}나이트 획득!</p>)}
+                      {clearRewards.orbs.map(pId => <p key={pId} className="text-blue-400 font-bold animate-pulse">• {pId === 'P382' ? '쪽빛구슬' : '주홍구슬'} 획득!</p>)}
+                      {clearRewards.splicers > 0 && <p className="text-cyan-400 font-bold animate-pulse">• 유전자쐐기 획득!</p>}
+                      {clearRewards.necropluses > 0 && <p className="text-yellow-400 font-bold animate-pulse">• 네크로플러스 획득!</p>}
+                      {clearRewards.rustedSwords > 0 && <p className="text-blue-300 font-bold animate-pulse">• 녹슨 검 획득!</p>}
+                      {clearRewards.rustedShields > 0 && <p className="text-red-300 font-bold animate-pulse">• 녹슨 방패 획득!</p>}
+                      {clearRewards.secretSwords > 0 && <p className="text-cyan-300 font-bold animate-pulse">• 신비의칼 획득!</p>}
+                      {clearRewards.relicSongs > 0 && <p className="text-pink-300 font-bold animate-pulse">• 옛노래 획득!</p>}
+                      {clearRewards.prisonBottles > 0 && <p className="text-purple-300 font-bold animate-pulse">• 굴레의항아리 획득!</p>}
+                      {clearRewards.adamantCrystals > 0 && <p className="text-blue-300 font-bold animate-pulse">• 큰금강옥 획득!</p>}
+                      {clearRewards.lustrousGlobes > 0 && <p className="text-pink-300 font-bold animate-pulse">• 큰백옥 획득!</p>}
+                      {clearRewards.griseousOrbs > 0 && <p className="text-purple-300 font-bold animate-pulse">• 백금옥 획득!</p>}
+                      {clearRewards.ultraCrystals > 0 && <p className="text-yellow-300 font-bold animate-pulse">• 울트라네크로지움Z 획득!</p>}
+                    </div>
+
+                    {pendingHiddenStage && (
+                      <div className="bg-purple-900 border-2 border-purple-500 rounded-lg p-3 mb-6 text-center animate-pulse relative z-10">
+                         <p className="text-purple-200 font-bold mb-1">🌀 시공간의 균열이 발생했습니다!</p>
+                         <p className="text-[11px] text-purple-300 font-normal">정체불명의 환상의 포켓몬이 숨어있는 히든 스테이지로 가는 문이 열렸습니다.</p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4 relative z-10">
+                      <button onClick={() => { playClickSound(); setSelectedUpgradePokemonId(player.id); setGameState('bp_shop'); }} className="py-3 px-4 bg-teal-500 hover:bg-teal-600 border-4 border-gray-800 rounded-lg text-white font-bold text-lg transition-all shadow-[4px_4px_0_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none">💊 도핑 강화 상점</button>
+                      {pendingHiddenStage ? (
+                          <button onClick={() => { playClickSound(); const mythicalId = pendingHiddenStage; setPendingHiddenStage(null); startHiddenBattle(mythicalId); }} className="py-3 px-4 bg-purple-600 hover:bg-purple-700 border-4 border-gray-800 rounded-lg text-white font-black text-lg transition-all shadow-[4px_4px_0_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none animate-pulse">🌌 차원의 문 진입</button>
+                      ) : (
+                          <button onClick={() => {
+                            playClickSound();
+                            const nextStage = stage + 1;
+                            setStage(nextStage);
+                            updatePlayerHp(player.maxHp);
+                            setPotions(p => Math.min(5, p + 1));
+                            setPartyHpPct({}); setFaintedPokemonIds([]); 
+                            
+                            if (pendingLegendaryGen) {
+                              const maxGen = Math.min(8, Math.floor(playerLevel / 5));
+                              let allAvailable = [];
+                              for (let i = 1; i <= maxGen; i++) {
+                                  if (legendaryByGen[i]) allAvailable = [...allAvailable, ...legendaryByGen[i].filter(id => !ownedLegendaries.includes(id))];
+                              }
+                              
+                              if (allAvailable.length > 0) {
+                                  const options = allAvailable.map(id => getScaledStats(pokemonData[id], playerLevel, Math.random() < 0.1));
+                                  setLegendaryOptions(options); setGameState('legendary_select');
+                              } else {
+                                  setPendingLegendaryGen(null);
+                                  startBattle(player, nextStage);
+                              }
+                            } else {
+                              startBattle(player, nextStage);
+                            }
+                          }} className="py-3 px-4 bg-yellow-400 hover:bg-yellow-500 border-4 border-gray-800 rounded-lg text-gray-900 font-black text-lg transition-all shadow-[4px_4px_0_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none">
+                            {pendingLegendaryGen ? '전설 포켓몬 합류' : '다음 방 진입'}
+                          </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            if (gameState === 'bp_shop') {
+              const upgradeInfo = statUpgrades[selectedUpgradePokemonId] || { hp: 0, attack: 0, defense: 0 };
+              const allMyPokemon = Object.values(pokemonData).filter(p => 
+                (!p.isLegendary && p.unlockLevel <= playerLevel && !evolvedAway.includes(p.id) && !String(p.id).startsWith('M') && !String(p.id).startsWith('P') && !String(p.id).startsWith('B') && !String(p.id).startsWith('W') && !String(p.id).startsWith('D') && !String(p.id).startsWith('L') && !String(p.id).startsWith('C') && !String(p.id).startsWith('A')) || 
+                ownedLegendaries.includes(p.id) || unlockedEvolutions.includes(p.id)
+              );
+
+              return (
+                <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 font-mono text-white">
+                  <div className="max-w-lg w-full bg-gray-800 border-4 border-teal-500 rounded-xl p-6 shadow-2xl">
+                    <div className="flex justify-between items-center mb-4 border-b-2 border-gray-700 pb-2">
+                      <h2 className="text-2xl font-black text-teal-400">🧪 트레이너 도핑 연구소</h2>
+                      <div className="bg-yellow-400 text-gray-900 font-bold px-3 py-1 rounded-full text-sm">{bp} BP 소지중</div>
+                    </div>
+                    <p className="text-gray-400 text-xs mb-4">획득한 BP로 포켓몬에게 강화 물약을 주입합니다.</p>
+                    <div className="mb-4">
+                      <label className="block text-xs font-bold text-teal-300 mb-1">대상 포켓몬 선택:</label>
+                      <select className="w-full bg-gray-700 border-2 border-gray-600 rounded p-2 text-sm font-bold animate-pulse" value={selectedUpgradePokemonId || ''} onChange={(e) => setSelectedUpgradePokemonId(Number(e.target.value) || e.target.value)}>
+                        {allMyPokemon.map(p => <option key={p.id} value={p.id} className="text-gray-900">{p.name} (현재 강화: HP+{statUpgrades[p.id]?.hp || 0}, 공격+{statUpgrades[p.id]?.attack || 0})</option>)}
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mb-6">
+                      <div className="bg-gray-900 p-3 border-2 border-gray-700 rounded-lg flex flex-col justify-between shadow-md">
+                        <div><span className="text-green-400 font-bold text-sm">맥스업 (HP +20)</span><p className="text-xs font-bold text-yellow-300 mt-1">현재: +{upgradeInfo.hp}</p></div>
+                        <button disabled={bp < 15} onClick={() => { playClickSound(); handleBuyUpgrade('hp'); }} className={`w-full mt-3 py-1 text-xs font-bold rounded ${bp >= 15 ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-700 opacity-50'}`}>15 BP로 주입</button>
+                      </div>
+                      <div className="bg-gray-900 p-3 border-2 border-gray-700 rounded-lg flex flex-col justify-between shadow-md">
+                        <div><span className="text-red-400 font-bold text-sm">타우린 (공격력 +5)</span><p className="text-xs font-bold text-yellow-300 mt-1">현재: +{upgradeInfo.attack}</p></div>
+                        <button disabled={bp < 15} onClick={() => { playClickSound(); handleBuyUpgrade('attack'); }} className={`w-full mt-3 py-1 text-xs font-bold rounded ${bp >= 15 ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-700 opacity-50'}`}>15 BP로 주입</button>
+                      </div>
+                      <div className="bg-gray-900 p-3 border-2 border-gray-700 rounded-lg flex flex-col justify-between shadow-md">
+                        <div><span className="text-blue-400 font-bold text-sm">사포닌 (방어력 +5)</span><p className="text-xs font-bold text-yellow-300 mt-1">현재: +{upgradeInfo.defense}</p></div>
+                        <button disabled={bp < 15} onClick={() => { playClickSound(); handleBuyUpgrade('defense'); }} className={`w-full mt-3 py-1 text-xs font-bold rounded ${bp >= 15 ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-700 opacity-50'}`}>15 BP로 주입</button>
+                      </div>
+                      <div className="bg-gray-900 p-3 border-2 border-gray-700 rounded-lg flex flex-col justify-between shadow-md">
+                        <div><span className="text-teal-400 font-bold text-sm">상처약 (+1개 구매)</span><p className="text-xs font-bold text-yellow-300 mt-1">소지: {potions}개</p></div>
+                        <button disabled={bp < 10 || potions >= 5} onClick={() => { playClickSound(); handleBuyUpgrade('potion'); }} className={`w-full mt-3 py-1 text-xs font-bold rounded ${bp >= 10 && potions < 5 ? 'bg-teal-500 hover:bg-teal-600' : 'bg-gray-700 opacity-50'}`}>{potions >= 5 ? '가득 참' : '10 BP로 구매'}</button>
+                      </div>
+                    </div>
+                    <button onClick={() => { playClickSound(); setGameState('stage_clear'); }} className="w-full py-3 bg-gray-700 hover:bg-gray-600 border-2 border-gray-500 rounded-lg font-bold">뒤로가기</button>
+                  </div>
+                </div>
+              );
+            }
+
+            if (gameState === 'legendary_select') {
+              return (
+                <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 font-mono">
+                  <div className="max-w-2xl w-full bg-white border-8 border-gray-800 rounded-xl p-6 shadow-2xl">
+                    <h1 className="text-2xl font-black text-center mb-4 text-purple-600 animate-bounce">전설의 포켓몬 출현!</h1>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 mb-4 max-h-96 overflow-y-auto p-2">
+                      {legendaryOptions.map(poke => (
+                        <button key={poke.id} onClick={() => {
+                            playClickSound();
+                            if (poke.isShiny) setShinyList(prev => [...new Set([...prev, poke.id])]);
+                            setOwnedLegendaries(prev => [...prev, poke.id]);
+                            setPendingLegendaryGen(null);
+                            startBattle(player, stage);
+                          }} className="flex flex-col items-center p-3 border-4 border-gray-300 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all relative overflow-hidden">
+                          {poke.isShiny && <div className="absolute inset-0 bg-yellow-200 opacity-20 animate-pulse rounded-lg"></div>}
+                          <img src={poke.front} alt={poke.name} className="w-20 h-20 rendering-pixelated mb-2 relative z-10" />
+                          <span className={`font-bold text-xs text-center relative z-10 ${poke.isShiny ? 'text-yellow-600' : 'text-gray-800'}`}>{poke.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            if (gameState === 'pokemon_switch') {
+              const availablePokemon = Object.values(pokemonData).filter(p => 
+                (!p.isLegendary && p.unlockLevel <= playerLevel && !evolvedAway.includes(p.id) && !String(p.id).startsWith('M') && !String(p.id).startsWith('P') && !String(p.id).startsWith('B') && !String(p.id).startsWith('W') && !String(p.id).startsWith('D') && !String(p.id).startsWith('L') && !String(p.id).startsWith('C') && !String(p.id).startsWith('A')) || 
+                ownedLegendaries.includes(p.id) || unlockedEvolutions.includes(p.id)
+              );
+
+              const handleSelectPokemon = (basePoke) => {
+                if (faintedPokemonIds.includes(basePoke.id)) return;
+                if (player.baseId === basePoke.id && playerHpRef.current > 0) { setGameState('battle'); return; }
+                
+                const wasFainted = playerHpRef.current <= 0;
+                if (playerHpRef.current > 0) setPartyHpPct(prev => ({...prev, [player.baseId]: playerHpRef.current / player.maxHp}));
+
+                const scaledNewPlayer = getScaledStats(basePoke, playerLevel); 
+                const pct = partyHpPct[basePoke.id] !== undefined ? partyHpPct[basePoke.id] : 1.0;
+                const newHp = Math.max(1, Math.floor(scaledNewPlayer.maxHp * pct));
+                
+                setPlayer({ ...scaledNewPlayer, baseId: basePoke.id }); updatePlayerHp(newHp);
+                
+                if (wasFainted) setDialogue(`가라! ${scaledNewPlayer.name}!`); else setDialogue(`무엇을 할까?`);
+                setMenuView('main'); setGameState('battle');
+              };
+
+              return (
+                <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 font-mono text-white">
+                  <div className="max-w-md w-full bg-gray-800 border-4 border-gray-600 rounded-xl p-6 shadow-2xl">
+                    <h2 className="text-2xl font-bold mb-6 text-center">{playerHpRef.current <= 0 ? '다음 포켓몬을 선택하세요!' : '포켓몬 교체'}</h2>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6 max-h-96 overflow-y-auto p-2">
+                      {availablePokemon.map(basePoke => {
+                        const poke = getScaledStats(basePoke, playerLevel);
+                        const isFainted = faintedPokemonIds.includes(poke.id);
+                        const isCurrent = player.baseId === poke.id;
+                        const pct = isCurrent ? (playerHpRef.current/player.maxHp) : (partyHpPct[poke.id] !== undefined ? partyHpPct[poke.id] : 1.0);
+
+                        return (
+                          <button key={poke.id} onClick={() => { playClickSound(); handleSelectPokemon(basePoke); }} disabled={isFainted || (isCurrent && playerHpRef.current <= 0)} className={`flex flex-col items-center p-2 border-2 rounded-lg transition-colors ${isCurrent && playerHpRef.current > 0 ? 'border-green-500 bg-green-900' : isFainted ? 'border-red-900 bg-red-950 opacity-50 cursor-not-allowed' : 'border-gray-500 bg-gray-700 hover:border-blue-400 hover:bg-blue-900'}`}>
+                            <img src={poke.front} alt={poke.name} className={`w-16 h-16 rendering-pixelated ${isFainted ? 'grayscale opacity-50' : ''}`} />
+                            <span className={`font-bold text-xs text-center ${poke.isShiny ? 'text-yellow-400' : 'text-gray-200'}`}>{poke.name}</span>
+                            <div className="w-full bg-gray-900 h-2 mt-2 rounded-full overflow-hidden border border-gray-700">
+                              <div className={`h-full ${pct > 0.5 ? 'bg-green-500' : pct > 0.2 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${pct * 100}%` }}></div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {playerHpRef.current > 0 && <button onClick={() => { playClickSound(); setGameState('battle'); }} className={buttonClass}>배틀로 돌아가기</button>}
+                  </div>
+                </div>
+              );
+            }
+
+            if (gameState === 'gameover') {
+              return (
+                <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 font-mono text-white">
+                  <div className="text-center">
+                    <h2 className="text-4xl font-bold mb-8 text-red-500">배틀 종료!</h2>
+                    <div className="flex justify-center items-end gap-8 mb-8 grayscale opacity-50">
+                      <img src={player.front} alt="player" className="w-32 h-32 rendering-pixelated" />
+                    </div>
+                    <p className="text-2xl mb-4 font-bold">도달 스테이지 : {stage}</p>
+                    <p className="text-xl mb-8 text-gray-400">포켓몬이 모두 기절했다...<br/>서둘러 포켓몬 센터로 가야 합니다!</p>
+                    <button onClick={() => { playClickSound(); setGameState('start'); }} className={buttonClass}>처음부터 다시하기</button>
+                  </div>
+                </div>
+              );
+            }
+
+            if (gameState === 'game_clear_choice') {
+              return (
+                <div className="min-h-screen bg-yellow-100 flex items-center justify-center p-4 font-mono text-gray-800">
+                  <div className="text-center bg-white p-10 rounded-2xl border-8 border-yellow-400 shadow-2xl max-w-lg w-full relative overflow-hidden">
+                    <h2 className="text-4xl font-black mb-6 text-yellow-500 drop-shadow-[2px_2px_0_rgba(0,0,0,1)] relative z-10">🎉 챔피언 등극! 🎉</h2>
+                    <p className="text-xl mb-4 font-black text-purple-600 relative z-10">무패의 챔피언 단델을 꺾었습니다!</p>
+                    <p className="text-md mb-8 text-gray-700 font-bold relative z-10">이제 명예의 전당에 이름을 새길 수 있습니다.<br/>하지만... 미지의 시련이 당신을 부르고 있습니다.</p>
+                    <div className="flex flex-col gap-4 relative z-10">
+                      <button onClick={() => { playClickSound(); setGameState('master_select'); }} className="w-full py-3 px-4 bg-yellow-400 border-4 border-yellow-600 rounded-lg font-black text-gray-900 shadow-[4px_4px_0_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 text-lg">명예의 전당 등록 (엔딩)</button>
+                      <button onClick={() => { 
+                          playClickSound(); 
+                          setStage(46); 
+                          updatePlayerHp(player.maxHp);
+                          setPotions(5);
+                          setPartyHpPct({}); setFaintedPokemonIds([]);
+                          startBattle(player, 46); 
+                      }} className="w-full py-3 px-4 bg-red-600 border-4 border-red-800 rounded-lg font-black text-white shadow-[4px_4px_0_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 animate-pulse text-lg">마지막 시련 도전 (VS 지우)</button>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            if (gameState === 'game_clear') {
+              const isTrueEnding = stage === 46;
+              return (
+                <div className="min-h-screen bg-yellow-100 flex items-center justify-center p-4 font-mono text-gray-800">
+                  <div className="text-center bg-white p-10 rounded-2xl border-8 border-yellow-400 shadow-2xl max-w-lg w-full relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-full pointer-events-none flex justify-center items-center opacity-20">
+                       <div className="w-64 h-64 bg-yellow-400 rounded-full animate-ping"></div>
+                    </div>
+                    <h2 className="text-4xl font-black mb-6 text-yellow-500 drop-shadow-[2px_2px_0_rgba(0,0,0,1)] relative z-10">
+                      {isTrueEnding ? '🌟 진정한 마스터 🌟' : '🎉 챔피언 등극! 🎉'}
+                    </h2>
+                    <div className="flex justify-center mb-6 relative z-10">
+                      <img src={player.front} alt="player" className="w-40 h-40 rendering-pixelated animate-bounce drop-shadow-xl" />
+                    </div>
+                    <p className="text-2xl mb-4 font-black text-purple-600 relative z-10">
+                      {isTrueEnding ? '전설적인 트레이너 지우를 꺾었습니다!' : '무패의 챔피언 단델을 꺾었습니다!'}
+                    </p>
+                    {isTrueEnding && <p className="text-red-500 font-bold animate-pulse text-lg mb-2 relative z-10">• 영원한 유대의 증표 [지우의 모자] 획득!</p>}
+                    <p className="text-lg mb-8 text-gray-700 font-bold relative z-10">
+                      모든 시련을 이겨낸 당신은<br/>세계 최강의 포켓몬 마스터입니다!
+                    </p>
+                    <button onClick={() => { playClickSound(); setGameState('master_select'); }} className={`relative z-10 ${buttonClass}`}>다음 회차의 파트너 선택하기</button>
+                  </div>
+                </div>
+              );
+            }
+
+            if (gameState === 'master_select') {
+              const availablePokemon = Object.values(pokemonData).filter(p => 
+                (!p.isLegendary && p.unlockLevel <= playerLevel && !evolvedAway.includes(p.id) && !String(p.id).startsWith('M') && !String(p.id).startsWith('P') && !String(p.id).startsWith('B') && !String(p.id).startsWith('W') && !String(p.id).startsWith('D') && !String(p.id).startsWith('L') && !String(p.id).startsWith('C') && !String(p.id).startsWith('A')) || 
+                ownedLegendaries.includes(p.id) || unlockedEvolutions.includes(p.id)
+              );
+
+              return (
+                <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 font-mono text-white">
+                  <div className="max-w-3xl w-full bg-yellow-900 border-4 border-yellow-500 rounded-xl p-6 shadow-2xl">
+                    <h2 className="text-3xl font-black mb-4 text-center text-yellow-400 drop-shadow-md">명예의 전당 등록</h2>
+                    <p className="text-center text-gray-200 mb-6 font-bold leading-relaxed">
+                      챔피언 등극을 축하합니다!<br/>새로운 모험(다음 회차)에 데려갈 포켓몬을 딱 한 마리만 골라주세요.<br/>
+                      선택된 포켓몬은 영광스러운 <span className="text-yellow-300">포켓몬 마스터</span> 칭호를 얻고 1스테이지부터 파티에 합류합니다!
+                    </p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 mb-4 max-h-96 overflow-y-auto p-3 bg-gray-800 rounded-lg border-2 border-gray-600">
+                      {availablePokemon.map(basePoke => {
+                        const poke = getScaledStats(basePoke, playerLevel);
+                        const isAlreadyMaster = masterPokemonIds.includes(poke.id);
+                        return (
+                          <button key={poke.id} onClick={() => {
+                            playClickSound();
+                            if (!masterPokemonIds.includes(poke.id)) {
+                              setMasterPokemonIds(prev => [...prev, poke.id]);
+                            }
+                            setGameState('start');
+                          }} disabled={isAlreadyMaster} className={`flex flex-col items-center p-2 border-2 rounded-lg transition-colors ${isAlreadyMaster ? 'border-gray-500 bg-gray-700 opacity-50 cursor-not-allowed' : 'border-yellow-500 bg-gray-700 hover:border-yellow-400 hover:bg-gray-600 shadow-md active:translate-y-1'}`}>
+                            <img src={poke.front} alt={poke.name} className="w-16 h-16 rendering-pixelated" />
+                            <span className={`font-bold text-[11px] sm:text-xs text-center mt-1 break-keep ${poke.isShiny ? 'text-yellow-400' : 'text-gray-200'}`}>{pokemonData[poke.id].name}</span>
+                            {isAlreadyMaster && <span className="text-[10px] text-red-400 mt-1 font-bold">이미 마스터</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div className="min-h-screen bg-gray-900 flex items-center justify-center p-2 sm:p-4 font-mono select-none overflow-hidden relative">
+                <div style={{ transform: `scale(${zoom})`, transformOrigin: 'center' }} className="w-full max-w-lg bg-gray-200 border-x-8 border-t-8 border-b-[24px] border-gray-300 rounded-t-3xl rounded-b-[40px] shadow-2xl overflow-hidden relative pb-12 transition-transform duration-300">
+                  <div className="w-full h-8 bg-red-600 border-b-4 border-red-800 flex items-center px-4 mb-2">
+                    <div className="w-4 h-4 bg-red-400 rounded-full border-2 border-red-800 mr-2"></div>
+                    <div className="w-4 h-4 bg-yellow-400 rounded-full border-2 border-yellow-600 mr-2"></div>
+                    <div className="w-4 h-4 bg-green-400 rounded-full border-2 border-green-600"></div>
+                    <div className="ml-auto text-white font-bold text-xs bg-red-800 px-2 py-1 rounded flex items-center gap-2">
+                      <span>BP: {bp}</span><span>STAGE {stage}</span>
+                    </div>
+                  </div>
+
+                  {battleField && (
+                    <div className="mx-4 mb-1.5 px-3 py-1 bg-teal-900/90 text-teal-200 rounded-lg border-2 border-teal-500 flex items-center justify-between text-xs font-bold animate-pulse">
+                      <span>현재 필드: {battleField.name}</span><span className="text-[10px] text-teal-300 font-normal">{battleField.desc}</span>
+                    </div>
+                  )}
+
+                  <div className="bg-white mx-4 border-4 border-gray-800 rounded-lg overflow-hidden relative">
+                    <div className="h-64 bg-gradient-to-b from-blue-200 to-green-300 relative overflow-hidden">
+                      <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
+                        <div className="bg-white/90 border-2 border-gray-800 p-2 rounded-lg w-48 shadow-md rounded-br-2xl relative">
+                          <div className={`font-black text-[10px] mb-1 ${currentTrainer.color}`}>{currentTrainer.name}</div>
+                          <div className="flex justify-between font-bold text-sm items-center">
+                            <div className="flex items-center gap-1">
+                              <span className={enemy.isShiny ? 'text-yellow-600' : ''}>{enemy.name}</span>
+                              <span className={`text-[9px] px-1 py-0.5 rounded-sm border-2 ${getTypeColor(enemy.type)} leading-none`}>{typeKoreanMap[enemy.type]}</span>
+                            </div>
+                            <span>Lv.{enemy.level}</span>
+                          </div>
+                          <HealthBar current={enemyHp} max={enemy.maxHp} />
+                          {enemyParty.length > 1 && (
+                            <div className="flex gap-1 mt-1.5 justify-end">
+                              {enemyParty.map((_, idx) => (
+                                <div key={idx} className={`w-3 h-3 rounded-full border border-gray-800 shadow-sm overflow-hidden ${idx < enemyIndex ? 'bg-gray-400' : 'bg-red-500'}`}><div className="w-full h-1/2 bg-white/40"></div></div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="relative w-32 h-32 flex justify-center items-end mt-4">
+                          <div className="absolute bottom-2 w-20 h-4 bg-black/20 rounded-[50%]"></div>
+                          
+                          {currentTrainer.sprite && currentTrainer.type !== 'hidden' && (
+                            <img 
+                              src={currentTrainer.sprite} 
+                              alt={currentTrainer.name} 
+                              className={`absolute -top-3 right-0 w-24 h-24 object-contain rendering-pixelated z-0 transition-opacity duration-300 ${enemyHp <= 0 ? 'opacity-40 grayscale' : 'opacity-100'}`} 
+                            />
+                          )}
+
+                          <div className={`relative z-10 w-full h-full flex justify-center items-end ${checkIsFloating(enemy) ? 'mb-4' : '-mb-2'}`}>
+                            <img src={enemy.front} alt="Enemy" className={`w-32 h-32 object-contain rendering-pixelated ${enemyAnim} ${enemyHp <= 0 ? 'opacity-0 translate-y-10 transition-all duration-200' : ''}`} style={{ imageRendering: 'pixelated' }} />
+                          </div>
+                          {activeEffect && activeEffect.target === 'enemy' && (
+                            <div className="absolute inset-0 flex items-center justify-center z-50 animate-ping text-6xl drop-shadow-[0_0_10px_rgba(255,255,255,1)]">
+                              {effectVisuals[activeEffect.type] || '💢'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="absolute bottom-2 left-4 right-4 flex justify-between items-end">
+                        <div className="relative w-32 h-32 flex justify-center items-end">
+                           <div className="absolute bottom-0 w-24 h-5 bg-black/20 rounded-[50%]"></div>
+                           <div className={`relative z-10 w-full h-full flex justify-center items-end ${checkIsFloating(player) ? 'mb-4' : '-mb-4'}`}>
+                             <img src={player.back} alt="Player" className={`w-40 h-40 max-w-none object-contain rendering-pixelated ${playerAnim} ${playerHp <= 0 ? 'opacity-0 translate-y-10 transition-all duration-200' : ''}`} style={{ imageRendering: 'pixelated' }} />
+                           </div>
+                           {activeEffect && activeEffect.target === 'player' && (
+                            <div className="absolute inset-0 flex items-center justify-center z-50 animate-ping text-6xl drop-shadow-[0_0_10px_rgba(255,255,255,1)]">
+                              {effectVisuals[activeEffect.type] || '💢'}
+                            </div>
+                           )}
+                        </div>
+                        <div className="bg-white/90 border-2 border-gray-800 p-2 rounded-lg w-48 shadow-md rounded-tl-2xl mb-4">
+                          <div className="flex justify-between font-bold text-sm items-center">
+                            <div className="flex items-center gap-1">
+                              <span className={player.isShiny ? 'text-yellow-600' : ''}>{player.name}</span>
+                              <span className={`text-[9px] px-1 py-0.5 rounded-sm border-2 ${getTypeColor(player.type)} leading-none`}>{typeKoreanMap[player.type]}</span>
+                            </div>
+                            <span>Lv.{playerLevel}</span>
+                          </div>
+                          <HealthBar current={playerHp} max={player.maxHp} />
+                          <div className="text-right text-xs font-bold mt-1 text-gray-700">{playerHp} / {player.maxHp}</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="h-32 bg-white border-t-4 border-gray-800 p-2 flex">
+                      <div className={`border-4 border-double border-gray-600 rounded-lg p-3 bg-gray-50 flex-grow font-bold text-gray-800 text-lg sm:text-xl leading-relaxed flex items-center ${menuView !== 'hidden' ? 'w-1/2 mr-2' : 'w-full'}`}>
+                        {dialogue}
+                      </div>
+                      {menuView === 'main' && !isAnimating && (
+                        <div className="w-1/2 flex flex-col gap-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <button onClick={() => { playClickSound(); setMenuView('fight'); }} className="bg-red-50 border-2 border-red-500 rounded-lg font-bold text-red-700 hover:bg-red-100 transition-colors shadow-sm active:translate-y-1">싸운다</button>
+                            <button onClick={() => { playClickSound(); handleItem(); }} className="bg-blue-50 border-2 border-blue-500 rounded-lg font-bold text-blue-700 hover:bg-blue-100 transition-colors shadow-sm active:translate-y-1 flex flex-col items-center justify-center"><span>가방</span><span className="text-xs font-normal">(상처약 x{potions})</span></button>
+                            <button onClick={() => { playClickSound(); setGameState('pokemon_switch'); }} className="bg-green-50 border-2 border-green-500 rounded-lg font-bold text-green-700 hover:bg-green-100 transition-colors shadow-sm active:translate-y-1">포켓몬</button>
+                            <button onClick={() => { playClickSound(); handleRun(); }} className="bg-yellow-50 border-2 border-yellow-500 rounded-lg font-bold text-yellow-700 hover:bg-yellow-100 transition-colors shadow-sm active:translate-y-1">도망친다</button>
+                          </div>
+                          {canMegaEvolve && <button onClick={() => { playClickSound(); handleMegaEvolveClick(); }} className="w-full bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-white font-black py-1.5 rounded-lg border-2 border-purple-900 shadow-[2px_2px_0_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none animate-pulse text-sm sm:text-base">메가진화 (키스톤 소모)</button>}
+                          {canPrimalRevert && <button onClick={() => { playClickSound(); handlePrimalRevertClick(); }} className="w-full bg-gradient-to-r from-blue-500 via-yellow-500 to-red-500 text-white font-black py-1.5 rounded-lg border-2 border-yellow-900 shadow-[2px_2px_0_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none animate-pulse text-sm sm:text-base">원시회귀 (구슬 소모)</button>}
+                          {canFuseKyurem && <button onClick={() => { playClickSound(); handleFusionClick('kyurem'); }} className="w-full bg-gradient-to-r from-cyan-500 via-blue-500 to-gray-500 text-white font-black py-1.5 rounded-lg border-2 border-cyan-900 shadow-[2px_2px_0_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none animate-pulse text-sm sm:text-base">합체 (유전자쐐기 소모)</button>}
+                          {canFuseNecrozma && <button onClick={() => { playClickSound(); handleFusionClick('necrozma'); }} className="w-full bg-gradient-to-r from-yellow-500 via-orange-500 to-purple-500 text-white font-black py-1.5 rounded-lg border-2 border-yellow-900 shadow-[2px_2px_0_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none animate-pulse text-sm sm:text-base">합체 (네크로플러스 소모)</button>}
+                          {canCrownedZacian && <button onClick={() => { playClickSound(); executeCrowned('C888'); }} className="w-full bg-gradient-to-r from-blue-400 via-teal-500 to-indigo-500 text-white font-black py-1.5 rounded-lg border-2 border-blue-900 shadow-[2px_2px_0_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none animate-pulse text-sm sm:text-base">검왕 폼체인지 (녹슨 검 소모)</button>}
+                          {canCrownedZamazenta && <button onClick={() => { playClickSound(); executeCrowned('C889'); }} className="w-full bg-gradient-to-r from-red-500 via-pink-600 to-purple-600 text-white font-black py-1.5 rounded-lg border-2 border-red-900 shadow-[2px_2px_0_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none animate-pulse text-sm sm:text-base">방패왕 폼체인지 (녹슨 방패 소모)</button>}
+                          {canAwakenKeldeo && <button onClick={() => { playClickSound(); executeAwaken('R647'); }} className="w-full bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-600 text-white font-black py-1.5 rounded-lg border-2 border-cyan-900 shadow-[2px_2px_0_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none animate-pulse text-sm sm:text-base">각오의 모습 (신비의칼 소모)</button>}
+                          {canAwakenMeloetta && <button onClick={() => { playClickSound(); executeAwaken('P648'); }} className="w-full bg-gradient-to-r from-pink-400 via-rose-500 to-red-400 text-white font-black py-1.5 rounded-lg border-2 border-pink-900 shadow-[2px_2px_0_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none animate-pulse text-sm sm:text-base">스텝폼 (옛노래 소모)</button>}
+                          {canAwakenHoopa && <button onClick={() => { playClickSound(); executeAwaken('U720'); }} className="w-full bg-gradient-to-r from-purple-500 via-fuchsia-600 to-indigo-600 text-white font-black py-1.5 rounded-lg border-2 border-purple-900 shadow-[2px_2px_0_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none animate-pulse text-sm sm:text-base">굴레를 벗어난 후파 (굴레의항아 소모)</button>}
+                          {canOriginDialga && <button onClick={() => { playClickSound(); executeOriginRevert('O483'); }} className="w-full bg-gradient-to-r from-blue-500 via-indigo-600 to-gray-500 text-white font-black py-1.5 rounded-lg border-2 border-indigo-900 shadow-[2px_2px_0_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none animate-pulse text-sm sm:text-base">오리진폼 (큰금강옥 소모)</button>}
+                          {canOriginPalkia && <button onClick={() => { playClickSound(); executeOriginRevert('O484'); }} className="w-full bg-gradient-to-r from-pink-500 via-purple-600 to-rose-500 text-white font-black py-1.5 rounded-lg border-2 border-purple-900 shadow-[2px_2px_0_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none animate-pulse text-sm sm:text-base">오리진폼 (큰백옥 소모)</button>}
+                          {canOriginGiratina && <button onClick={() => { playClickSound(); executeOriginRevert('O487'); }} className="w-full bg-gradient-to-r from-purple-700 via-gray-600 to-red-700 text-white font-black py-1.5 rounded-lg border-2 border-gray-900 shadow-[2px_2px_0_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none animate-pulse text-sm sm:text-base">오리진폼 (백금옥 소모)</button>}
+                          {canUltraBurst && <button onClick={() => { playClickSound(); executeUltraBurst('U800'); }} className="w-full bg-gradient-to-r from-yellow-300 via-yellow-500 to-orange-500 text-white font-black py-1.5 rounded-lg border-2 border-yellow-700 shadow-[2px_2px_0_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none animate-pulse text-sm sm:text-base">울트라버스트 (Z크리스탈 소모)</button>}
+                          {canAshTransform && (
+                              <button onClick={() => { playClickSound(); executeAshTransform(player.baseId === 25 ? 'A25' : 'A658'); }} className="w-full bg-gradient-to-r from-red-500 via-yellow-400 to-blue-500 text-white font-black py-1.5 rounded-lg border-2 border-red-900 shadow-[2px_2px_0_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none animate-pulse text-sm sm:text-base">유대변화 (지우의 모자 소모)</button>
+                          )}
+                        </div>
+                      )}
+                      {menuView === 'run_confirm' && !isAnimating && (
+                        <div className="w-1/2 flex flex-col gap-2 relative">
+                          <button onClick={() => { playClickSound(); executeRunConfirmed(); }} className="w-full bg-red-50 border-2 border-red-500 rounded-lg font-bold text-red-700 hover:bg-red-100 transition-colors shadow-sm active:translate-y-1 py-3 text-sm">그럼에도 도망친다</button>
+                          <button onClick={() => { playClickSound(); setDialogue(`무엇을 할까?`); setMenuView('main'); }} className="w-full bg-gray-50 border-2 border-gray-500 rounded-lg font-bold text-gray-700 hover:bg-gray-100 transition-colors shadow-sm active:translate-y-1 py-3 text-sm">취소하고 싸운다</button>
+                        </div>
+                      )}
+                      {menuView === 'fight' && !isAnimating && (
+                        <div className="w-1/2 grid grid-cols-2 gap-2 relative">
+                          {player.moves.map((move, idx) => (
+                            <button key={idx} onClick={() => { playClickSound(); handleAttack(move); }} className={`${getTypeColor(move.type)} border-2 rounded-lg font-bold hover:brightness-110 transition-all shadow-sm active:translate-y-1 text-sm sm:text-base flex flex-col items-center justify-center py-1`}>
+                              <span>{move.name}</span><span className="text-[10px] sm:text-xs font-normal opacity-90">{typeKoreanMap[move.type]} / 위력:{move.power}</span>
+                            </button>
+                          ))}
+                          <button onClick={() => { playClickSound(); setMenuView('main'); }} className="absolute -top-10 right-0 bg-white border-2 border-gray-800 px-3 py-1 rounded-lg text-sm font-bold hover:bg-gray-200 shadow-[2px_2px_0_0_rgba(0,0,0,1)]">취소</button>
+                        </div>
+                      )}
+                      {menuView === 'mega_select' && !isAnimating && (
+                        <div className="w-1/2 flex gap-2 justify-center relative">
+                          {megaSelectOptions.map(mId => (
+                             <button key={mId} onClick={() => { playClickSound(); executeMegaEvolution(mId); }} className="flex-1 bg-purple-50 border-2 border-purple-500 rounded-lg p-2 font-bold text-purple-800 hover:bg-purple-100 shadow-sm active:translate-y-1 text-center flex flex-col items-center justify-center">
+                                <span className="text-sm sm:text-base">{pokemonData[mId].name}</span><div className="text-[10px] sm:text-xs font-normal text-gray-500 font-sans mt-1">{pokemonData[mId].type.toUpperCase()} / 메가스톤 소모</div>
+                             </button>
+                          ))}
+                          <button onClick={() => { playClickSound(); setMenuView('main'); }} className="absolute -top-10 right-0 bg-white border-2 border-gray-800 px-3 py-1 rounded-lg text-sm font-bold hover:bg-gray-200 shadow-[2px_2px_0_0_rgba(0,0,0,1)]">취소</button>
+                        </div>
+                      )}
+                      {menuView === 'fusion_select' && !isAnimating && (
+                        <div className="w-1/2 flex gap-2 justify-center relative">
+                          {fusionSelectOptions.map(fId => (
+                             <button key={fId} onClick={() => { playClickSound(); executeFusion(fId); }} className="flex-1 bg-indigo-50 border-2 border-indigo-500 rounded-lg p-2 font-bold text-indigo-800 hover:bg-indigo-100 shadow-sm active:translate-y-1 text-center flex flex-col items-center justify-center">
+                                <span className="text-sm sm:text-base">{pokemonData[fId].name}</span><div className="text-[10px] sm:text-xs font-normal text-gray-500 font-sans mt-1">합체 아이템 소모</div>
+                             </button>
+                          ))}
+                          <button onClick={() => { playClickSound(); setMenuView('main'); }} className="absolute -top-10 right-0 bg-white border-2 border-gray-800 px-3 py-1 rounded-lg text-sm font-bold hover:bg-gray-200 shadow-[2px_2px_0_0_rgba(0,0,0,1)]">취소</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="absolute bottom-4 right-6 flex gap-2 rotate-45">
+                    <div className="w-1 h-6 bg-gray-400 rounded-full"></div>
+                    <div className="w-1 h-6 bg-gray-400 rounded-full"></div>
+                    <div className="w-1 h-6 bg-gray-400 rounded-full"></div>
+                    <div className="w-1 h-6 bg-gray-400 rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+            );
+          };
+
+          return (
+            <>
+              <audio ref={bgmRef} src={currentBgmSrc} loop />
+
+              <div className="fixed top-4 right-4 sm:top-6 sm:right-6 z-[9999] flex gap-2">
+                <button onClick={() => { playClickSound(); toggleBgm(); }} className="bg-black/60 text-white px-3 py-1.5 rounded-lg font-bold shadow-lg hover:bg-black transition-colors border-2 border-gray-600">
+                  {bgmOn ? '🔊 BGM' : '🔇 BGM'}
+                </button>
+                <button onClick={() => setZoom(z => Math.max(0.5, z - 0.1))} className="bg-black/60 text-white px-3 py-1.5 rounded-lg font-bold shadow-lg hover:bg-black transition-colors border-2 border-gray-600">🔍 -</button>
+                <button onClick={() => setZoom(z => Math.min(2.0, z + 0.1))} className="bg-black/60 text-white px-3 py-1.5 rounded-lg font-bold shadow-lg hover:bg-black transition-colors border-2 border-gray-600">🔍 +</button>
+              </div>
+
+              {renderGameScreen()}
+            </>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
