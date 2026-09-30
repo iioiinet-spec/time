@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>중학 생활영어 100선 · 말하기 트레이너</title>
+
+<!-- ▼ 외부 의존성은 CDN 2개뿐 (Tailwind + 웹폰트). 그 외 100% 바닐라 JS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+
+<script>
+  /* CDN이 잠시 막히거나 오프라인이어도 스크립트 오류가 나지 않도록 방어 */
+  if (window.tailwind) tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Noto Sans KR', 'system-ui', 'sans-serif'],
+          en:   ['Nunito', 'Noto Sans KR', 'sans-serif']
+        },
+        colors: {
+          ivory: '#FBF8F1',
+          ink:   '#2A2622',
+          teal:  { 50:'#EAF7F5', 100:'#CFEDE8', 400:'#3FB0A0', 500:'#22998A', 600:'#158073', 700:'#0F6459' },
+          sun:   { 100:'#FFF1D6', 400:'#F5B841', 500:'#E9A522' }
+        },
+        boxShadow: { soft: '0 6px 24px -8px rgba(42,38,34,.18)' }
+      }
+    }
+  };
+</script>
+
+<style>
+  /* Tailwind CDN이 로드되지 않아도 화면 전환만큼은 동작하도록 하는 최소 안전장치 */
+  .hidden { display: none !important; }
+
+  html { scroll-behavior: smooth; }
+  body { -webkit-tap-highlight-color: transparent; }
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-thumb { background: #d9d2c4; border-radius: 9px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  @keyframes pop { 0% { transform: translateY(6px) scale(.98); opacity: 0 } 100% { transform: none; opacity: 1 } }
+  .pop { animation: pop .22s ease-out both; }
+
+  @keyframes pulse-mic { 0%,100% { box-shadow: 0 0 0 0 rgba(233,165,34,.55) } 50% { box-shadow: 0 0 0 12px rgba(233,165,34,0) } }
+  .mic-on { animation: pulse-mic 1.2s infinite; }
+
+  input[type=range] { accent-color: #158073; }
+  .tab-on { background:#158073; color:#fff; box-shadow:0 6px 18px -8px rgba(21,128,115,.9); }
+  .tab-off { background:#fff; color:#7a7168; }
+</style>
+</head>
+
+<body class="bg-ivory text-ink font-sans min-h-screen">
+
+<!-- ══════════════════ HEADER ══════════════════ -->
+<header class="sticky top-0 z-30 bg-ivory/90 backdrop-blur border-b border-black/5">
+  <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+    <div class="w-10 h-10 rounded-2xl bg-teal-600 text-white grid place-items-center text-xl shadow-soft shrink-0">🗣️</div>
+    <div class="min-w-0 flex-1">
+      <h1 class="font-en font-extrabold text-lg leading-tight">Everyday English 100</h1>
+      <p class="text-[11px] text-ink/50 truncate">중학 생활영어 말하기 트레이너 · 세영AI코딩학원</p>
+    </div>
+    <button id="btn-reset" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-black/10 text-ink/50 hover:bg-white transition">기록 초기화</button>
+  </div>
+
+  <!-- 진행률 -->
+  <div class="max-w-5xl mx-auto px-4 pb-3">
+    <div class="flex items-center justify-between text-[11px] text-ink/55 mb-1">
+      <span>학습 진행률</span><span id="progress-label">0 / 0</span>
+    </div>
+    <div class="h-2 rounded-full bg-black/5 overflow-hidden">
+      <div id="progress-bar" class="h-full w-0 bg-gradient-to-r from-teal-400 to-teal-600 transition-all duration-500"></div>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════ TABS ══════════════════ -->
+<nav class="max-w-5xl mx-auto px-4 mt-4">
+  <div class="grid grid-cols-2 gap-2 p-1.5 bg-black/5 rounded-2xl">
+    <button data-tab="list"     class="tab py-2.5 rounded-xl text-sm font-bold transition">📚 표현 카드</button>
+    <button data-tab="roleplay" class="tab py-2.5 rounded-xl text-sm font-bold transition">🎭 역할극 연습</button>
+  </div>
+</nav>
+
+<main class="max-w-5xl mx-auto px-4 py-5 pb-24">
+
+  <!-- ══════════════════ VIEW 1 : LIST ══════════════════ -->
+  <section id="view-list">
+    <!-- 음성 설정 -->
+    <div class="bg-white rounded-2xl shadow-soft p-4 mb-4">
+      <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <div class="flex items-center gap-3 flex-1 min-w-[220px]">
+          <span class="text-xs font-bold text-ink/60 shrink-0">🐢 속도</span>
+          <input id="rate" type="range" min="0.5" max="1.3" step="0.05" value="0.9" class="flex-1" />
+          <span id="rate-val" class="text-xs font-en font-bold text-teal-600 w-9 text-right">0.90</span>
+        </div>
+        <div class="flex items-center gap-2 flex-1 min-w-[220px]">
+          <span class="text-xs font-bold text-ink/60 shrink-0">🔊 음성</span>
+          <select id="voice" class="flex-1 text-xs border border-black/10 rounded-lg px-2 py-1.5 bg-white"></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 검색 + 카테고리 -->
+    <div class="mb-3">
+      <input id="search" type="search" placeholder="영어·한국어·상황으로 검색…"
+             class="w-full px-4 py-3 rounded-2xl border border-black/10 bg-white shadow-soft text-sm outline-none focus:ring-2 focus:ring-teal-400/40" />
+    </div>
+    <div id="chips" class="flex gap-2 overflow-x-auto pb-3 -mx-1 px-1"></div>
+
+    <div id="cards" class="grid sm:grid-cols-2 gap-3"></div>
+    <p id="empty" class="hidden text-center text-sm text-ink/40 py-14">검색 결과가 없어요 🔍</p>
+  </section>
+
+  <!-- ══════════════════ VIEW 2 : ROLEPLAY ══════════════════ -->
+  <section id="view-roleplay" class="hidden">
+    <!-- 시나리오 선택 -->
+    <div id="rp-picker">
+      <p class="text-sm text-ink/55 mb-3">연습할 상황을 골라 보세요. AI 친구가 영어로 말을 걸어 옵니다.</p>
+      <div id="rp-list" class="grid sm:grid-cols-2 gap-3"></div>
+    </div>
+
+    <!-- 대화 화면 -->
+    <div id="rp-stage" class="hidden">
+      <div class="bg-white rounded-2xl shadow-soft p-4 mb-3 flex items-center gap-3">
+        <div id="rp-avatar" class="w-12 h-12 rounded-2xl bg-teal-50 grid place-items-center text-2xl shrink-0"></div>
+        <div class="min-w-0 flex-1">
+          <p id="rp-name" class="font-en font-bold"></p>
+          <p id="rp-role" class="text-[11px] text-ink/50 truncate"></p>
+        </div>
+        <button id="rp-back" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-black/10 text-ink/55 hover:bg-ivory transition">목록</button>
+      </div>
+
+      <div id="chat" class="bg-white rounded-2xl shadow-soft p-4 h-[420px] overflow-y-auto flex flex-col gap-3"></div>
+
+      <!-- 입력부 -->
+      <div id="rp-input" class="mt-3 bg-white rounded-2xl shadow-soft p-3">
+        <div class="flex gap-2">
+          <button id="btn-mic" title="말하기" class="w-12 h-12 shrink-0 rounded-xl bg-sun-400 text-white text-xl grid place-items-center hover:bg-sun-500 transition">🎤</button>
+          <input id="answer" type="text" placeholder="영어로 대답을 입력하거나 🎤를 누르세요"
+                 class="flex-1 min-w-0 px-3 rounded-xl border border-black/10 text-sm outline-none focus:ring-2 focus:ring-teal-400/40" />
+          <button id="btn-send" class="w-12 h-12 shrink-0 rounded-xl bg-teal-600 text-white text-xl grid place-items-center hover:bg-teal-700 transition">➤</button>
+        </div>
+        <div class="flex gap-2 mt-2">
+          <button id="btn-hint"   class="flex-1 text-[11px] py-2 rounded-lg bg-black/5 hover:bg-black/10 transition">💡 힌트</button>
+          <button id="btn-sample" class="flex-1 text-[11px] py-2 rounded-lg bg-black/5 hover:bg-black/10 transition">📝 모범답안</button>
+          <button id="btn-replay" class="flex-1 text-[11px] py-2 rounded-lg bg-black/5 hover:bg-black/10 transition">🔁 다시 듣기</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="border-t border-black/5 py-6 text-center text-[11px] text-ink/40">
+  세영코딩연구소 / 세영AI코딩학원 · 바이브코딩 특강 &nbsp;|&nbsp; 설계 · 제작 : 김경훈 (Ph.D.)
+</footer>
+
+<!-- 토스트 -->
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-6 z-50 hidden px-4 py-2.5 rounded-xl bg-ink text-white text-xs shadow-lg"></div>
+
+<script>
+/* ==========================================================================
+   중학 생활영어 100선 · 말하기 트레이너   (Single HTML File)
+   - 외부 서버 / 빌드 / npm 설치 없이 브라우저에서 바로 실행됩니다.
+   - TTS : window.speechSynthesis       (모든 최신 브라우저)
+   - STT : webkitSpeechRecognition      (Chrome / Edge 권장, 그 외는 텍스트 입력)
+   - 저장: localStorage
+   ========================================================================== */
+
+/* ==========================================================================
+   [ 1 ] 학습 데이터
+   --------------------------------------------------------------------------
+   ★ 100선 확장 가이드 ★
+   아래 EXPRESSIONS 배열에 같은 모양의 객체를 계속 붙여 넣기만 하면 됩니다.
+   카테고리 칩·검색·진행률·역할극 목록은 전부 배열을 읽어 자동 생성되므로
+   화면 코드는 한 줄도 고칠 필요가 없습니다.
+
+   {
+     id        : 11,                     // 고유 숫자 (중복 금지)
+     category  : "학교생활",              // 새 이름을 쓰면 필터 칩이 자동 추가됨
+     en        : "영어 표현",
+     ko        : "한국어 뜻",
+     situation : "언제 쓰는 말인지 한 줄 설명",
+     tip       : "중학생 눈높이 포인트 (생략 가능)",
+     persona   : {
+       name : "AI 상대 이름",
+       emoji: "🧑",
+       role : "상대의 정체 / 상황",
+       turns: [                          // 3~5턴 권장
+         {
+           bot   : "AI가 먼저 건네는 영어 문장",
+           must  : [ ["동의어","표현들"], ["또 다른 필수 요소"] ],  // ← 채점 기준
+           hint  : "한국어 힌트",
+           sample: "모범 답안(영어)"
+         }
+       ]
+     }
+   }
+
+   ▸ must 의 채점 규칙
+     - must 는 "조건 그룹"의 배열입니다.
+     - 한 그룹 안의 표현 중 하나라도 사용자의 답에 들어 있으면 그 그룹은 정답 처리.
+     - (맞은 그룹 수 / 전체 그룹 수) 가 점수의 60%를 차지합니다.
+       (나머지는 문장 길이 20점 + 대문자·문장부호 20점)
+     - 그룹을 1개만 쓰면 쉬운 문제, 2~3개면 난이도가 올라갑니다.
+   ========================================================================== */
+
+const EXPRESSIONS = [
+  {
+    id: 1, category: "인사·소개",
+    en: "Nice to meet you. I'm Minji.",
+    ko: "만나서 반가워. 난 민지야.",
+    situation: "새 학기 첫날, 처음 만난 친구에게 이름을 말하며 인사할 때",
+    tip: "처음 만난 사이엔 meet, 이미 아는 사이엔 'Nice to see you'를 씁니다.",
+    persona: {
+      name: "Emma", emoji: "👩🏻‍🦰", role: "미국에서 막 전학 온 같은 반 친구",
+      turns: [
+        { bot: "Hi! I'm Emma. I just moved here from Boston.",
+          must: [["nice to meet","glad to meet","good to meet"], ["i'm ", "i am ", "my name"]],
+          hint: "‘만나서 반가워’ + 내 이름 소개를 이어서 말해 보세요.",
+          sample: "Nice to meet you, Emma. I'm Minji." },
+        { bot: "Minji? That's a pretty name. What grade are you in?",
+          must: [["grade", "second", "2nd", "middle school", "i'm in"]],
+          hint: "‘나는 중학교 2학년이야’ → I'm in the second grade of middle school.",
+          sample: "I'm in the second grade of middle school." },
+        { bot: "Really? We're in the same class then! See you tomorrow.",
+          must: [["see you", "bye", "have a good", "take care"]],
+          hint: "헤어질 때 인사로 마무리해 보세요.",
+          sample: "See you tomorrow, Emma. Have a good day!" }
+      ]
+    }
+  },
+  {
+    id: 2, category: "인사·소개",
+    en: "How's it going? — Not bad. How about you?",
+    ko: "잘 지내? — 나쁘지 않아. 너는?",
+    situation: "아는 친구를 복도에서 마주쳐 가볍게 안부를 물을 때",
+    tip: "How are you? 보다 훨씬 자주 쓰는 캐주얼 인사입니다.",
+    persona: {
+      name: "Jake", emoji: "🧢", role: "옆자리에 앉는 단짝 친구",
+      turns: [
+        { bot: "Hey! How's it going?",
+          must: [["good", "fine", "great", "not bad", "okay", "so so"], ["how about you", "and you", "how are you", "what about you"]],
+          hint: "내 기분을 말한 뒤, 상대에게도 똑같이 되물어 주세요.",
+          sample: "Not bad. How about you?" },
+        { bot: "Pretty good! Did you sleep well last night?",
+          must: [["yes", "no", "i slept", "i didn't", "i went to bed", "stayed up"]],
+          hint: "잘 잤는지 Yes / No로 시작해 한 문장 덧붙여 보세요.",
+          sample: "No, I stayed up late doing my homework." },
+        { bot: "Same here. Anyway, the first class starts soon. Shall we go in?",
+          must: [["sure", "okay", "let's go", "yes", "of course"]],
+          hint: "‘그래, 가자!’ 라고 대답해 보세요.",
+          sample: "Sure, let's go in." }
+      ]
+    }
+  },
+  {
+    id: 3, category: "학교생활",
+    en: "May I go to the nurse's office? I have a headache.",
+    ko: "보건실에 가도 될까요? 머리가 아파요.",
+    situation: "수업 중 몸이 아파 선생님께 허락을 구할 때",
+    tip: "선생님께는 Can I 보다 정중한 May I / Could I 를 씁니다.",
+    persona: {
+      name: "Mr. Brown", emoji: "👨🏼‍🏫", role: "영어 수업을 맡은 원어민 선생님",
+      turns: [
+        { bot: "Minji, you look pale today. Are you all right?",
+          must: [["headache", "stomachache", "sick", "not feeling", "hurts", "fever"]],
+          hint: "어디가 아픈지 말해 보세요. I have a headache.",
+          sample: "Not really. I have a bad headache." },
+        { bot: "Oh, I'm sorry to hear that. Do you need to see the nurse?",
+          must: [["may i", "can i", "could i"], ["nurse", "nurse's office"]],
+          hint: "‘보건실에 가도 될까요?’ 를 정중하게 물어보세요.",
+          sample: "May I go to the nurse's office, please?" },
+        { bot: "Of course. Take this pass and go downstairs.",
+          must: [["thank", "thanks"]],
+          hint: "감사 인사로 마무리하세요.",
+          sample: "Thank you, Mr. Brown." }
+      ]
+    }
+  },
+  {
+    id: 4, category: "학교생활",
+    en: "Can you say that again, please? I didn't catch that.",
+    ko: "다시 한 번 말씀해 주시겠어요? 못 알아들었어요.",
+    situation: "선생님이나 친구의 말을 놓쳤을 때 되물어 볼 때",
+    tip: "‘What?’ 한 마디만 하면 무례하게 들릴 수 있어요. 꼭 please 를 붙이세요.",
+    persona: {
+      name: "Leo", emoji: "🧑🏽‍🏫", role: "빠른 말투의 원어민 보조교사",
+      turns: [
+        { bot: "Okay everyone, turn to page ninety-four and do exercise three.",
+          must: [["say that again", "repeat", "pardon", "one more time", "didn't catch", "didn't hear"]],
+          hint: "‘다시 말씀해 주시겠어요?’ 라고 정중히 요청하세요.",
+          sample: "Can you say that again, please? I didn't catch that." },
+        { bot: "Sure. Page ninety-four, exercise number three. Got it?",
+          must: [["got it", "yes", "i see", "okay", "understand"]],
+          hint: "이해했다고 짧게 대답해 보세요.",
+          sample: "Got it. Thank you!" },
+        { bot: "Great. Raise your hand if you need help.",
+          must: [["thank", "okay", "i will", "sure"]],
+          hint: "알겠다고 답하며 마무리하세요.",
+          sample: "Okay, I will. Thanks a lot." }
+      ]
+    }
+  },
+  {
+    id: 5, category: "길 묻기",
+    en: "Excuse me, how can I get to the subway station?",
+    ko: "실례합니다, 지하철역에 어떻게 가나요?",
+    situation: "낯선 동네에서 모르는 사람에게 길을 물을 때",
+    tip: "말을 걸 땐 반드시 Excuse me 로 시작합니다.",
+    persona: {
+      name: "Sarah", emoji: "👩🏾", role: "버스 정류장에서 기다리던 친절한 행인",
+      turns: [
+        { bot: "You look a little lost. Do you need some help?",
+          must: [["excuse me", "how can i get", "where is", "how do i get", "could you tell me"], ["subway", "station"]],
+          hint: "‘실례지만 지하철역에 어떻게 가나요?’",
+          sample: "Excuse me, how can I get to the subway station?" },
+        { bot: "Sure. Go straight two blocks and turn left at the bank.",
+          must: [["how long", "how far", "minutes", "is it far", "walk"]],
+          hint: "얼마나 걸리는지 물어보세요.",
+          sample: "How long does it take on foot?" },
+        { bot: "About five minutes on foot. You can't miss it.",
+          must: [["thank", "thanks", "appreciate"]],
+          hint: "고맙다는 인사로 마무리하세요.",
+          sample: "Thank you so much for your help!" }
+      ]
+    }
+  },
+  {
+    id: 6, category: "쇼핑",
+    en: "How much is it? Can I try it on?",
+    ko: "얼마예요? 입어 봐도 될까요?",
+    situation: "옷 가게에서 가격을 묻고 착용해 보고 싶을 때",
+    tip: "try it on = 옷·신발을 직접 입어/신어 보다.",
+    persona: {
+      name: "Ben", emoji: "🧑🏻‍💼", role: "쇼핑몰 옷 가게 점원",
+      turns: [
+        { bot: "Hi there! Can I help you find anything?",
+          must: [["i'm looking for", "looking for", "i want", "do you have", "can i see"]],
+          hint: "찾는 물건을 말해 보세요. I'm looking for a hoodie.",
+          sample: "Yes, I'm looking for a blue hoodie." },
+        { bot: "Sure, the blue hoodies are right over here.",
+          must: [["how much", "price", "cost"]],
+          hint: "가격을 물어보세요.",
+          sample: "Thanks. How much is this one?" },
+        { bot: "It's twenty dollars. It's on sale this week.",
+          must: [["try it on", "try this on", "try them on", "fitting room"]],
+          hint: "입어 봐도 되는지 물어보세요.",
+          sample: "Nice! Can I try it on?" }
+      ]
+    }
+  },
+  {
+    id: 7, category: "음식 주문",
+    en: "I'd like a cheeseburger and a small coke, please.",
+    ko: "치즈버거 하나랑 콜라 작은 거 하나 주세요.",
+    situation: "패스트푸드점에서 메뉴를 주문할 때",
+    tip: "I want 보다 I'd like(= I would like) 가 훨씬 공손합니다.",
+    persona: {
+      name: "Mia", emoji: "🧑🏻‍🍳", role: "버거 가게 카운터 직원",
+      turns: [
+        { bot: "Hi, welcome to Burger House! What can I get for you?",
+          must: [["i'd like", "i would like", "i'll have", "can i get", "i want"], ["burger", "cheeseburger", "coke", "fries"]],
+          hint: "‘~을 주세요’ + 메뉴 이름을 말해 보세요.",
+          sample: "I'd like a cheeseburger and a small coke, please." },
+        { bot: "Got it. For here or to go?",
+          must: [["for here", "to go", "take out", "takeout"]],
+          hint: "먹고 갈지 포장할지 답하세요.",
+          sample: "For here, please." },
+        { bot: "That'll be seven dollars and fifty cents.",
+          must: [["here you are", "here it is", "card", "cash", "thank"]],
+          hint: "돈을 건네며 한마디 해 보세요.",
+          sample: "Here you are. Thank you!" }
+      ]
+    }
+  },
+  {
+    id: 8, category: "감정·사과",
+    en: "I'm really sorry. It was my fault.",
+    ko: "정말 미안해. 내 잘못이야.",
+    situation: "친구에게 실수한 것을 진심으로 사과할 때",
+    tip: "fault = 잘못, 책임. 'It was my fault.' 한 문장이면 충분히 진심이 전해집니다.",
+    persona: {
+      name: "Daniel", emoji: "🧒🏻", role: "어제 일로 조금 삐친 친구",
+      turns: [
+        { bot: "Hey... you broke my umbrella yesterday and didn't tell me.",
+          must: [["sorry", "apologize"], ["my fault", "i didn't mean", "on purpose"]],
+          hint: "사과 + ‘내 잘못이었어’ 를 함께 말해 보세요.",
+          sample: "I'm really sorry, Daniel. It was my fault." },
+        { bot: "It's okay, but why didn't you say anything?",
+          must: [["i was", "i forgot", "afraid", "scared", "because"]],
+          hint: "말하지 못한 이유를 설명해 보세요.",
+          sample: "I was afraid you would get angry." },
+        { bot: "I get it. Just tell me next time, okay?",
+          must: [["i will", "okay", "sure", "promise", "thank"]],
+          hint: "다음엔 꼭 말하겠다고 약속하세요.",
+          sample: "I promise I will. Thanks for understanding." }
+      ]
+    }
+  },
+  {
+    id: 9, category: "제안·약속",
+    en: "Why don't we meet at three in front of the library?",
+    ko: "3시에 도서관 앞에서 만나는 게 어때?",
+    situation: "친구와 만날 시간과 장소를 정할 때",
+    tip: "Why don't we ~? = Let's ~ 보다 부드러운 제안 표현입니다.",
+    persona: {
+      name: "Sophie", emoji: "👧🏼", role: "주말에 같이 놀 계획을 짜는 친구",
+      turns: [
+        { bot: "Are you free this Saturday? Let's do something fun.",
+          must: [["why don't we", "how about", "let's", "shall we"], ["meet", "go", "watch", "see"]],
+          hint: "‘~하는 게 어때?’ 로 활동을 제안해 보세요.",
+          sample: "Sure! Why don't we watch a movie together?" },
+        { bot: "Sounds fun! What time and where should we meet?",
+          must: [["three", "3", "two", "o'clock", "at "], ["in front of", "at the", "near"]],
+          hint: "시간 + 장소를 함께 말해 보세요.",
+          sample: "Why don't we meet at three in front of the library?" },
+        { bot: "Perfect. See you then. Don't be late!",
+          must: [["i won't", "okay", "see you", "sure"]],
+          hint: "늦지 않겠다고 답하세요.",
+          sample: "I won't. See you on Saturday!" }
+      ]
+    }
+  },
+  {
+    id: 10, category: "부탁·전화",
+    en: "Could you do me a favor?",
+    ko: "부탁 하나만 들어줄 수 있어?",
+    situation: "누군가에게 조심스럽게 부탁을 꺼낼 때",
+    tip: "do me a favor = 부탁을 들어주다. 본론을 꺼내기 전 쿠션 표현으로 씁니다.",
+    persona: {
+      name: "Chris", emoji: "🧑🏻", role: "옆집에 사는 사촌 형",
+      turns: [
+        { bot: "Hey Minji, you sound serious. What's up?",
+          must: [["could you", "can you", "would you"], ["favor", "help me", "help"]],
+          hint: "‘부탁 하나만 들어줄래?’ 로 운을 떼 보세요.",
+          sample: "Could you do me a favor?" },
+        { bot: "Sure, what do you need?",
+          must: [["i need", "can you", "would you", "please"]],
+          hint: "무엇이 필요한지 구체적으로 말해 보세요.",
+          sample: "I need you to pick up my package, please." },
+        { bot: "No problem. I'll do it this evening.",
+          must: [["thank", "thanks", "appreciate", "you're the best"]],
+          hint: "고마움을 표현하며 마무리하세요.",
+          sample: "Thank you so much. You're the best!" }
+      ]
+    }
+  }
+  /* ↓ 여기에 id: 11 ~ 100 을 같은 형식으로 계속 추가하세요. */
+];
+
+
+/* ==========================================================================
+   [ 2 ] 저장소 (localStorage)
+   ========================================================================== */
+const KEY = 'sy-everyday-english-100-v1';
+
+const store = {
+  data: { learned: [], rate: 0.9, voiceURI: '', scores: {} },
+
+  load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) Object.assign(this.data, JSON.parse(raw));
+    } catch (e) { console.warn('저장된 기록을 불러오지 못했습니다.', e); }
+  },
+  save() {
+    try { localStorage.setItem(KEY, JSON.stringify(this.data)); }
+    catch (e) { console.warn('저장 실패', e); }
+  },
+  isLearned(id) { return this.data.learned.includes(id); },
+  toggleLearned(id) {
+    const i = this.data.learned.indexOf(id);
+    if (i >= 0) this.data.learned.splice(i, 1);
+    else this.data.learned.push(id);
+    this.save();
+  },
+  setScore(id, score) {
+    const prev = this.data.scores[id] || 0;
+    if (score > prev) this.data.scores[id] = score;
+    this.save();
+  }
+};
+store.load();
+
+
+/* ==========================================================================
+   [ 3 ] 공통 유틸 — DOM은 createElement로 생성
+   ========================================================================== */
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined && text !== null) n.textContent = text;
+  return n;
+}
+const $ = (sel) => document.querySelector(sel);
+
+let toastTimer = null;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.add('hidden'), 2600);
+}
+
+function normalize(s) {
+  return ' ' + String(s).toLowerCase()
+    .replace(/[’`]/g, "'")
+    .replace(/[^a-z0-9' ]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim() + ' ';
+}
+
+
+/* ==========================================================================
+   [ 4 ] TTS — window.speechSynthesis
+   ========================================================================== */
+const TTS = {
+  voices: [],
+  init() {
+    const load = () => {
+      this.voices = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang));
+      this.renderSelect();
+    };
+    load();
+    if (typeof speechSynthesis.onvoiceschanged !== 'undefined') {
+      speechSynthesis.onvoiceschanged = load;
+    }
+  },
+  renderSelect() {
+    const sel = $('#voice');
+    if (!sel) return;
+    sel.replaceChildren();
+    if (!this.voices.length) {
+      sel.appendChild(el('option', '', '기본 음성'));
+      return;
+    }
+    this.voices.forEach(v => {
+      const o = el('option', '', v.name + '  (' + v.lang + ')');
+      o.value = v.voiceURI;
+      sel.appendChild(o);
+    });
+    // 저장된 음성 복원, 없으면 en-US 우선
+    const saved = store.data.voiceURI;
+    const fallback = (this.voices.find(v => /en-US/i.test(v.lang)) || this.voices[0]).voiceURI;
+    sel.value = this.voices.some(v => v.voiceURI === saved) ? saved : fallback;
+    store.data.voiceURI = sel.value;
+  },
+  speak(text, onEnd) {
+    if (!('speechSynthesis' in window)) { toast('이 브라우저는 음성 읽기를 지원하지 않아요.'); return; }
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = store.data.rate;
+    const v = this.voices.find(x => x.voiceURI === store.data.voiceURI);
+    if (v) u.voice = v;
+    if (onEnd) u.onend = onEnd;
+    speechSynthesis.speak(u);
+  }
+};
+
+
+/* ==========================================================================
+   [ 5 ] STT — webkitSpeechRecognition (미지원 시 텍스트 입력으로 대체)
+   ========================================================================== */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognizer = null;
+
+function listen(btn, onResult) {
+  if (!SR) { toast('음성 인식은 Chrome / Edge에서만 동작해요. 텍스트로 입력해 주세요.'); return; }
+  if (recognizer) { recognizer.stop(); return; }
+
+  recognizer = new SR();
+  recognizer.lang = 'en-US';
+  recognizer.interimResults = false;
+  recognizer.maxAlternatives = 1;
+
+  btn.classList.add('mic-on');
+  const original = btn.textContent;
+  btn.textContent = '⏹';
+
+  recognizer.onresult = (e) => onResult(e.results[0][0].transcript);
+  recognizer.onerror = (e) => {
+    if (e.error === 'not-allowed') toast('마이크 권한을 허용해 주세요.');
+    else if (e.error === 'no-speech') toast('소리가 들리지 않았어요. 다시 시도해 보세요.');
+    else toast('음성 인식 오류: ' + e.error);
+  };
+  recognizer.onend = () => {
+    btn.classList.remove('mic-on');
+    btn.textContent = original;
+    recognizer = null;
+  };
+  recognizer.start();
+}
+
+
+/* ==========================================================================
+   [ 6 ] 채점 엔진 — 규칙 기반 AI 시뮬레이션
+   --------------------------------------------------------------------------
+   ★ 실제 LLM(OpenAI 등) 연동으로 바꾸고 싶다면 ★
+   아래 evaluateLocal() 대신 evaluateWithAI() 를 호출하도록 한 줄만 바꾸면 됩니다.
+   단, 브라우저에 API 키를 그대로 박으면 누구나 볼 수 있으므로 반드시
+   학원 서버(프록시)를 한 단계 두고 호출하세요.
+
+   async function evaluateWithAI(userText, turn, expr) {
+     const res = await fetch('https://내학원서버.example.com/api/chat', {   // ← 프록시 주소
+       method : 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body   : JSON.stringify({
+         model: 'gpt-4o-mini',
+         messages: [
+           { role: 'system', content:
+               '너는 한국 중학생의 영어 회화 코치다. ' +
+               '학생의 답변을 100점 만점으로 채점하고, 칭찬 한 줄과 고칠 점 한 줄을 ' +
+               '반드시 한국어로 알려 준 뒤, 영어로 대화를 한 턴 더 이어가라. ' +
+               'JSON 형식 {"score":number,"feedback":string,"reply":string} 으로만 답하라.' },
+           { role: 'user', content:
+               '상황: ' + expr.situation + '\n' +
+               '상대의 말: ' + turn.bot + '\n' +
+               '모범 답안: ' + turn.sample + '\n' +
+               '학생의 답변: ' + userText }
+         ],
+         response_format: { type: 'json_object' }
+       })
+     });
+     const data = await res.json();
+     return JSON.parse(data.choices[0].message.content);   // {score, feedback, reply}
+   }
+   ========================================================================== */
+
+function evaluateLocal(userText, turn) {
+  const text = normalize(userText);
+  const words = text.trim() ? text.trim().split(' ') : [];
+
+  // (1) 필수 표현 그룹 매칭 — 70점
+  const groups = turn.must || [];
+  let hitGroups = 0;
+  const missed = [];
+  groups.forEach(group => {
+    const ok = group.some(k => text.includes(normalize(k).trim()));
+    if (ok) hitGroups++; else missed.push(group[0]);
+  });
+  const ratio = groups.length ? hitGroups / groups.length : 1;
+  let score = Math.round(ratio * 60);
+
+  // (2) 문장 길이 — 20점 (한 단어로 끝내지 않도록)
+  score += Math.min(20, words.length * 4);
+
+  // (3) 형식 점수 — 20점 (첫 글자 대문자 / 마침표·물음표)
+  const raw = userText.trim();
+  const capOK   = /^[A-Z]/.test(raw);
+  const punctOK = /[.!?]$/.test(raw);
+  if (capOK)   score += 10;
+  if (punctOK) score += 10;
+  score = Math.max(0, Math.min(100, score));
+
+  // (4) 고칠 점 — 하나라도 있으면 '완벽' 등급은 주지 않는다
+  const fixes = [];
+  if (missed.length) fixes.push('이 표현을 넣으면 더 자연스러워요 → “' + missed.join('”, “') + '”');
+  if (words.length < 3) fixes.push('한 단어로 끝내지 말고 문장으로 말해 보세요.');
+  if (raw && !capOK)   fixes.push('문장의 첫 글자는 대문자로 시작해요.');
+  if (raw && !punctOK) fixes.push('문장 끝에는 마침표(.)나 물음표(?)를 붙여요.');
+  if (/\bi\b/.test(raw)) fixes.push('“I”는 언제나 대문자로 씁니다.');
+
+  // (5) 중학생 눈높이 피드백
+  let level = score >= 85 ? 'great' : score >= 60 ? 'good' : 'try';
+  if (level === 'great' && fixes.length) level = 'good';   // 고칠 점이 남아 있으면 강등
+  const head = level === 'great' ? '🌟 완벽해요!' : level === 'good' ? '👍 잘했어요!' : '🤔 조금만 더!';
+
+  const notes = fixes.length ? fixes : ['핵심 표현·대소문자·문장부호까지 완벽해요. 발음도 또렷하게!'];
+
+  return { score, level, head, notes };
+}
+
+
+/* ==========================================================================
+   [ 7 ] 화면 전환
+   ========================================================================== */
+function switchView(name) {
+  $('#view-list').classList.toggle('hidden', name !== 'list');
+  $('#view-roleplay').classList.toggle('hidden', name !== 'roleplay');
+  document.querySelectorAll('.tab').forEach(b => {
+    const on = b.dataset.tab === name;
+    b.classList.toggle('tab-on', on);
+    b.classList.toggle('tab-off', !on);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+document.querySelectorAll('.tab').forEach(b => {
+  b.addEventListener('click', () => switchView(b.dataset.tab));
+});
+
+
+/* ==========================================================================
+   [ 8 ] 진행률
+   ========================================================================== */
+function renderProgress() {
+  const total = EXPRESSIONS.length;
+  const done = EXPRESSIONS.filter(e => store.isLearned(e.id)).length;
+  $('#progress-label').textContent = done + ' / ' + total + ' 문장';
+  $('#progress-bar').style.width = (total ? (done / total) * 100 : 0) + '%';
+}
+
+
+/* ==========================================================================
+   [ 9 ] VIEW 1 — 표현 카드 목록
+   ========================================================================== */
+let filterCategory = '전체';
+let keyword = '';
+
+function renderChips() {
+  const box = $('#chips');
+  box.replaceChildren();
+  const cats = ['전체', ...new Set(EXPRESSIONS.map(e => e.category))];
+  cats.forEach(c => {
+    const on = c === filterCategory;
+    const b = el('button',
+      'shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold border transition ' +
+      (on ? 'bg-teal-600 text-white border-teal-600 shadow-soft'
+          : 'bg-white text-ink/60 border-black/10 hover:border-teal-400'), c);
+    b.addEventListener('click', () => { filterCategory = c; renderChips(); renderCards(); });
+    box.appendChild(b);
+  });
+}
+
+function matchFilter(e) {
+  if (filterCategory !== '전체' && e.category !== filterCategory) return false;
+  if (!keyword) return true;
+  const k = keyword.toLowerCase();
+  return (e.en + e.ko + e.situation + e.category).toLowerCase().includes(k);
+}
+
+function renderCards() {
+  const box = $('#cards');
+  box.replaceChildren();
+  const list = EXPRESSIONS.filter(matchFilter);
+  $('#empty').classList.toggle('hidden', list.length > 0);
+
+  list.forEach(e => {
+    const done = store.isLearned(e.id);
+    const card = el('article',
+      'pop bg-white rounded-2xl shadow-soft p-4 flex flex-col gap-2 border-2 transition ' +
+      (done ? 'border-teal-400' : 'border-transparent'));
+
+    // 상단: 카테고리 + 완료 토글
+    const top = el('div', 'flex items-center justify-between gap-2');
+    top.appendChild(el('span', 'text-[10px] font-bold px-2 py-1 rounded-md bg-teal-50 text-teal-700', e.category));
+    const chk = el('button',
+      'text-[11px] px-2.5 py-1 rounded-lg font-bold transition ' +
+      (done ? 'bg-teal-600 text-white' : 'bg-black/5 text-ink/45 hover:bg-black/10'),
+      done ? '✓ 학습완료' : '학습완료');
+    chk.addEventListener('click', () => {
+      store.toggleLearned(e.id);
+      renderCards(); renderProgress();
+    });
+    top.appendChild(chk);
+    card.appendChild(top);
+
+    // 영어 문장
+    card.appendChild(el('p', 'font-en font-extrabold text-[17px] leading-snug', e.en));
+    // 한국어
+    card.appendChild(el('p', 'text-sm text-ink/70', e.ko));
+    // 상황
+    card.appendChild(el('p', 'text-xs text-ink/45 leading-relaxed', '💬 ' + e.situation));
+    if (e.tip) card.appendChild(el('p', 'text-[11px] text-sun-500 bg-sun-100/60 rounded-lg px-2.5 py-1.5 leading-relaxed', '📌 ' + e.tip));
+
+    // 최고 점수
+    const best = store.data.scores[e.id];
+    if (best) card.appendChild(el('p', 'text-[11px] font-bold text-teal-600', '🏅 역할극 최고 점수 ' + best + '점'));
+
+    // 버튼 줄
+    const row = el('div', 'flex gap-2 mt-auto pt-1');
+
+    const bSpeak = el('button', 'flex-1 py-2 rounded-xl bg-teal-600 text-white text-xs font-bold hover:bg-teal-700 transition', '🔊 듣기');
+    bSpeak.addEventListener('click', () => TTS.speak(e.en.replace(/—/g, ',')));
+    row.appendChild(bSpeak);
+
+    const bMic = el('button', 'flex-1 py-2 rounded-xl bg-sun-400 text-white text-xs font-bold hover:bg-sun-500 transition', '🎤 따라하기');
+    bMic.addEventListener('click', () => {
+      listen(bMic, (said) => {
+        const target = normalize(e.en).trim().split(' ');
+        const mine = normalize(said).trim().split(' ');
+        const hit = target.filter(w => mine.includes(w)).length;
+        const pct = Math.round((hit / Math.max(1, target.length)) * 100);
+        toast('🎧 인식: “' + said + '” · 일치율 ' + pct + '%');
+      });
+    });
+    row.appendChild(bMic);
+
+    const bPlay = el('button', 'flex-1 py-2 rounded-xl bg-black/5 text-xs font-bold hover:bg-black/10 transition', '🎭 역할극');
+    bPlay.addEventListener('click', () => { switchView('roleplay'); startRoleplay(e.id); });
+    row.appendChild(bPlay);
+
+    card.appendChild(row);
+    box.appendChild(card);
+  });
+}
+
+
+/* ==========================================================================
+   [ 10 ] VIEW 2 — 역할극
+   ========================================================================== */
+const rp = { expr: null, turn: 0, scores: [], finished: false };
+
+function renderRoleplayList() {
+  const box = $('#rp-list');
+  box.replaceChildren();
+  EXPRESSIONS.forEach(e => {
+    const card = el('button', 'pop text-left bg-white rounded-2xl shadow-soft p-4 hover:ring-2 hover:ring-teal-400/50 transition flex gap-3 items-start');
+    card.appendChild(el('div', 'w-11 h-11 rounded-2xl bg-teal-50 grid place-items-center text-2xl shrink-0', e.persona.emoji));
+    const info = el('div', 'min-w-0');
+    info.appendChild(el('p', 'font-en font-bold text-sm', e.persona.name + ' · ' + e.category));
+    info.appendChild(el('p', 'text-xs text-ink/55 leading-relaxed mt-0.5', e.persona.role));
+    info.appendChild(el('p', 'text-[11px] text-ink/40 mt-1 truncate', '🎯 ' + e.en));
+    card.appendChild(info);
+    card.addEventListener('click', () => startRoleplay(e.id));
+    box.appendChild(card);
+  });
+}
+
+function startRoleplay(id) {
+  rp.expr = EXPRESSIONS.find(e => e.id === id);
+  rp.turn = 0; rp.scores = []; rp.finished = false;
+
+  $('#rp-picker').classList.add('hidden');
+  $('#rp-stage').classList.remove('hidden');
+  $('#rp-input').classList.remove('hidden');
+  $('#rp-avatar').textContent = rp.expr.persona.emoji;
+  $('#rp-name').textContent = rp.expr.persona.name;
+  $('#rp-role').textContent = rp.expr.persona.role;
+  $('#chat').replaceChildren();
+  $('#answer').value = '';
+
+  addSystem('🎬 ' + rp.expr.situation);
+  addSystem('🎯 목표 표현 : ' + rp.expr.en);
+  botSpeaks();
+}
+
+function backToPicker() {
+  speechSynthesis.cancel();
+  $('#rp-stage').classList.add('hidden');
+  $('#rp-picker').classList.remove('hidden');
+}
+
+function scrollChat() { const c = $('#chat'); c.scrollTop = c.scrollHeight; }
+
+function addSystem(text) {
+  const p = el('p', 'pop text-[11px] text-center text-ink/40 bg-black/[.03] rounded-lg py-1.5 px-2', text);
+  $('#chat').appendChild(p); scrollChat();
+}
+
+function addBot(text) {
+  const row = el('div', 'pop flex gap-2 items-end');
+  row.appendChild(el('div', 'w-8 h-8 rounded-xl bg-teal-50 grid place-items-center text-lg shrink-0', rp.expr.persona.emoji));
+  const bubble = el('div', 'max-w-[78%] bg-black/[.04] rounded-2xl rounded-bl-md px-3.5 py-2.5');
+  bubble.appendChild(el('p', 'font-en text-[15px] leading-snug', text));
+  const b = el('button', 'text-[11px] text-teal-600 mt-1 hover:underline', '🔊 다시 듣기');
+  b.addEventListener('click', () => TTS.speak(text));
+  bubble.appendChild(b);
+  row.appendChild(bubble);
+  $('#chat').appendChild(row); scrollChat();
+}
+
+function addUser(text) {
+  const row = el('div', 'pop flex justify-end');
+  const bubble = el('div', 'max-w-[78%] bg-teal-600 text-white rounded-2xl rounded-br-md px-3.5 py-2.5');
+  bubble.appendChild(el('p', 'font-en text-[15px] leading-snug', text));
+  row.appendChild(bubble);
+  $('#chat').appendChild(row); scrollChat();
+}
+
+function addFeedback(r, sample) {
+  const tone = r.level === 'great' ? 'bg-teal-50 border-teal-400'
+             : r.level === 'good'  ? 'bg-sun-100/70 border-sun-400'
+             :                        'bg-black/[.04] border-black/10';
+  const box = el('div', 'pop border-l-4 rounded-xl px-3.5 py-2.5 ' + tone);
+  const head = el('div', 'flex items-center justify-between gap-2');
+  head.appendChild(el('p', 'text-xs font-bold', r.head));
+  head.appendChild(el('p', 'font-en text-sm font-extrabold', r.score + ' / 100'));
+  box.appendChild(head);
+  r.notes.forEach(n => box.appendChild(el('p', 'text-[11px] text-ink/60 mt-1 leading-relaxed', '· ' + n)));
+  const s = el('p', 'text-[11px] text-ink/70 mt-2 font-en bg-white/70 rounded-lg px-2 py-1.5', '모범답안 : ' + sample);
+  box.appendChild(s);
+  $('#chat').appendChild(box); scrollChat();
+}
+
+function botSpeaks() {
+  const turn = rp.expr.persona.turns[rp.turn];
+  addBot(turn.bot);
+  TTS.speak(turn.bot);
+}
+
+function submitAnswer(text) {
+  if (rp.finished) return;
+  const value = (text || '').trim();
+  if (!value) { toast('영어로 한 문장 말해 보세요!'); return; }
+
+  const turn = rp.expr.persona.turns[rp.turn];
+  addUser(value);
+  $('#answer').value = '';
+
+  /* ▼ 실제 LLM을 쓰려면 이 한 줄을 evaluateWithAI(...) 로 교체하세요 (위 주석 참고) */
+  const result = evaluateLocal(value, turn);
+
+  rp.scores.push(result.score);
+  addFeedback(result, turn.sample);
+
+  rp.turn++;
+  if (rp.turn < rp.expr.persona.turns.length) {
+    setTimeout(botSpeaks, 700);
+  } else {
+    setTimeout(finishRoleplay, 700);
+  }
+}
+
+function finishRoleplay() {
+  rp.finished = true;
+  const avg = Math.round(rp.scores.reduce((a, b) => a + b, 0) / rp.scores.length);
+  store.setScore(rp.expr.id, avg);
+
+  const medal = avg >= 85 ? '🥇' : avg >= 60 ? '🥈' : '🥉';
+  const box = el('div', 'pop bg-white border-2 border-teal-400 rounded-2xl p-4 text-center');
+  box.appendChild(el('p', 'text-3xl', medal));
+  box.appendChild(el('p', 'font-en font-extrabold text-2xl mt-1', avg + ' / 100'));
+  box.appendChild(el('p', 'text-xs text-ink/55 mt-1',
+    avg >= 85 ? '원어민처럼 자연스러웠어요!' : avg >= 60 ? '핵심 표현을 잘 썼어요. 한 번 더!' : '모범답안을 소리 내어 3번 읽고 다시 도전!'));
+
+  const row = el('div', 'flex gap-2 mt-3');
+  const again = el('button', 'flex-1 py-2.5 rounded-xl bg-teal-600 text-white text-xs font-bold', '🔁 다시 연습');
+  again.addEventListener('click', () => startRoleplay(rp.expr.id));
+  const mark = el('button', 'flex-1 py-2.5 rounded-xl bg-black/5 text-xs font-bold', '✓ 학습완료로 표시');
+  mark.addEventListener('click', () => {
+    if (!store.isLearned(rp.expr.id)) store.toggleLearned(rp.expr.id);
+    renderCards(); renderProgress(); toast('학습완료로 저장했어요!');
+  });
+  const back = el('button', 'flex-1 py-2.5 rounded-xl bg-black/5 text-xs font-bold', '📋 다른 상황');
+  back.addEventListener('click', backToPicker);
+  row.append(again, mark, back);
+  box.appendChild(row);
+
+  $('#chat').appendChild(box);
+  $('#rp-input').classList.add('hidden');
+  scrollChat();
+  renderCards(); renderProgress();
+}
+
+
+/* ==========================================================================
+   [ 11 ] 이벤트 바인딩
+   ========================================================================== */
+$('#rate').addEventListener('input', (ev) => {
+  store.data.rate = parseFloat(ev.target.value);
+  $('#rate-val').textContent = store.data.rate.toFixed(2);
+  store.save();
+});
+
+$('#voice').addEventListener('change', (ev) => {
+  store.data.voiceURI = ev.target.value;
+  store.save();
+  TTS.speak('Hello! This is my voice.');
+});
+
+$('#search').addEventListener('input', (ev) => { keyword = ev.target.value.trim(); renderCards(); });
+
+$('#btn-reset').addEventListener('click', () => {
+  if (!confirm('학습 기록(완료 체크·점수)을 모두 지울까요?')) return;
+  store.data.learned = []; store.data.scores = {}; store.save();
+  renderCards(); renderProgress(); toast('기록을 초기화했어요.');
+});
+
+$('#btn-send').addEventListener('click', () => submitAnswer($('#answer').value));
+$('#answer').addEventListener('keydown', (ev) => { if (ev.key === 'Enter') submitAnswer($('#answer').value); });
+$('#btn-mic').addEventListener('click', () => {
+  listen($('#btn-mic'), (said) => { $('#answer').value = said; submitAnswer(said); });
+});
+$('#btn-hint').addEventListener('click', () => {
+  if (rp.finished || !rp.expr) return;
+  addSystem('💡 ' + rp.expr.persona.turns[rp.turn].hint);
+});
+$('#btn-sample').addEventListener('click', () => {
+  if (rp.finished || !rp.expr) return;
+  const s = rp.expr.persona.turns[rp.turn].sample;
+  addSystem('📝 모범답안 : ' + s);
+  TTS.speak(s);
+});
+$('#btn-replay').addEventListener('click', () => {
+  if (!rp.expr) return;
+  const t = rp.expr.persona.turns[Math.min(rp.turn, rp.expr.persona.turns.length - 1)];
+  TTS.speak(t.bot);
+});
+$('#rp-back').addEventListener('click', backToPicker);
+
+
+/* ==========================================================================
+   [ 12 ] 시작
+   ========================================================================== */
+(function init() {
+  $('#rate').value = store.data.rate;
+  $('#rate-val').textContent = Number(store.data.rate).toFixed(2);
+  TTS.init();
+  renderChips();
+  renderCards();
+  renderRoleplayList();
+  renderProgress();
+  switchView('list');
+  if (!SR) console.info('이 브라우저는 음성 인식을 지원하지 않습니다. 텍스트 입력으로 연습하세요.');
+})();
+</script>
+</body>
+</html>

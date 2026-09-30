@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Middle School English Quest - 생활영어 회화</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <style>
+    :root{--ink:#24324a;--pink:#ff78a8;--yellow:#ffd85e;--mint:#6ee7c7;--sky:#73c8ff;--violet:#a78bfa}
+    *{box-sizing:border-box}
+    body{
+      margin:0;color:var(--ink);
+      background:
+        radial-gradient(circle at 10% 10%,#fff4b8 0 5%,transparent 20%),
+        radial-gradient(circle at 90% 10%,#ffd8e8 0 7%,transparent 22%),
+        linear-gradient(135deg,#effcff,#fff7fb 45%,#f7f2ff);
+      min-height:100vh;font-family:ui-rounded,"Pretendard","Noto Sans KR",system-ui,sans-serif;
+    }
+    .glass{background:rgba(255,255,255,.86);backdrop-filter:blur(12px);border:3px solid rgba(255,255,255,.9)}
+    .soft-shadow{box-shadow:0 18px 50px rgba(68,80,130,.13)}
+    .category-btn.active{transform:translateY(-4px) scale(1.03);box-shadow:0 10px 25px rgba(79,70,229,.18);border-color:#8b5cf6}
+    .bubble{animation:floaty 3s ease-in-out infinite}
+    .bubble:nth-child(2){animation-delay:.6s}.bubble:nth-child(3){animation-delay:1.2s}
+    @keyframes floaty{50%{transform:translateY(-10px) rotate(2deg)}}
+    .speaker.playing{animation:pulseSpeaker .55s ease-in-out infinite alternate}
+    @keyframes pulseSpeaker{to{transform:scale(1.14);filter:drop-shadow(0 0 10px #60a5fa)}}
+    .wave span{display:inline-block;width:7px;border-radius:999px;background:linear-gradient(#60a5fa,#8b5cf6);animation:wave .8s ease-in-out infinite alternate}
+    .wave span:nth-child(2){animation-delay:.1s}.wave span:nth-child(3){animation-delay:.2s}.wave span:nth-child(4){animation-delay:.3s}.wave span:nth-child(5){animation-delay:.4s}
+    @keyframes wave{from{height:8px}to{height:32px}}
+    .pop{animation:pop .65s cubic-bezier(.2,1.6,.4,1)}
+    @keyframes pop{0%{transform:scale(.3) rotate(-12deg);opacity:0}70%{transform:scale(1.15) rotate(4deg)}100%{transform:scale(1);opacity:1}}
+    .star{position:fixed;pointer-events:none;font-size:28px;z-index:80;animation:starFly 1.1s ease-out forwards}
+    @keyframes starFly{to{transform:translate(var(--x),var(--y)) rotate(300deg) scale(.2);opacity:0}}
+    .choice.good{background:#dcfce7!important;border-color:#22c55e!important}.choice.bad{background:#fee2e2!important;border-color:#ef4444!important}
+    .progress-shine{position:relative;overflow:hidden}.progress-shine:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 25%,rgba(255,255,255,.7) 45%,transparent 65%);animation:shine 2s linear infinite}
+    @keyframes shine{from{transform:translateX(-120%)}to{transform:translateX(120%)}}
+    .mascot{filter:drop-shadow(0 10px 10px rgba(0,0,0,.12));animation:mascot 2.2s ease-in-out infinite}
+    @keyframes mascot{50%{transform:translateY(-8px) rotate(3deg)}}
+    @media print{
+      body{background:white}.no-print{display:none!important}.glass{box-shadow:none;border:1px solid #ddd}
+    }
+  </style>
+</head>
+<body>
+  <div id="stars"></div>
+  <main class="max-w-6xl mx-auto p-4 md:p-7">
+    <header class="glass soft-shadow rounded-[32px] p-5 md:p-7 mb-5 relative overflow-hidden">
+      <div class="absolute right-4 top-2 text-5xl md:text-7xl mascot">🦊</div>
+      <div class="flex items-center gap-3 pr-20">
+        <div class="text-4xl">🎮</div>
+        <div>
+          <p class="font-black text-violet-500 tracking-widest text-sm">ENGLISH QUEST</p>
+          <h1 class="text-2xl md:text-4xl font-black">중학교 생활영어 회화 100</h1>
+          <p class="mt-1 text-slate-500 font-bold">듣고 👂 말하고 🎤 미션을 깨며 영어 XP를 모아봐!</p>
+        </div>
+      </div>
+      <div class="mt-5 grid md:grid-cols-[1fr_auto] gap-3 items-center">
+        <div>
+          <div class="flex justify-between font-black text-sm mb-1"><span>⭐ 나의 경험치</span><span id="xpText">0 / 100 XP</span></div>
+          <div class="h-5 bg-slate-100 rounded-full p-1 border border-slate-200">
+            <div id="xpBar" class="h-full rounded-full bg-gradient-to-r from-cyan-400 via-violet-400 to-pink-400 progress-shine transition-all duration-700" style="width:0%"></div>
+          </div>
+        </div>
+        <div id="levelBadge" class="rounded-2xl bg-yellow-100 border-2 border-yellow-300 px-5 py-2 font-black text-yellow-700">Lv.1 🌱</div>
+      </div>
+      <div id="badgeRow" class="flex gap-2 mt-3 flex-wrap"></div>
+    </header>
+
+    <section class="glass soft-shadow rounded-[28px] p-4 mb-5 no-print">
+      <div id="categoryTabs" class="flex gap-2 overflow-x-auto pb-1"></div>
+    </section>
+
+    <section class="grid lg:grid-cols-[1.35fr_.65fr] gap-5">
+      <div class="space-y-5">
+        <article id="lessonCard" class="glass soft-shadow rounded-[32px] p-5 md:p-7 relative overflow-hidden">
+          <div class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-pink-100"></div>
+          <div class="flex justify-between items-start gap-4 relative">
+            <div>
+              <div id="lessonMeta" class="font-black text-violet-500 mb-2"></div>
+              <div class="flex items-center gap-3">
+                <div id="sceneEmoji" class="text-6xl bubble">👋</div>
+                <div>
+                  <p class="text-xs font-black text-slate-400">TODAY'S EXPRESSION</p>
+                  <h2 id="englishText" class="text-2xl md:text-4xl leading-tight font-black mt-1"></h2>
+                </div>
+              </div>
+              <p id="koreanText" class="mt-4 text-lg md:text-xl font-bold text-slate-600"></p>
+              <p id="personaText" class="mt-2 inline-block rounded-full bg-cyan-50 text-cyan-700 px-3 py-1 text-sm font-bold"></p>
+            </div>
+            <button id="speakBtn" class="speaker shrink-0 w-16 h-16 rounded-2xl bg-sky-100 border-2 border-sky-300 text-3xl hover:scale-105 transition" title="영어 듣기">🔊</button>
+          </div>
+          <div class="mt-6 flex gap-2 flex-wrap relative no-print">
+            <button id="prevBtn" class="px-4 py-3 rounded-2xl bg-white border-2 border-slate-200 font-black">← 이전</button>
+            <button id="completeBtn" class="px-5 py-3 rounded-2xl bg-emerald-400 text-white border-2 border-emerald-500 font-black shadow">✓ 학습 완료</button>
+            <button id="nextBtn" class="px-4 py-3 rounded-2xl bg-white border-2 border-slate-200 font-black">다음 →</button>
+          </div>
+        </article>
+
+        <article class="glass soft-shadow rounded-[32px] p-5 md:p-7 no-print">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-black text-pink-500">ROLE PLAY</p>
+              <h3 class="text-xl md:text-2xl font-black">🤖 AI 친구와 역할극</h3>
+            </div>
+            <div id="wave" class="wave hidden items-end gap-1 h-9"><span></span><span></span><span></span><span></span><span></span></div>
+          </div>
+          <div id="chatBox" class="mt-4 bg-gradient-to-br from-violet-50 to-sky-50 border-2 border-violet-100 rounded-3xl p-4 min-h-[140px] space-y-3"></div>
+          <div class="mt-3 flex gap-2">
+            <input id="answerInput" class="flex-1 min-w-0 rounded-2xl border-2 border-slate-200 px-4 py-3 font-bold outline-none focus:border-violet-400" placeholder="영어로 대답해 보세요!" />
+            <button id="micBtn" class="w-14 rounded-2xl bg-pink-100 border-2 border-pink-300 text-2xl" title="음성 입력">🎤</button>
+            <button id="sendBtn" class="px-5 rounded-2xl bg-violet-500 text-white font-black">보내기</button>
+          </div>
+          <p id="sttHint" class="text-xs text-slate-400 mt-2">Chrome/Edge에서는 🎤 버튼으로 음성 입력을 사용할 수 있어요.</p>
+        </article>
+
+        <article class="glass soft-shadow rounded-[32px] p-5 md:p-7 no-print">
+          <div class="flex justify-between items-center">
+            <h3 class="text-xl md:text-2xl font-black">🧩 뜻 맞히기 미션</h3>
+            <span id="quizScore" class="font-black text-orange-500">연속 정답 0 🔥</span>
+          </div>
+          <p id="quizQuestion" class="mt-4 text-xl font-black"></p>
+          <div id="quizChoices" class="grid sm:grid-cols-2 gap-3 mt-4"></div>
+        </article>
+      </div>
+
+      <aside class="space-y-5">
+        <section class="glass soft-shadow rounded-[28px] p-5">
+          <h3 class="font-black text-xl">🏆 나의 학습 현황</h3>
+          <div class="grid grid-cols-2 gap-3 mt-4">
+            <div class="rounded-2xl bg-yellow-50 border-2 border-yellow-200 p-4 text-center"><div class="text-3xl">⭐</div><div id="doneCount" class="text-2xl font-black">0</div><div class="text-xs font-bold text-slate-500">완료 문장</div></div>
+            <div class="rounded-2xl bg-mint-50 border-2 border-emerald-200 p-4 text-center"><div class="text-3xl">🔥</div><div id="streakCount" class="text-2xl font-black">0</div><div class="text-xs font-bold text-slate-500">퀴즈 연속</div></div>
+          </div>
+          <button id="resetBtn" class="no-print mt-4 w-full rounded-xl border-2 border-slate-200 py-2 text-sm font-bold text-slate-500">진행도 초기화</button>
+        </section>
+
+        <section class="glass soft-shadow rounded-[28px] p-5">
+          <h3 class="font-black text-xl">💡 오늘의 학습법</h3>
+          <div class="mt-3 space-y-3 text-sm font-bold text-slate-600">
+            <p>1. 🔊 문장을 2번 들어요.</p>
+            <p>2. 🎤 소리 내어 따라 말해요.</p>
+            <p>3. 🤖 역할극에서 직접 대답해요.</p>
+            <p>4. 🧩 뜻 맞히기로 확인해요.</p>
+          </div>
+        </section>
+
+        <section class="glass soft-shadow rounded-[28px] p-5">
+          <h3 class="font-black text-xl">📚 문장 목록</h3>
+          <div id="lessonList" class="mt-3 max-h-[380px] overflow-auto space-y-2 pr-1"></div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+<script>
+/*
+  ===================== 100문장 확장 가이드 =====================
+  아래 lessons 배열에 같은 형식의 객체를 추가하면 됩니다.
+  { id:11, category:"학교", emoji:"🏫", en:"...", ko:"...",
+    persona:"AI 페르소나 설명", ai:"AI가 먼저 하는 영어 질문/대사",
+    answers:["학생 정답으로 인정할 핵심 표현1","표현2"] }
+  id는 중복되지 않게 1~100까지 사용하세요.
+  category 값은 categories 배열의 key와 맞추면 자동으로 탭에 분류됩니다.
+  =============================================================
+*/
+const categories = [
+  {key:"전체", emoji:"🌈"}, {key:"인사",emoji:"👋"}, {key:"학교",emoji:"🏫"},
+  {key:"친구",emoji:"🧑‍🤝‍🧑"}, {key:"취미",emoji:"🎮"}, {key:"식당",emoji:"🍔"}
+];
+
+const lessons = [
+ {id:1,category:"인사",emoji:"👋",en:"How's it going?",ko:"어떻게 지내? / 잘 지내?",persona:"밝은 전학생 Alex",ai:"Hi! How's it going?",answers:["good","great","fine","pretty good","not bad","i'm good","im good"]},
+ {id:2,category:"인사",emoji:"😊",en:"Nice to meet you.",ko:"만나서 반가워.",persona:"새 친구 Mina",ai:"I'm Mina. Nice to meet you!",answers:["nice to meet you","you too","nice to meet you too"]},
+ {id:3,category:"학교",emoji:"📚",en:"What class do we have next?",ko:"우리 다음 수업이 뭐야?",persona:"같은 반 친구 Jamie",ai:"We have science next. Do you like science?",answers:["yes","i do","yes i do","i like science","no","i don't","no i don't"]},
+ {id:4,category:"학교",emoji:"✏️",en:"Can I borrow your pencil?",ko:"네 연필 좀 빌려도 될까?",persona:"필통을 깜빡한 친구 Sam",ai:"I forgot my pencil. Can I borrow yours?",answers:["sure","of course","yes","here you are","okay"]},
+ {id:5,category:"친구",emoji:"🤝",en:"Do you want to hang out after school?",ko:"방과 후에 같이 놀래?",persona:"친한 친구 Chris",ai:"Do you want to hang out after school?",answers:["sure","yes","sounds good","okay","i'd love to","id love to"]},
+ {id:6,category:"친구",emoji:"💬",en:"What do you think about it?",ko:"너는 그것에 대해 어떻게 생각해?",persona:"의견을 묻는 친구 Lily",ai:"I like this school festival poster. What do you think about it?",answers:["i like it","it's good","its good","i think it's good","great","cool"]},
+ {id:7,category:"취미",emoji:"🎮",en:"What do you do for fun?",ko:"재미로 뭐 해? / 취미가 뭐야?",persona:"게임을 좋아하는 Noah",ai:"What do you do for fun?",answers:["i play","i like","i enjoy","game","soccer","music","read","drawing"]},
+ {id:8,category:"취미",emoji:"⚽",en:"I'm really into soccer these days.",ko:"나 요즘 축구에 푹 빠졌어.",persona:"운동 친구 Emma",ai:"I'm really into soccer these days. What are you into?",answers:["i'm into","im into","i like","i love","music","games","basketball","drawing"]},
+ {id:9,category:"식당",emoji:"🍔",en:"I'd like a cheeseburger, please.",ko:"치즈버거 하나 주세요.",persona:"친절한 식당 직원 Robin",ai:"Welcome! What would you like to order?",answers:["i'd like","id like","please","burger","cheeseburger","pizza"]},
+ {id:10,category:"식당",emoji:"🥤",en:"Can I get some water, please?",ko:"물 좀 주시겠어요?",persona:"카페 직원 Taylor",ai:"Sure! Anything else?",answers:["water","no thanks","that's all","thats all","yes please","thank you"]}
+];
+
+let state = JSON.parse(localStorage.getItem("englishQuestState") || '{"completed":[],"streak":0}');
+if(!Array.isArray(state.completed)) state.completed=[];
+let filter="전체", currentIndex=0, recognition=null;
+
+const $=s=>document.querySelector(s);
+function save(){ localStorage.setItem("englishQuestState",JSON.stringify(state)); renderProgress(); renderList(); }
+function currentLessons(){ return filter==="전체" ? lessons : lessons.filter(x=>x.category===filter); }
+function lesson(){ return currentLessons()[currentIndex] || currentLessons()[0]; }
+function norm(s){return (s||"").toLowerCase().replace(/[.,!?']/g,"").replace(/\s+/g," ").trim()}
+
+function renderTabs(){
+  $("#categoryTabs").innerHTML=categories.map(c=>`<button data-cat="${c.key}" class="category-btn ${filter===c.key?'active':''} whitespace-nowrap px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white font-black transition">${c.emoji} ${c.key}</button>`).join("");
+  document.querySelectorAll(".category-btn").forEach(b=>b.onclick=()=>{filter=b.dataset.cat;currentIndex=0;renderTabs();renderLesson();renderList();});
+}
+function renderLesson(){
+  const x=lesson(); if(!x)return;
+  $("#lessonMeta").textContent=`#${String(x.id).padStart(2,"0")} · ${x.category}`;
+  $("#sceneEmoji").textContent=x.emoji; $("#englishText").textContent=x.en; $("#koreanText").textContent=x.ko;
+  $("#personaText").textContent="🎭 "+x.persona;
+  $("#completeBtn").textContent=state.completed.includes(x.id)?"✓ 완료했어요":"✓ 학습 완료";
+  $("#completeBtn").className=state.completed.includes(x.id)?"px-5 py-3 rounded-2xl bg-slate-300 text-white border-2 border-slate-300 font-black":"px-5 py-3 rounded-2xl bg-emerald-400 text-white border-2 border-emerald-500 font-black shadow";
+  $("#chatBox").innerHTML=`<div class="flex gap-2"><div class="text-3xl bubble">🤖</div><div class="bg-white border-2 border-violet-100 rounded-2xl rounded-tl-sm px-4 py-3 font-bold">${x.ai}</div></div>`;
+  $("#answerInput").value="";
+  makeQuiz();
+}
+function renderList(){
+  const arr=currentLessons();
+  $("#lessonList").innerHTML=arr.map((x,i)=>`<button data-i="${i}" class="w-full text-left p-3 rounded-2xl border-2 ${i===currentIndex?'border-violet-300 bg-violet-50':'border-slate-100 bg-white'} hover:border-violet-200 transition">
+    <div class="flex items-center gap-2"><span class="text-2xl">${x.emoji}</span><div class="min-w-0"><div class="font-black truncate">${x.en}</div><div class="text-xs text-slate-500 truncate">${x.ko}</div></div><span class="ml-auto">${state.completed.includes(x.id)?'✅':''}</span></div>
+  </button>`).join("");
+  document.querySelectorAll("#lessonList button").forEach(b=>b.onclick=()=>{currentIndex=+b.dataset.i;renderLesson();renderList();window.scrollTo({top:250,behavior:"smooth"});});
+}
+function renderProgress(){
+  const done=state.completed.length, xp=done*10, level=Math.floor(xp/50)+1, pct=Math.min(100,(xp%50)/50*100);
+  $("#xpText").textContent=`${xp} XP · ${done}/100 문장`; $("#xpBar").style.width=(done>=10?100:pct)+"%";
+  $("#doneCount").textContent=done; $("#streakCount").textContent=state.streak||0; $("#quizScore").textContent=`연속 정답 ${state.streak||0} 🔥`;
+  const levels=["🌱","🐣","🦊","🚀","👑"]; $("#levelBadge").textContent=`Lv.${level} ${levels[Math.min(level-1,levels.length-1)]}`;
+  let badges=[];
+  if(done>=1) badges.push("🥉 첫 문장");
+  if(done>=3) badges.push("🥈 3문장");
+  if(done>=5) badges.push("🥇 5문장");
+  if(done>=10) badges.push("🏆 샘플 마스터");
+  $("#badgeRow").innerHTML=badges.map(b=>`<span class="pop rounded-full bg-white border-2 border-yellow-200 px-3 py-1 text-sm font-black">${b}</span>`).join("") || `<span class="text-sm text-slate-400 font-bold">문장을 완료하면 배지를 얻어요! 🎁</span>`;
+}
+function speak(text){
+  if(!("speechSynthesis" in window)){alert("이 브라우저는 음성 읽기를 지원하지 않습니다.");return;}
+  speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang="en-US";u.rate=.88;u.pitch=1.05;
+  const btn=$("#speakBtn"); btn.classList.add("playing"); u.onend=()=>btn.classList.remove("playing"); u.onerror=()=>btn.classList.remove("playing"); speechSynthesis.speak(u);
+}
+function celebrate(big=false){
+  if(window.confetti){confetti({particleCount:big?180:90,spread:big?100:70,origin:{y:.65}});}
+  for(let i=0;i<10;i++){let s=document.createElement("div");s.className="star";s.textContent=i%2?"⭐":"✨";s.style.left=(45+Math.random()*10)+"vw";s.style.top="45vh";s.style.setProperty("--x",(Math.random()*500-250)+"px");s.style.setProperty("--y",(Math.random()*-400-80)+"px");document.body.appendChild(s);setTimeout(()=>s.remove(),1200);}
+}
+function completeCurrent(){
+  const x=lesson(); if(!state.completed.includes(x.id)){state.completed.push(x.id);save();celebrate(true);$("#levelBadge").classList.add("pop");setTimeout(()=>$("#levelBadge").classList.remove("pop"),700);}
+  renderLesson();
+}
+function addChat(who,text,good=false){
+  const row=document.createElement("div");row.className=`flex gap-2 ${who==="me"?"justify-end":""}`;
+  row.innerHTML=who==="me"?`<div class="bg-sky-500 text-white rounded-2xl rounded-tr-sm px-4 py-3 font-bold max-w-[85%]">${escapeHtml(text)}</div><div class="text-3xl">🙂</div>`:`<div class="text-3xl">${good?"🌟":"🤖"}</div><div class="${good?"bg-emerald-50 border-emerald-200":"bg-white border-violet-100"} border-2 rounded-2xl rounded-tl-sm px-4 py-3 font-bold max-w-[85%]">${text}</div>`;
+  $("#chatBox").appendChild(row);$("#chatBox").scrollTop=$("#chatBox").scrollHeight;
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function checkRoleplay(){
+  const val=$("#answerInput").value.trim();if(!val)return;addChat("me",val);$("#answerInput").value="";
+  const n=norm(val), x=lesson(); const ok=x.answers.some(a=>n.includes(norm(a)));
+  setTimeout(()=>{if(ok){addChat("ai","Awesome! 🎉 자연스럽게 잘 대답했어요. 한 번 더 소리 내어 말해 볼까요?",true);celebrate(); if(!state.completed.includes(x.id)){state.completed.push(x.id);save();} }
+  else addChat("ai","좋은 시도예요! 💪 핵심 표현을 조금 바꿔서 다시 말해 보세요. 🔊 버튼으로 예문도 다시 들어보세요.");},350);
+}
+function setupSTT(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){$("#micBtn").onclick=()=>alert("음성 인식이 지원되지 않는 브라우저입니다. 텍스트 입력을 이용해 주세요.");return;}
+  recognition=new SR();recognition.lang="en-US";recognition.interimResults=false;recognition.continuous=false;
+  recognition.onstart=()=>{$("#wave").classList.remove("hidden");$("#wave").classList.add("flex");$("#micBtn").textContent="⏹️";};
+  recognition.onend=()=>{$("#wave").classList.add("hidden");$("#wave").classList.remove("flex");$("#micBtn").textContent="🎤";};
+  recognition.onresult=e=>{$("#answerInput").value=e.results[0][0].transcript;checkRoleplay();};
+  recognition.onerror=e=>{console.log(e);};
+  $("#micBtn").onclick=()=>{try{recognition.start()}catch(e){recognition.stop()}};
+}
+function makeQuiz(){
+  const x=lesson();$("#quizQuestion").textContent=`"${x.en}"의 뜻은 무엇일까요?`;
+  let wrong=lessons.filter(v=>v.id!==x.id).sort(()=>Math.random()-.5).slice(0,3).map(v=>v.ko);
+  let opts=[x.ko,...wrong].sort(()=>Math.random()-.5);
+  $("#quizChoices").innerHTML=opts.map(o=>`<button class="choice text-left bg-white border-2 border-slate-200 rounded-2xl p-4 font-black hover:border-violet-300 transition" data-answer="${o===x.ko}">${o}</button>`).join("");
+  document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>{document.querySelectorAll(".choice").forEach(z=>z.disabled=true);if(b.dataset.answer==="true"){b.classList.add("good");state.streak=(state.streak||0)+1;celebrate();}else{b.classList.add("bad");state.streak=0;document.querySelector('.choice[data-answer="true"]').classList.add("good");}save();setTimeout(makeQuiz,1300);});
+}
+$("#speakBtn").onclick=()=>speak(lesson().en);
+$("#completeBtn").onclick=completeCurrent;
+$("#prevBtn").onclick=()=>{const a=currentLessons();currentIndex=(currentIndex-1+a.length)%a.length;renderLesson();renderList();};
+$("#nextBtn").onclick=()=>{const a=currentLessons();currentIndex=(currentIndex+1)%a.length;renderLesson();renderList();};
+$("#sendBtn").onclick=checkRoleplay;$("#answerInput").addEventListener("keydown",e=>{if(e.key==="Enter")checkRoleplay()});
+$("#resetBtn").onclick=()=>{if(confirm("저장된 학습 진행도를 초기화할까요?")){state={completed:[],streak:0};save();renderLesson();}};
+renderTabs();renderLesson();renderList();renderProgress();setupSTT();
+</script>
+</body>
+</html>
