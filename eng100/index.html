@@ -1,0 +1,3191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>중학 생활영어 100선 · 말하기 트레이너</title>
+
+<!-- ▼ 외부 의존성은 CDN 2개뿐 (Tailwind + 웹폰트). 그 외 100% 바닐라 JS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+
+<script>
+  /* CDN이 잠시 막히거나 오프라인이어도 스크립트 오류가 나지 않도록 방어 */
+  if (window.tailwind) tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Noto Sans KR', 'system-ui', 'sans-serif'],
+          en:   ['Nunito', 'Noto Sans KR', 'sans-serif']
+        },
+        colors: {
+          ivory: '#FBF8F1',
+          ink:   '#2A2622',
+          teal:  { 50:'#EAF7F5', 100:'#CFEDE8', 400:'#3FB0A0', 500:'#22998A', 600:'#158073', 700:'#0F6459' },
+          sun:   { 100:'#FFF1D6', 400:'#F5B841', 500:'#E9A522' }
+        },
+        boxShadow: { soft: '0 6px 24px -8px rgba(42,38,34,.18)' }
+      }
+    }
+  };
+</script>
+
+<style>
+  /* Tailwind CDN이 로드되지 않아도 화면 전환만큼은 동작하도록 하는 최소 안전장치 */
+  .hidden { display: none !important; }
+
+  html { scroll-behavior: smooth; }
+  body { -webkit-tap-highlight-color: transparent; }
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-thumb { background: #d9d2c4; border-radius: 9px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  @keyframes pop { 0% { transform: translateY(6px) scale(.98); opacity: 0 } 100% { transform: none; opacity: 1 } }
+  .pop { animation: pop .22s ease-out both; }
+
+  @keyframes pulse-mic { 0%,100% { box-shadow: 0 0 0 0 rgba(233,165,34,.55) } 50% { box-shadow: 0 0 0 12px rgba(233,165,34,0) } }
+  .mic-on { animation: pulse-mic 1.2s infinite; }
+
+  input[type=range] { accent-color: #158073; }
+  .tab-on { background:#158073; color:#fff; box-shadow:0 6px 18px -8px rgba(21,128,115,.9); }
+  .tab-off { background:#fff; color:#7a7168; }
+</style>
+</head>
+
+<body class="bg-ivory text-ink font-sans min-h-screen">
+
+<!-- ══════════════════ HEADER ══════════════════ -->
+<header class="sticky top-0 z-30 bg-ivory/90 backdrop-blur border-b border-black/5">
+  <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+    <div class="w-10 h-10 rounded-2xl bg-teal-600 text-white grid place-items-center text-xl shadow-soft shrink-0">🗣️</div>
+    <div class="min-w-0 flex-1">
+      <h1 class="font-en font-extrabold text-lg leading-tight">Everyday English 100</h1>
+      <p class="text-[11px] text-ink/50 truncate">중학 생활영어 말하기 트레이너</p>
+    </div>
+    <button id="btn-reset" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-black/10 text-ink/50 hover:bg-white transition">기록 초기화</button>
+  </div>
+
+  <!-- 진행률 -->
+  <div class="max-w-5xl mx-auto px-4 pb-3">
+    <div class="flex items-center justify-between text-[11px] text-ink/55 mb-1">
+      <span>학습 진행률</span><span id="progress-label">0 / 0</span>
+    </div>
+    <div class="h-2 rounded-full bg-black/5 overflow-hidden">
+      <div id="progress-bar" class="h-full w-0 bg-gradient-to-r from-teal-400 to-teal-600 transition-all duration-500"></div>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════ TABS ══════════════════ -->
+<nav class="max-w-5xl mx-auto px-4 mt-4">
+  <div class="grid grid-cols-2 gap-2 p-1.5 bg-black/5 rounded-2xl">
+    <button data-tab="list"     class="tab py-2.5 rounded-xl text-sm font-bold transition">📚 표현 카드</button>
+    <button data-tab="roleplay" class="tab py-2.5 rounded-xl text-sm font-bold transition">🎭 역할극 연습</button>
+  </div>
+</nav>
+
+<main class="max-w-5xl mx-auto px-4 py-5 pb-24">
+
+  <!-- ══════════════════ VIEW 1 : LIST ══════════════════ -->
+  <section id="view-list">
+    <!-- 음성 설정 -->
+    <div class="bg-white rounded-2xl shadow-soft p-4 mb-4">
+      <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <div class="flex items-center gap-3 flex-1 min-w-[220px]">
+          <span class="text-xs font-bold text-ink/60 shrink-0">🐢 속도</span>
+          <input id="rate" type="range" min="0.5" max="1.3" step="0.05" value="0.9" class="flex-1" />
+          <span id="rate-val" class="text-xs font-en font-bold text-teal-600 w-9 text-right">0.90</span>
+        </div>
+        <div class="flex items-center gap-2 flex-1 min-w-[220px]">
+          <span class="text-xs font-bold text-ink/60 shrink-0">🔊 음성</span>
+          <select id="voice" class="flex-1 text-xs border border-black/10 rounded-lg px-2 py-1.5 bg-white"></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 검색 + 카테고리 -->
+    <div class="mb-3">
+      <input id="search" type="search" placeholder="영어·한국어·상황으로 검색…"
+             class="w-full px-4 py-3 rounded-2xl border border-black/10 bg-white shadow-soft text-sm outline-none focus:ring-2 focus:ring-teal-400/40" />
+    </div>
+    <div id="chips" class="flex gap-2 overflow-x-auto pb-3 -mx-1 px-1"></div>
+
+    <div id="cards" class="grid sm:grid-cols-2 gap-3"></div>
+    <p id="empty" class="hidden text-center text-sm text-ink/40 py-14">검색 결과가 없어요 🔍</p>
+  </section>
+
+  <!-- ══════════════════ VIEW 2 : ROLEPLAY ══════════════════ -->
+  <section id="view-roleplay" class="hidden">
+    <!-- 시나리오 선택 -->
+    <div id="rp-picker">
+      <p class="text-sm text-ink/55 mb-3">연습할 상황을 골라 보세요. AI 친구가 영어로 말을 걸어 옵니다.</p>
+      <select id="rp-cat" class="w-full mb-3 px-3 py-2.5 rounded-xl border border-black/10 bg-white shadow-soft text-sm outline-none"></select>
+      <div id="rp-list" class="grid sm:grid-cols-2 gap-3"></div>
+    </div>
+
+    <!-- 대화 화면 -->
+    <div id="rp-stage" class="hidden">
+      <div class="bg-white rounded-2xl shadow-soft p-4 mb-3 flex items-center gap-3">
+        <div id="rp-avatar" class="w-12 h-12 rounded-2xl bg-teal-50 grid place-items-center text-2xl shrink-0"></div>
+        <div class="min-w-0 flex-1">
+          <p id="rp-name" class="font-en font-bold"></p>
+          <p id="rp-role" class="text-[11px] text-ink/50 truncate"></p>
+        </div>
+        <button id="rp-back" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-black/10 text-ink/55 hover:bg-ivory transition">목록</button>
+      </div>
+
+      <div id="chat" class="bg-white rounded-2xl shadow-soft p-4 h-[420px] overflow-y-auto flex flex-col gap-3"></div>
+
+      <!-- 입력부 -->
+      <div id="rp-input" class="mt-3 bg-white rounded-2xl shadow-soft p-3">
+        <div class="flex gap-2">
+          <button id="btn-mic" title="말하기" class="w-12 h-12 shrink-0 rounded-xl bg-sun-400 text-white text-xl grid place-items-center hover:bg-sun-500 transition">🎤</button>
+          <input id="answer" type="text" placeholder="영어로 대답을 입력하거나 🎤를 누르세요"
+                 class="flex-1 min-w-0 px-3 rounded-xl border border-black/10 text-sm outline-none focus:ring-2 focus:ring-teal-400/40" />
+          <button id="btn-send" class="w-12 h-12 shrink-0 rounded-xl bg-teal-600 text-white text-xl grid place-items-center hover:bg-teal-700 transition">➤</button>
+        </div>
+        <div class="flex gap-2 mt-2">
+          <button id="btn-hint"   class="flex-1 text-[11px] py-2 rounded-lg bg-black/5 hover:bg-black/10 transition">💡 힌트</button>
+          <button id="btn-sample" class="flex-1 text-[11px] py-2 rounded-lg bg-black/5 hover:bg-black/10 transition">📝 모범답안</button>
+          <button id="btn-replay" class="flex-1 text-[11px] py-2 rounded-lg bg-black/5 hover:bg-black/10 transition">🔁 다시 듣기</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="border-t border-black/5 py-6 text-center text-[11px] text-ink/40">
+  세영코딩연구소 &nbsp;&nbsp; 저자 : Ph.D KIM
+</footer>
+
+<!-- 토스트 -->
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-6 z-50 hidden px-4 py-2.5 rounded-xl bg-ink text-white text-xs shadow-lg"></div>
+
+<script>
+/* ==========================================================================
+   중학 생활영어 100선 · 말하기 트레이너   (Single HTML File)
+   - 외부 서버 / 빌드 / npm 설치 없이 브라우저에서 바로 실행됩니다.
+   - TTS : window.speechSynthesis       (모든 최신 브라우저)
+   - STT : webkitSpeechRecognition      (Chrome / Edge 권장, 그 외는 텍스트 입력)
+   - 저장: localStorage
+   ========================================================================== */
+
+/* ==========================================================================
+   [ 1 ] 학습 데이터
+   --------------------------------------------------------------------------
+   ★ 100선 확장 가이드 ★
+   아래 EXPRESSIONS 배열에 같은 모양의 객체를 계속 붙여 넣기만 하면 됩니다.
+   카테고리 칩·검색·진행률·역할극 목록은 전부 배열을 읽어 자동 생성되므로
+   화면 코드는 한 줄도 고칠 필요가 없습니다.
+
+   {
+     id        : 11,                     // 고유 숫자 (중복 금지)
+     category  : "학교생활",              // 새 이름을 쓰면 필터 칩이 자동 추가됨
+     en        : "영어 표현",
+     ko        : "한국어 뜻",
+     situation : "언제 쓰는 말인지 한 줄 설명",
+     tip       : "중학생 눈높이 포인트 (생략 가능)",
+     persona   : {
+       name : "AI 상대 이름",
+       emoji: "🧑",
+       role : "상대의 정체 / 상황",
+       turns: [                          // 3~5턴 권장
+         {
+           bot   : "AI가 먼저 건네는 영어 문장",
+           must  : [ ["동의어","표현들"], ["또 다른 필수 요소"] ],  // ← 채점 기준
+           hint  : "한국어 힌트",
+           sample: "모범 답안(영어)"
+         }
+       ]
+     }
+   }
+
+   ▸ must 의 채점 규칙
+     - must 는 "조건 그룹"의 배열입니다.
+     - 한 그룹 안의 표현 중 하나라도 사용자의 답에 들어 있으면 그 그룹은 정답 처리.
+     - (맞은 그룹 수 / 전체 그룹 수) 가 점수의 60%를 차지합니다.
+       (나머지는 문장 길이 20점 + 대문자·문장부호 20점)
+     - 그룹을 1개만 쓰면 쉬운 문제, 2~3개면 난이도가 올라갑니다.
+   ========================================================================== */
+
+const EXPRESSIONS = [
+  {
+    id: 1, category: "인사·소개",
+    en: "Nice to meet you. I'm Minji.",
+    ko: "만나서 반가워. 난 민지야.",
+    situation: "새 학기 첫날, 처음 만난 친구에게 이름을 말하며 인사할 때",
+    tip: "처음 만난 사이엔 meet, 이미 아는 사이엔 'Nice to see you'를 씁니다.",
+    persona: {
+      name: "Emma", emoji: "👩🏻‍🦰", role: "미국에서 막 전학 온 같은 반 친구",
+      turns: [
+        { bot: "Hi! I'm Emma. I just moved here from Boston.",
+          must: [["nice to meet","glad to meet","good to meet"], ["i'm ", "i am ", "my name"]],
+          hint: "‘만나서 반가워’ + 내 이름 소개를 이어서 말해 보세요.",
+          sample: "Nice to meet you, Emma. I'm Minji." },
+        { bot: "Minji? That's a pretty name. What grade are you in?",
+          must: [["grade", "second", "2nd", "middle school", "i'm in"]],
+          hint: "‘나는 중학교 2학년이야’ → I'm in the second grade of middle school.",
+          sample: "I'm in the second grade of middle school." },
+        { bot: "Really? We're in the same class then! See you tomorrow.",
+          must: [["see you", "bye", "have a good", "take care"]],
+          hint: "헤어질 때 인사로 마무리해 보세요.",
+          sample: "See you tomorrow, Emma. Have a good day!" }
+      ]
+    }
+  },
+  {
+    id: 2, category: "인사·소개",
+    en: "How's it going? — Not bad. How about you?",
+    ko: "잘 지내? — 나쁘지 않아. 너는?",
+    situation: "아는 친구를 복도에서 마주쳐 가볍게 안부를 물을 때",
+    tip: "How are you? 보다 훨씬 자주 쓰는 캐주얼 인사입니다.",
+    persona: {
+      name: "Jake", emoji: "🧢", role: "옆자리에 앉는 단짝 친구",
+      turns: [
+        { bot: "Hey! How's it going?",
+          must: [["good", "fine", "great", "not bad", "okay", "so so"], ["how about you", "and you", "how are you", "what about you"]],
+          hint: "내 기분을 말한 뒤, 상대에게도 똑같이 되물어 주세요.",
+          sample: "Not bad. How about you?" },
+        { bot: "Pretty good! Did you sleep well last night?",
+          must: [["yes", "no", "i slept", "i didn't", "i went to bed", "stayed up"]],
+          hint: "잘 잤는지 Yes / No로 시작해 한 문장 덧붙여 보세요.",
+          sample: "No, I stayed up late doing my homework." },
+        { bot: "Same here. Anyway, the first class starts soon. Shall we go in?",
+          must: [["sure", "okay", "let's go", "yes", "of course"]],
+          hint: "‘그래, 가자!’ 라고 대답해 보세요.",
+          sample: "Sure, let's go in." }
+      ]
+    }
+  },
+  {
+    id: 3, category: "학교생활",
+    en: "May I go to the nurse's office? I have a headache.",
+    ko: "보건실에 가도 될까요? 머리가 아파요.",
+    situation: "수업 중 몸이 아파 선생님께 허락을 구할 때",
+    tip: "선생님께는 Can I 보다 정중한 May I / Could I 를 씁니다.",
+    persona: {
+      name: "Mr. Brown", emoji: "👨🏼‍🏫", role: "영어 수업을 맡은 원어민 선생님",
+      turns: [
+        { bot: "Minji, you look pale today. Are you all right?",
+          must: [["headache", "stomachache", "sick", "not feeling", "hurts", "fever"]],
+          hint: "어디가 아픈지 말해 보세요. I have a headache.",
+          sample: "Not really. I have a bad headache." },
+        { bot: "Oh, I'm sorry to hear that. Do you need to see the nurse?",
+          must: [["may i", "can i", "could i"], ["nurse", "nurse's office"]],
+          hint: "‘보건실에 가도 될까요?’ 를 정중하게 물어보세요.",
+          sample: "May I go to the nurse's office, please?" },
+        { bot: "Of course. Take this pass and go downstairs.",
+          must: [["thank", "thanks"]],
+          hint: "감사 인사로 마무리하세요.",
+          sample: "Thank you, Mr. Brown." }
+      ]
+    }
+  },
+  {
+    id: 4, category: "학교생활",
+    en: "Can you say that again, please? I didn't catch that.",
+    ko: "다시 한 번 말씀해 주시겠어요? 못 알아들었어요.",
+    situation: "선생님이나 친구의 말을 놓쳤을 때 되물어 볼 때",
+    tip: "‘What?’ 한 마디만 하면 무례하게 들릴 수 있어요. 꼭 please 를 붙이세요.",
+    persona: {
+      name: "Leo", emoji: "🧑🏽‍🏫", role: "빠른 말투의 원어민 보조교사",
+      turns: [
+        { bot: "Okay everyone, turn to page ninety-four and do exercise three.",
+          must: [["say that again", "repeat", "pardon", "one more time", "didn't catch", "didn't hear"]],
+          hint: "‘다시 말씀해 주시겠어요?’ 라고 정중히 요청하세요.",
+          sample: "Can you say that again, please? I didn't catch that." },
+        { bot: "Sure. Page ninety-four, exercise number three. Got it?",
+          must: [["got it", "yes", "i see", "okay", "understand"]],
+          hint: "이해했다고 짧게 대답해 보세요.",
+          sample: "Got it. Thank you!" },
+        { bot: "Great. Raise your hand if you need help.",
+          must: [["thank", "okay", "i will", "sure"]],
+          hint: "알겠다고 답하며 마무리하세요.",
+          sample: "Okay, I will. Thanks a lot." }
+      ]
+    }
+  },
+  {
+    id: 5, category: "길 묻기",
+    en: "Excuse me, how can I get to the subway station?",
+    ko: "실례합니다, 지하철역에 어떻게 가나요?",
+    situation: "낯선 동네에서 모르는 사람에게 길을 물을 때",
+    tip: "말을 걸 땐 반드시 Excuse me 로 시작합니다.",
+    persona: {
+      name: "Sarah", emoji: "👩🏾", role: "버스 정류장에서 기다리던 친절한 행인",
+      turns: [
+        { bot: "You look a little lost. Do you need some help?",
+          must: [["excuse me", "how can i get", "where is", "how do i get", "could you tell me"], ["subway", "station"]],
+          hint: "‘실례지만 지하철역에 어떻게 가나요?’",
+          sample: "Excuse me, how can I get to the subway station?" },
+        { bot: "Sure. Go straight two blocks and turn left at the bank.",
+          must: [["how long", "how far", "minutes", "is it far", "walk"]],
+          hint: "얼마나 걸리는지 물어보세요.",
+          sample: "How long does it take on foot?" },
+        { bot: "About five minutes on foot. You can't miss it.",
+          must: [["thank", "thanks", "appreciate"]],
+          hint: "고맙다는 인사로 마무리하세요.",
+          sample: "Thank you so much for your help!" }
+      ]
+    }
+  },
+  {
+    id: 6, category: "쇼핑",
+    en: "How much is it? Can I try it on?",
+    ko: "얼마예요? 입어 봐도 될까요?",
+    situation: "옷 가게에서 가격을 묻고 착용해 보고 싶을 때",
+    tip: "try it on = 옷·신발을 직접 입어/신어 보다.",
+    persona: {
+      name: "Ben", emoji: "🧑🏻‍💼", role: "쇼핑몰 옷 가게 점원",
+      turns: [
+        { bot: "Hi there! Can I help you find anything?",
+          must: [["i'm looking for", "looking for", "i want", "do you have", "can i see"]],
+          hint: "찾는 물건을 말해 보세요. I'm looking for a hoodie.",
+          sample: "Yes, I'm looking for a blue hoodie." },
+        { bot: "Sure, the blue hoodies are right over here.",
+          must: [["how much", "price", "cost"]],
+          hint: "가격을 물어보세요.",
+          sample: "Thanks. How much is this one?" },
+        { bot: "It's twenty dollars. It's on sale this week.",
+          must: [["try it on", "try this on", "try them on", "fitting room"]],
+          hint: "입어 봐도 되는지 물어보세요.",
+          sample: "Nice! Can I try it on?" }
+      ]
+    }
+  },
+  {
+    id: 7, category: "음식 주문",
+    en: "I'd like a cheeseburger and a small coke, please.",
+    ko: "치즈버거 하나랑 콜라 작은 거 하나 주세요.",
+    situation: "패스트푸드점에서 메뉴를 주문할 때",
+    tip: "I want 보다 I'd like(= I would like) 가 훨씬 공손합니다.",
+    persona: {
+      name: "Mia", emoji: "🧑🏻‍🍳", role: "버거 가게 카운터 직원",
+      turns: [
+        { bot: "Hi, welcome to Burger House! What can I get for you?",
+          must: [["i'd like", "i would like", "i'll have", "can i get", "i want"], ["burger", "cheeseburger", "coke", "fries"]],
+          hint: "‘~을 주세요’ + 메뉴 이름을 말해 보세요.",
+          sample: "I'd like a cheeseburger and a small coke, please." },
+        { bot: "Got it. For here or to go?",
+          must: [["for here", "to go", "take out", "takeout"]],
+          hint: "먹고 갈지 포장할지 답하세요.",
+          sample: "For here, please." },
+        { bot: "That'll be seven dollars and fifty cents.",
+          must: [["here you are", "here it is", "card", "cash", "thank"]],
+          hint: "돈을 건네며 한마디 해 보세요.",
+          sample: "Here you are. Thank you!" }
+      ]
+    }
+  },
+  {
+    id: 8, category: "감정·사과",
+    en: "I'm really sorry. It was my fault.",
+    ko: "정말 미안해. 내 잘못이야.",
+    situation: "친구에게 실수한 것을 진심으로 사과할 때",
+    tip: "fault = 잘못, 책임. 'It was my fault.' 한 문장이면 충분히 진심이 전해집니다.",
+    persona: {
+      name: "Daniel", emoji: "🧒🏻", role: "어제 일로 조금 삐친 친구",
+      turns: [
+        { bot: "Hey... you broke my umbrella yesterday and didn't tell me.",
+          must: [["sorry", "apologize"], ["my fault", "i didn't mean", "on purpose"]],
+          hint: "사과 + ‘내 잘못이었어’ 를 함께 말해 보세요.",
+          sample: "I'm really sorry, Daniel. It was my fault." },
+        { bot: "It's okay, but why didn't you say anything?",
+          must: [["i was", "i forgot", "afraid", "scared", "because"]],
+          hint: "말하지 못한 이유를 설명해 보세요.",
+          sample: "I was afraid you would get angry." },
+        { bot: "I get it. Just tell me next time, okay?",
+          must: [["i will", "okay", "sure", "promise", "thank"]],
+          hint: "다음엔 꼭 말하겠다고 약속하세요.",
+          sample: "I promise I will. Thanks for understanding." }
+      ]
+    }
+  },
+  {
+    id: 9, category: "제안·약속",
+    en: "Why don't we meet at three in front of the library?",
+    ko: "3시에 도서관 앞에서 만나는 게 어때?",
+    situation: "친구와 만날 시간과 장소를 정할 때",
+    tip: "Why don't we ~? = Let's ~ 보다 부드러운 제안 표현입니다.",
+    persona: {
+      name: "Sophie", emoji: "👧🏼", role: "주말에 같이 놀 계획을 짜는 친구",
+      turns: [
+        { bot: "Are you free this Saturday? Let's do something fun.",
+          must: [["why don't we", "how about", "let's", "shall we"], ["meet", "go", "watch", "see"]],
+          hint: "‘~하는 게 어때?’ 로 활동을 제안해 보세요.",
+          sample: "Sure! Why don't we watch a movie together?" },
+        { bot: "Sounds fun! What time and where should we meet?",
+          must: [["three", "3", "two", "o'clock", "at "], ["in front of", "at the", "near"]],
+          hint: "시간 + 장소를 함께 말해 보세요.",
+          sample: "Why don't we meet at three in front of the library?" },
+        { bot: "Perfect. See you then. Don't be late!",
+          must: [["i won't", "okay", "see you", "sure"]],
+          hint: "늦지 않겠다고 답하세요.",
+          sample: "I won't. See you on Saturday!" }
+      ]
+    }
+  },
+  {
+    id: 10, category: "부탁·전화",
+    en: "Could you do me a favor?",
+    ko: "부탁 하나만 들어줄 수 있어?",
+    situation: "누군가에게 조심스럽게 부탁을 꺼낼 때",
+    tip: "do me a favor = 부탁을 들어주다. 본론을 꺼내기 전 쿠션 표현으로 씁니다.",
+    persona: {
+      name: "Chris", emoji: "🧑🏻", role: "옆집에 사는 사촌 형",
+      turns: [
+        { bot: "Hey Minji, you sound serious. What's up?",
+          must: [["could you", "can you", "would you"], ["favor", "help me", "help"]],
+          hint: "‘부탁 하나만 들어줄래?’ 로 운을 떼 보세요.",
+          sample: "Could you do me a favor?" },
+        { bot: "Sure, what do you need?",
+          must: [["i need", "can you", "would you", "please"]],
+          hint: "무엇이 필요한지 구체적으로 말해 보세요.",
+          sample: "I need you to pick up my package, please." },
+        { bot: "No problem. I'll do it this evening.",
+          must: [["thank", "thanks", "appreciate", "you're the best"]],
+          hint: "고마움을 표현하며 마무리하세요.",
+          sample: "Thank you so much. You're the best!" }
+      ]
+    }
+  },
+  {
+    id: 11, category: "취미·여가",
+    en: "What do you do in your free time?",
+    ko: "시간 날 때 뭐 해?",
+    situation: "친구와 서로의 취미를 물으며 대화를 시작할 때",
+    tip: "free time = 여가 시간. 친해지고 싶을 때 쓰기 좋은 첫 질문이에요.",
+    persona: {
+      name: "Amy", emoji: "👧🏻", role: "같은 동아리에 든 외국인 친구",
+      turns: [
+        { bot: "We have to wait ten more minutes. So, tell me something about yourself.",
+          must: [["what do you do", "what do you like", "free time", "hobby"]],
+          hint: "‘시간 날 때 뭐 해?’ 라고 물어보세요.",
+          sample: "What do you do in your free time?" },
+        { bot: "I usually draw webtoons. How about you?",
+          must: [["i usually", "i like", "i enjoy", "i play", "i watch"]],
+          hint: "나는 보통 ~해 라고 답해 보세요.",
+          sample: "I usually play badminton with my brother." },
+        { bot: "That's cool! Maybe we can do something together sometime.",
+          must: [["sure", "sounds good", "i'd love to", "that would be"]],
+          hint: "좋다고 답해 보세요.",
+          sample: "Sure, that sounds good!" }
+      ]
+    }
+  },
+  {
+    id: 12, category: "취미·여가",
+    en: "I'm into K-pop these days.",
+    ko: "나 요즘 케이팝에 빠져 있어.",
+    situation: "요즘 푹 빠진 것을 소개할 때",
+    tip: "be into ~ = ~에 푹 빠지다. like 보다 훨씬 생생한 표현이에요.",
+    persona: {
+      name: "Noah", emoji: "🧑🏼", role: "음악 취향이 궁금한 반 친구",
+      turns: [
+        { bot: "You're always listening to music. What kind do you like?",
+          must: [["i'm into", "i love", "i like"], ["k-pop", "kpop", "pop", "music", "hip-hop"]],
+          hint: "‘요즘 ~에 빠져 있어’ 라고 말해 보세요.",
+          sample: "I'm into K-pop these days." },
+        { bot: "Really? Who is your favorite singer?",
+          must: [["my favorite", "i like", "favorite singer", "is my"]],
+          hint: "가장 좋아하는 가수를 말해 보세요.",
+          sample: "My favorite singer is IU." },
+        { bot: "I've never heard of that group. Can you recommend a song?",
+          must: [["you should listen", "try listening", "i recommend", "listen to"]],
+          hint: "노래를 추천해 주세요.",
+          sample: "You should listen to their new song." }
+      ]
+    }
+  },
+  {
+    id: 13, category: "취미·여가",
+    en: "Do you want to join us?",
+    ko: "우리랑 같이 할래?",
+    situation: "놀고 있는 무리에 친구를 초대할 때",
+    tip: "join us = 우리와 함께하다. 친구를 끼워 줄 때 쓰는 따뜻한 한마디예요.",
+    persona: {
+      name: "Kate", emoji: "👩🏻", role: "점심시간에 배드민턴을 치는 친구",
+      turns: [
+        { bot: "We're playing badminton after lunch. Only three people, though.",
+          must: [["do you want to join", "want to join", "why don't you join", "can i join"]],
+          hint: "‘같이 할래?’ 라고 권해 보세요.",
+          sample: "Do you want to join us?" },
+        { bot: "Sure! But I'm not very good at it.",
+          must: [["don't worry", "it's okay", "that's fine", "no problem"]],
+          hint: "괜찮다고 안심시켜 주세요.",
+          sample: "Don't worry. It's just for fun." },
+        { bot: "Thanks. Where should I meet you?",
+          must: [["meet", "at the", "in front of", "playground", "gym"]],
+          hint: "만날 장소를 알려 주세요.",
+          sample: "Meet me at the playground." }
+      ]
+    }
+  },
+  {
+    id: 14, category: "취미·여가",
+    en: "That sounds like fun!",
+    ko: "그거 재밌겠다!",
+    situation: "친구의 제안이나 계획에 신나게 반응할 때",
+    tip: "sound like ~ = ~처럼 들리다. 리액션이 좋으면 대화가 길게 이어져요.",
+    persona: {
+      name: "Ryan", emoji: "🧑🏻", role: "주말 계획을 이야기하는 친구",
+      turns: [
+        { bot: "My family is going camping this weekend.",
+          must: [["sounds like fun", "sounds fun", "that sounds", "sounds great"]],
+          hint: "‘재밌겠다!’ 라고 반응해 보세요.",
+          sample: "That sounds like fun!" },
+        { bot: "Yeah, we're going to make a campfire at night.",
+          must: [["have you ever", "did you", "do you", "can you"]],
+          hint: "궁금한 점을 하나 물어보세요.",
+          sample: "Have you ever been camping before?" },
+        { bot: "Lots of times. You should come with us next time.",
+          must: [["i'd love to", "i want to", "that would be", "sure"]],
+          hint: "가고 싶다고 답해 보세요.",
+          sample: "I'd love to. Thank you!" }
+      ]
+    }
+  },
+  {
+    id: 15, category: "취미·여가",
+    en: "I'm not good at swimming.",
+    ko: "나 수영 잘 못해.",
+    situation: "잘 못하는 것을 솔직하게 말할 때",
+    tip: "be good at + -ing = ~을 잘하다. 못할 땐 not good at 을 씁니다.",
+    persona: {
+      name: "Ella", emoji: "👩🏼", role: "수영장에 같이 가자는 친구",
+      turns: [
+        { bot: "Let's go swimming this Saturday!",
+          must: [["i'm not good at", "not good at", "i can't swim", "i'm bad at"]],
+          hint: "수영을 잘 못한다고 솔직히 말해 보세요.",
+          sample: "Sorry, I'm not good at swimming." },
+        { bot: "That's okay! I can teach you. Have you ever tried?",
+          must: [["yes", "no", "i tried", "i've never", "once"]],
+          hint: "해 본 적이 있는지 답해 보세요.",
+          sample: "I've never tried it before." },
+        { bot: "Then let's start with the shallow pool. It'll be fun!",
+          must: [["okay", "sounds good", "let's try", "i'll try", "thank"]],
+          hint: "해 보겠다고 답해 보세요.",
+          sample: "Okay, I'll give it a try." }
+      ]
+    }
+  },
+  {
+    id: 16, category: "취미·여가",
+    en: "Let's take a picture together.",
+    ko: "같이 사진 찍자.",
+    situation: "친구들과 추억을 남기고 싶을 때",
+    tip: "take a picture = 사진을 찍다. take a picture of ~ 는 ‘~을 찍다’ 예요.",
+    persona: {
+      name: "Sora", emoji: "👧🏽", role: "수학여행에 함께 간 친구",
+      turns: [
+        { bot: "Look at that view! The sea is so blue.",
+          must: [["let's take a picture", "take a picture", "let's take a photo", "selfie"]],
+          hint: "‘같이 사진 찍자’ 고 제안해 보세요.",
+          sample: "Wow! Let's take a picture together." },
+        { bot: "Good idea. Should I ask someone to take it for us?",
+          must: [["yes", "no", "let's just", "i'll take", "selfie"]],
+          hint: "어떻게 찍을지 답해 보세요.",
+          sample: "Yes, please. Or we can just take a selfie." },
+        { bot: "Okay, ready? One, two, three!",
+          must: [["cheese", "smile", "say cheese", "got it"]],
+          hint: "사진 찍을 때 하는 말을 해 보세요.",
+          sample: "Say cheese!" }
+      ]
+    }
+  },
+  {
+    id: 17, category: "학교생활",
+    en: "I forgot my homework at home.",
+    ko: "숙제를 집에 두고 왔어요.",
+    situation: "숙제를 깜빡하고 안 가져왔을 때 선생님께 말할 때",
+    tip: "forget A at B = A를 B에 두고 오다. 변명보다 사실을 먼저 말하는 게 좋아요.",
+    persona: {
+      name: "Ms. Clark", emoji: "👩🏼‍🏫", role: "숙제를 걷는 담임 선생님",
+      turns: [
+        { bot: "Everyone, please pass your homework to the front.",
+          must: [["i'm sorry", "sorry"], ["forgot", "left my homework", "at home"]],
+          hint: "사과 + ‘집에 두고 왔어요’ 를 말해 보세요.",
+          sample: "I'm sorry. I forgot my homework at home." },
+        { bot: "I see. Did you finish it, though?",
+          must: [["yes", "no", "i finished", "i did", "i didn't"]],
+          hint: "숙제를 끝내긴 했는지 답해 보세요.",
+          sample: "Yes, I finished it last night." },
+        { bot: "All right. Bring it to me tomorrow morning.",
+          must: [["i will", "okay", "yes", "thank"]],
+          hint: "내일 가져오겠다고 답하세요.",
+          sample: "I will. Thank you, Ms. Clark." }
+      ]
+    }
+  },
+  {
+    id: 18, category: "학교생활",
+    en: "Can I borrow your eraser?",
+    ko: "지우개 좀 빌려줄래?",
+    situation: "친구에게 학용품을 빌릴 때",
+    tip: "borrow = 빌리다(내가), lend = 빌려주다(남에게). 헷갈리기 쉬워요.",
+    persona: {
+      name: "Mina", emoji: "👧🏻", role: "옆자리 짝꿍",
+      turns: [
+        { bot: "You look like you're looking for something.",
+          must: [["can i borrow", "could i borrow", "may i borrow", "can you lend"]],
+          hint: "‘지우개 좀 빌려줄래?’ 라고 물어보세요.",
+          sample: "Can I borrow your eraser?" },
+        { bot: "Sure, here you are.",
+          must: [["thank", "thanks"]],
+          hint: "고맙다고 말하세요.",
+          sample: "Thank you so much." },
+        { bot: "No problem. Just give it back after class.",
+          must: [["i will", "okay", "sure", "of course"]],
+          hint: "수업 끝나고 돌려주겠다고 답하세요.",
+          sample: "Okay, I will give it back after class." }
+      ]
+    }
+  },
+  {
+    id: 19, category: "학교생활",
+    en: "What's our homework for today?",
+    ko: "오늘 숙제가 뭐야?",
+    situation: "수업을 놓쳤거나 숙제를 못 들었을 때",
+    tip: "for today = 오늘 치의. 친구에게 물을 땐 What's our ~ 가 자연스러워요.",
+    persona: {
+      name: "Jun", emoji: "🧑🏻", role: "꼼꼼히 필기하는 반 친구",
+      turns: [
+        { bot: "Hey, you were at the nurse's office last period, right?",
+          must: [["what's our homework", "what is our homework", "what's the homework", "any homework"]],
+          hint: "오늘 숙제가 뭔지 물어보세요.",
+          sample: "Yes. What's our homework for today?" },
+        { bot: "We have to write a diary in English. Five sentences.",
+          must: [["when", "due", "by when", "tomorrow", "do we have to"]],
+          hint: "언제까지인지 물어보세요.",
+          sample: "When is it due?" },
+        { bot: "It's due tomorrow morning. Don't be late again!",
+          must: [["thank", "thanks", "got it", "i see"]],
+          hint: "고맙다고 답하며 마무리하세요.",
+          sample: "Got it. Thanks a lot!" }
+      ]
+    }
+  },
+  {
+    id: 20, category: "학교생활",
+    en: "I don't understand this question.",
+    ko: "이 문제를 모르겠어요.",
+    situation: "수업 중 모르는 문제를 질문할 때",
+    tip: "모르는 걸 묻는 건 창피한 일이 아니에요. I have a question. 도 함께 익혀 두세요.",
+    persona: {
+      name: "Mr. Park", emoji: "👨🏻‍🏫", role: "수학을 영어로 가르치는 선생님",
+      turns: [
+        { bot: "Does anyone have a question about number seven?",
+          must: [["i don't understand", "i can't understand", "i have a question", "could you explain"]],
+          hint: "‘이 문제를 모르겠어요’ 라고 말해 보세요.",
+          sample: "I don't understand this question." },
+        { bot: "Which part is difficult for you?",
+          must: [["this part", "the second", "i don't know how", "the last", "from"]],
+          hint: "어느 부분이 어려운지 말해 보세요.",
+          sample: "The second part is difficult for me." },
+        { bot: "Okay, let me explain it again slowly.",
+          must: [["thank", "thanks", "please", "yes"]],
+          hint: "감사 인사로 답하세요.",
+          sample: "Thank you, sir." }
+      ]
+    }
+  },
+  {
+    id: 21, category: "학교생활",
+    en: "When is the test?",
+    ko: "시험이 언제예요?",
+    situation: "시험 날짜나 범위를 확인할 때",
+    tip: "When is ~? 는 날짜·시간을 묻는 가장 기본 표현이에요.",
+    persona: {
+      name: "Ms. Clark", emoji: "👩🏼‍🏫", role: "시험 안내를 하는 담임 선생님",
+      turns: [
+        { bot: "Don't forget, the English test is coming up soon.",
+          must: [["when is the test", "when is it", "what day", "when will"]],
+          hint: "시험이 언제인지 물어보세요.",
+          sample: "When is the test?" },
+        { bot: "It's next Tuesday, third period.",
+          must: [["what", "which", "how many", "range", "pages", "units"]],
+          hint: "시험 범위를 물어보세요.",
+          sample: "What is on the test?" },
+        { bot: "Units four and five. Study the new words carefully.",
+          must: [["thank", "okay", "i will", "got it"]],
+          hint: "알겠다고 답하며 마무리하세요.",
+          sample: "Okay, thank you. I will study hard." }
+      ]
+    }
+  },
+  {
+    id: 22, category: "학교생활",
+    en: "I'm sorry I'm late.",
+    ko: "늦어서 죄송합니다.",
+    situation: "지각했을 때 교실에 들어가며 사과할 때",
+    tip: "이유를 길게 말하기보다 사과를 먼저 하는 게 예의예요.",
+    persona: {
+      name: "Mr. Brown", emoji: "👨🏼‍🏫", role: "1교시 수업 중인 선생님",
+      turns: [
+        { bot: "(You open the classroom door ten minutes after class started.)",
+          must: [["i'm sorry", "sorry", "excuse me"], ["late", "i'm late"]],
+          hint: "‘늦어서 죄송합니다’ 라고 말해 보세요.",
+          sample: "I'm sorry I'm late." },
+        { bot: "It's all right. What happened?",
+          must: [["i missed", "the bus", "i overslept", "because", "i had to"]],
+          hint: "늦은 이유를 한 문장으로 말해 보세요.",
+          sample: "I missed the bus this morning." },
+        { bot: "I understand. Take your seat and catch up quickly.",
+          must: [["thank", "okay", "yes", "i will"]],
+          hint: "감사 인사로 마무리하세요.",
+          sample: "Thank you. I will." }
+      ]
+    }
+  },
+  {
+    id: 23, category: "학교생활",
+    en: "May I use the bathroom?",
+    ko: "화장실에 가도 될까요?",
+    situation: "수업 중 화장실에 가야 할 때",
+    tip: "bathroom / restroom 둘 다 씁니다. 선생님께는 May I ~? 가 가장 공손해요.",
+    persona: {
+      name: "Mr. Park", emoji: "👨🏻‍🏫", role: "수업 중인 선생님",
+      turns: [
+        { bot: "Yes? Do you have a question, Minji?",
+          must: [["may i", "can i", "could i"], ["bathroom", "restroom", "toilet"]],
+          hint: "‘화장실에 가도 될까요?’ 를 정중하게 물어보세요.",
+          sample: "May I use the bathroom, please?" },
+        { bot: "Of course. Be quick, we're starting the activity soon.",
+          must: [["i will", "okay", "yes", "thank"]],
+          hint: "빨리 다녀오겠다고 답하세요.",
+          sample: "Yes, I'll be quick. Thank you." },
+        { bot: "(You come back after two minutes.) Feeling better?",
+          must: [["yes", "much better", "i'm fine", "thank"]],
+          hint: "괜찮아졌다고 답하세요.",
+          sample: "Yes, much better. Thank you, sir." }
+      ]
+    }
+  },
+  {
+    id: 24, category: "학교생활",
+    en: "Let's study together for the exam.",
+    ko: "같이 시험 공부하자.",
+    situation: "친구에게 함께 공부하자고 제안할 때",
+    tip: "study for ~ = ~를 대비해 공부하다. study about 은 쓰지 않아요.",
+    persona: {
+      name: "Hana", emoji: "👧🏻", role: "같은 반 공부 친구",
+      turns: [
+        { bot: "This history test is going to be really hard.",
+          must: [["let's study", "why don't we study", "shall we study", "study together"]],
+          hint: "‘같이 공부하자’ 고 제안해 보세요.",
+          sample: "Then let's study together for the exam." },
+        { bot: "Good idea! Where should we study?",
+          must: [["library", "my house", "at the", "cafe", "classroom"]],
+          hint: "공부할 장소를 제안해 보세요.",
+          sample: "How about the school library?" },
+        { bot: "Perfect. Let's meet there at four.",
+          must: [["see you", "okay", "sure", "i'll be there"]],
+          hint: "알겠다고 답하며 마무리하세요.",
+          sample: "Okay, see you there at four." }
+      ]
+    }
+  },
+  {
+    id: 25, category: "친구관계",
+    en: "Are you okay? You look upset.",
+    ko: "괜찮아? 속상해 보여.",
+    situation: "친구의 표정이 안 좋을 때 먼저 말을 걸 때",
+    tip: "look + 형용사 = ~해 보이다. upset(속상한), tired(피곤한) 등과 함께 써 보세요.",
+    persona: {
+      name: "Somi", emoji: "👧🏻", role: "혼자 앉아 있는 친구",
+      turns: [
+        { bot: "(Your friend is sitting alone and not saying anything.)",
+          must: [["are you okay", "are you all right", "what's wrong"], ["you look", "upset", "sad", "tired"]],
+          hint: "‘괜찮아? 속상해 보여’ 라고 말을 걸어 보세요.",
+          sample: "Are you okay? You look upset." },
+        { bot: "I got a bad grade on my math test.",
+          must: [["i'm sorry", "that's too bad", "don't worry", "it's okay"]],
+          hint: "위로의 말을 건네 보세요.",
+          sample: "I'm sorry to hear that. Don't worry too much." },
+        { bot: "Thanks. I just feel like I'm not good enough.",
+          must: [["you can", "next time", "i'll help", "let's study", "you're"]],
+          hint: "응원하거나 도와주겠다고 말해 보세요.",
+          sample: "You can do better next time. I'll help you study." }
+      ]
+    }
+  },
+  {
+    id: 26, category: "친구관계",
+    en: "Don't worry. You can do it.",
+    ko: "걱정 마. 넌 할 수 있어.",
+    situation: "긴장하거나 자신 없어 하는 친구를 응원할 때",
+    tip: "짧지만 힘이 되는 말이에요. You've got this! 도 같은 뜻입니다.",
+    persona: {
+      name: "Ben", emoji: "🧑🏻", role: "발표를 앞두고 긴장한 친구",
+      turns: [
+        { bot: "My hands are shaking. I have to give a speech in ten minutes.",
+          must: [["don't worry", "you can do it", "you'll be fine", "you've got this"]],
+          hint: "‘걱정 마, 넌 할 수 있어’ 라고 응원해 보세요.",
+          sample: "Don't worry. You can do it." },
+        { bot: "What if I forget everything on the stage?",
+          must: [["just", "take a deep breath", "practice", "look at me", "slowly"]],
+          hint: "구체적인 방법을 하나 알려 주세요.",
+          sample: "Just take a deep breath and speak slowly." },
+        { bot: "Okay. I'll try. Thanks for being here.",
+          must: [["good luck", "you're welcome", "no problem", "i'm cheering"]],
+          hint: "행운을 빌어 주세요.",
+          sample: "Good luck! I'll be cheering for you." }
+      ]
+    }
+  },
+  {
+    id: 27, category: "친구관계",
+    en: "Thanks for helping me out.",
+    ko: "도와줘서 고마워.",
+    situation: "친구가 나를 도와줬을 때 고마움을 표현할 때",
+    tip: "Thanks for + -ing = ~해 줘서 고마워. 뒤에 동사원형을 쓰지 않도록 주의!",
+    persona: {
+      name: "Leo", emoji: "🧑🏽", role: "무거운 짐을 같이 들어 준 친구",
+      turns: [
+        { bot: "There you go. That box was heavier than it looked!",
+          must: [["thanks for", "thank you for"], ["helping", "your help", "help"]],
+          hint: "‘도와줘서 고마워’ 라고 말해 보세요.",
+          sample: "Thanks for helping me out." },
+        { bot: "No problem. What's in it, anyway?",
+          must: [["it's", "these are", "books", "art", "supplies", "for"]],
+          hint: "상자 안에 무엇이 들었는지 말해 보세요.",
+          sample: "These are art supplies for the festival." },
+        { bot: "Oh, the school festival! Can I help with that too?",
+          must: [["yes", "sure", "that would be", "of course", "please"]],
+          hint: "고맙게 받아들여 보세요.",
+          sample: "Sure, that would be great!" }
+      ]
+    }
+  },
+  {
+    id: 28, category: "친구관계",
+    en: "Can we talk for a minute?",
+    ko: "잠깐 얘기 좀 할 수 있을까?",
+    situation: "친구에게 진지한 이야기를 꺼내고 싶을 때",
+    tip: "for a minute = 잠깐만. 갑작스럽지 않게 대화를 여는 쿠션 표현이에요.",
+    persona: {
+      name: "Jiho", emoji: "🧑🏻", role: "요즘 나를 피하는 것 같은 친구",
+      turns: [
+        { bot: "Oh, hi. I was just about to go home.",
+          must: [["can we talk", "could we talk", "do you have a minute", "can i talk to you"]],
+          hint: "잠깐 이야기하자고 부탁해 보세요.",
+          sample: "Wait, can we talk for a minute?" },
+        { bot: "Sure. What is it?",
+          must: [["i feel", "i think", "you've been", "lately", "i wanted to"]],
+          hint: "솔직한 마음을 한 문장으로 말해 보세요.",
+          sample: "I feel like you've been avoiding me lately." },
+        { bot: "I'm sorry. I was upset, but I should have told you.",
+          must: [["it's okay", "thank", "i understand", "let's", "i'm glad"]],
+          hint: "이해한다고 답하며 마무리하세요.",
+          sample: "It's okay. I'm glad we talked." }
+      ]
+    }
+  },
+  {
+    id: 29, category: "친구관계",
+    en: "I didn't mean to hurt your feelings.",
+    ko: "네 마음 상하게 할 생각은 아니었어.",
+    situation: "의도치 않게 친구에게 상처를 줬을 때",
+    tip: "mean to ~ = ~할 의도이다. 사과할 때 아주 자주 쓰는 표현이에요.",
+    persona: {
+      name: "Yuna", emoji: "👧🏻", role: "내 농담에 기분이 상한 친구",
+      turns: [
+        { bot: "That joke you made in front of everyone... it really hurt.",
+          must: [["i'm sorry", "sorry"], ["didn't mean to", "i didn't know", "my fault"]],
+          hint: "사과 + ‘그럴 의도가 아니었어’ 를 말해 보세요.",
+          sample: "I'm sorry. I didn't mean to hurt your feelings." },
+        { bot: "I know you were just joking, but it wasn't funny to me.",
+          must: [["you're right", "i understand", "i see", "i won't"]],
+          hint: "친구의 말을 받아들여 보세요.",
+          sample: "You're right. I won't do that again." },
+        { bot: "Thanks for understanding. Let's forget about it.",
+          must: [["thank", "friends", "okay", "i'm glad"]],
+          hint: "고맙다고 답하며 마무리하세요.",
+          sample: "Thank you. I'm glad we're still friends." }
+      ]
+    }
+  },
+  {
+    id: 30, category: "친구관계",
+    en: "Let's be friends again.",
+    ko: "우리 다시 친하게 지내자.",
+    situation: "다툰 친구와 화해하고 싶을 때",
+    tip: "again = 다시. 용기 내어 먼저 손을 내미는 표현이에요.",
+    persona: {
+      name: "Dohee", emoji: "👧🏽", role: "일주일째 말을 안 하는 친구",
+      turns: [
+        { bot: "(You walk up to your friend after a week of silence.)",
+          must: [["let's be friends", "can we be friends", "i miss", "i'm sorry"]],
+          hint: "먼저 화해를 제안해 보세요.",
+          sample: "Let's be friends again. I miss you." },
+        { bot: "I've been wanting to say the same thing.",
+          must: [["really", "me too", "i'm glad", "i was"]],
+          hint: "반가운 마음을 표현해 보세요.",
+          sample: "Really? I'm so glad to hear that." },
+        { bot: "Want to get some tteokbokki after school?",
+          must: [["sure", "yes", "let's go", "sounds good", "i'd love to"]],
+          hint: "같이 가자고 답하세요.",
+          sample: "Sure! Let's go together." }
+      ]
+    }
+  },
+  {
+    id: 31, category: "음식 주문",
+    en: "What's your favorite food?",
+    ko: "가장 좋아하는 음식이 뭐야?",
+    situation: "친구나 처음 만난 사람과 음식 이야기를 나눌 때",
+    tip: "favorite 앞에는 the 를 쓰지 않아요. your favorite food 가 맞습니다.",
+    persona: {
+      name: "Chloe", emoji: "👩🏻", role: "한국 음식을 궁금해하는 교환학생",
+      turns: [
+        { bot: "Everything in the cafeteria smells so good today.",
+          must: [["what's your favorite", "what is your favorite", "do you like", "favorite food"]],
+          hint: "좋아하는 음식이 뭔지 물어보세요.",
+          sample: "What's your favorite food?" },
+        { bot: "I love pizza! What about Korean food? What should I try?",
+          must: [["you should try", "i recommend", "try", "my favorite is"]],
+          hint: "한국 음식을 하나 추천해 보세요.",
+          sample: "You should try bibimbap. It's my favorite." },
+        { bot: "Bibimbap? Is it spicy?",
+          must: [["a little", "not really", "yes", "no", "you can"]],
+          hint: "매운지 답해 보세요.",
+          sample: "It can be a little spicy, but you can order it mild." }
+      ]
+    }
+  },
+  {
+    id: 32, category: "음식 주문",
+    en: "Can I have the menu, please?",
+    ko: "메뉴판 좀 주시겠어요?",
+    situation: "식당에 앉아 메뉴판을 요청할 때",
+    tip: "Can I have ~, please? 는 식당에서 무엇이든 요청할 때 쓰는 만능 표현이에요.",
+    persona: {
+      name: "Server", emoji: "🧑🏻‍🍳", role: "레스토랑 종업원",
+      turns: [
+        { bot: "Good evening. A table for two? Here you are.",
+          must: [["can i have", "could i have", "may i have", "could we get"], ["menu"]],
+          hint: "메뉴판을 달라고 정중히 요청하세요.",
+          sample: "Thank you. Can I have the menu, please?" },
+        { bot: "Of course. Here it is. Today's special is tomato pasta.",
+          must: [["i'll have", "i'd like", "can i get", "sounds good"]],
+          hint: "주문할 메뉴를 말해 보세요.",
+          sample: "That sounds good. I'll have the tomato pasta." },
+        { bot: "Great choice. Anything to drink?",
+          must: [["water", "juice", "no thank", "just water", "a glass of"]],
+          hint: "마실 것을 답해 보세요.",
+          sample: "Just water, please." }
+      ]
+    }
+  },
+  {
+    id: 33, category: "음식 주문",
+    en: "It tastes really good!",
+    ko: "정말 맛있다!",
+    situation: "음식을 먹고 맛있다고 표현할 때",
+    tip: "taste + 형용사 = ~한 맛이 나다. delicious 한 단어로도 충분해요.",
+    persona: {
+      name: "Grandma Kim", emoji: "👵🏻", role: "음식을 차려 주신 할머니",
+      turns: [
+        { bot: "Try this soup. I made it this morning.",
+          must: [["it tastes", "tastes good", "delicious", "so good", "yummy"]],
+          hint: "맛있다고 표현해 보세요.",
+          sample: "Wow, it tastes really good!" },
+        { bot: "I'm glad you like it. Would you like some more?",
+          must: [["yes please", "no thank", "i'm full", "a little more"]],
+          hint: "더 먹을지 답해 보세요.",
+          sample: "Yes, please. A little more." },
+        { bot: "Here you go. Eat a lot and grow strong.",
+          must: [["thank", "thanks"]],
+          hint: "감사 인사로 마무리하세요.",
+          sample: "Thank you, Grandma." }
+      ]
+    }
+  },
+  {
+    id: 34, category: "음식 주문",
+    en: "I'm allergic to peanuts.",
+    ko: "저는 땅콩 알레르기가 있어요.",
+    situation: "음식을 주문하거나 권유받을 때 꼭 알려야 하는 말",
+    tip: "be allergic to ~ = ~에 알레르기가 있다. 해외여행에서 안전을 지켜 주는 문장이에요.",
+    persona: {
+      name: "Waiter", emoji: "🧑🏼‍🍳", role: "외국 식당의 종업원",
+      turns: [
+        { bot: "Our salad comes with a special peanut sauce. Is that okay?",
+          must: [["i'm allergic", "allergic to", "i can't eat"], ["peanut", "nuts", "peanuts"]],
+          hint: "‘땅콩 알레르기가 있어요’ 라고 알려 주세요.",
+          sample: "Sorry, I'm allergic to peanuts." },
+        { bot: "Oh, thank you for telling me. Would you like another dressing?",
+          must: [["yes please", "do you have", "what about", "could i get", "olive"]],
+          hint: "다른 소스를 부탁해 보세요.",
+          sample: "Yes, please. Do you have olive oil instead?" },
+        { bot: "Certainly. I'll tell the kitchen to be careful.",
+          must: [["thank", "thanks", "appreciate"]],
+          hint: "감사 인사로 마무리하세요.",
+          sample: "Thank you. I really appreciate it." }
+      ]
+    }
+  },
+  {
+    id: 35, category: "음식 주문",
+    en: "Could I get some water, please?",
+    ko: "물 좀 주시겠어요?",
+    situation: "식당에서 물이나 추가 요청을 할 때",
+    tip: "Could I get ~? 은 Can I have ~? 보다 조금 더 공손한 표현이에요.",
+    persona: {
+      name: "Server", emoji: "🧑🏽‍🍳", role: "바쁜 식당의 종업원",
+      turns: [
+        { bot: "How is everything so far?",
+          must: [["could i get", "can i get", "can i have", "may i have"], ["water"]],
+          hint: "물을 달라고 정중히 요청하세요.",
+          sample: "It's great, thanks. Could I get some water, please?" },
+        { bot: "Sure. Cold or room temperature?",
+          must: [["cold", "room temperature", "either", "warm"]],
+          hint: "어떤 물을 원하는지 답해 보세요.",
+          sample: "Cold water, please." },
+        { bot: "Here you are. Let me know if you need anything else.",
+          must: [["thank", "thanks", "okay", "i will"]],
+          hint: "감사 인사로 마무리하세요.",
+          sample: "Thank you very much." }
+      ]
+    }
+  },
+  {
+    id: 36, category: "음식 주문",
+    en: "Let's split the bill.",
+    ko: "각자 내자.",
+    situation: "친구와 밥을 먹고 계산할 때",
+    tip: "split the bill = 나눠서 내다. ‘내가 살게’ 는 It's on me. 예요.",
+    persona: {
+      name: "Alex", emoji: "🧑🏻", role: "같이 밥을 먹은 친구",
+      turns: [
+        { bot: "That was delicious. I'll get the check.",
+          must: [["let's split", "split the bill", "let's share", "go dutch"]],
+          hint: "각자 내자고 제안해 보세요.",
+          sample: "No, let's split the bill." },
+        { bot: "Are you sure? I invited you, though.",
+          must: [["i'm sure", "yes", "it's okay", "next time", "really"]],
+          hint: "괜찮다고 답해 보세요.",
+          sample: "I'm sure. You can buy next time." },
+        { bot: "All right. That's fifteen dollars each, then.",
+          must: [["here you are", "here it is", "okay", "got it", "thank"]],
+          hint: "돈을 건네며 답하세요.",
+          sample: "Okay, here you are." }
+      ]
+    }
+  },
+  {
+    id: 37, category: "쇼핑",
+    en: "Do you have this in a bigger size?",
+    ko: "이거 더 큰 사이즈 있나요?",
+    situation: "옷이나 신발의 다른 사이즈를 찾을 때",
+    tip: "in a bigger/smaller size = 더 큰/작은 사이즈로. 색은 in another color 예요.",
+    persona: {
+      name: "Clerk", emoji: "👩🏻‍💼", role: "옷 가게 점원",
+      turns: [
+        { bot: "How does it fit? Is the size okay?",
+          must: [["do you have", "is there", "can i get"], ["bigger", "larger", "bigger size"]],
+          hint: "더 큰 사이즈가 있는지 물어보세요.",
+          sample: "It's a little tight. Do you have this in a bigger size?" },
+        { bot: "Let me check. What size are you looking for?",
+          must: [["large", "medium", "small", "size", "l", "m"]],
+          hint: "원하는 사이즈를 말해 보세요.",
+          sample: "I think I need a large." },
+        { bot: "Here's a large. The fitting room is over there.",
+          must: [["thank", "thanks", "okay", "i'll try"]],
+          hint: "고맙다고 답하세요.",
+          sample: "Thank you. I'll try it on." }
+      ]
+    }
+  },
+  {
+    id: 38, category: "쇼핑",
+    en: "It's too expensive for me.",
+    ko: "제겐 너무 비싸요.",
+    situation: "가격이 부담스러울 때 솔직하게 말할 때",
+    tip: "too + 형용사 = 너무 ~한(부정적). very 와 느낌이 달라요.",
+    persona: {
+      name: "Vendor", emoji: "🧑🏻‍💼", role: "시장 상인",
+      turns: [
+        { bot: "This bag is only forty dollars. Good quality!",
+          must: [["too expensive", "it's expensive", "i can't afford", "out of my budget"]],
+          hint: "너무 비싸다고 말해 보세요.",
+          sample: "Hmm, it's too expensive for me." },
+        { bot: "How much do you want to pay?",
+          must: [["how about", "can you make it", "would you take", "i can pay", "dollars"]],
+          hint: "원하는 가격을 말해 보세요.",
+          sample: "How about twenty-five dollars?" },
+        { bot: "Thirty, and it's yours.",
+          must: [["okay", "deal", "i'll take it", "sounds good", "thank"]],
+          hint: "결정을 말해 보세요.",
+          sample: "Okay, deal. I'll take it." }
+      ]
+    }
+  },
+  {
+    id: 39, category: "쇼핑",
+    en: "Can I get a refund?",
+    ko: "환불받을 수 있나요?",
+    situation: "산 물건이 마음에 들지 않거나 문제가 있을 때",
+    tip: "refund = 환불, exchange = 교환. 영수증(receipt)은 꼭 챙기세요.",
+    persona: {
+      name: "Clerk", emoji: "🧑🏼‍💼", role: "고객센터 직원",
+      turns: [
+        { bot: "Hello, how can I help you today?",
+          must: [["can i get a refund", "i'd like a refund", "can i return", "refund"]],
+          hint: "환불이 가능한지 물어보세요.",
+          sample: "Hi. Can I get a refund for this?" },
+        { bot: "May I ask what the problem is?",
+          must: [["it's broken", "doesn't work", "too small", "wrong", "it's damaged"]],
+          hint: "문제가 무엇인지 설명해 보세요.",
+          sample: "It doesn't work. I think it's broken." },
+        { bot: "I see. Do you have the receipt with you?",
+          must: [["yes", "here it is", "here you are", "no i don't"]],
+          hint: "영수증이 있는지 답해 보세요.",
+          sample: "Yes, here it is." }
+      ]
+    }
+  },
+  {
+    id: 40, category: "쇼핑",
+    en: "I'll take this one.",
+    ko: "이걸로 할게요.",
+    situation: "여러 개 중 하나를 고르고 사겠다고 말할 때",
+    tip: "take = (물건을) 사다. buy 대신 가게에서 훨씬 자주 쓰여요.",
+    persona: {
+      name: "Clerk", emoji: "👩🏽‍💼", role: "문구점 점원",
+      turns: [
+        { bot: "We have blue, black, and green notebooks. Which do you prefer?",
+          must: [["i'll take", "i'd like", "i want", "this one", "i'll get"]],
+          hint: "고른 것을 말해 보세요.",
+          sample: "I'll take this one, the blue one." },
+        { bot: "Good choice. Would you like a bag?",
+          must: [["yes please", "no thank", "i have", "it's okay"]],
+          hint: "봉투가 필요한지 답해 보세요.",
+          sample: "No, thank you. I have my own bag." },
+        { bot: "That'll be three dollars, please.",
+          must: [["here you are", "card", "cash", "here it is"]],
+          hint: "계산하며 한마디 해 보세요.",
+          sample: "Here you are. Thank you!" }
+      ]
+    }
+  },
+  {
+    id: 41, category: "쇼핑",
+    en: "Do you take credit cards?",
+    ko: "카드 되나요?",
+    situation: "계산할 때 결제 수단을 확인할 때",
+    tip: "take = 받다. Do you accept credit cards? 도 같은 뜻이에요.",
+    persona: {
+      name: "Clerk", emoji: "🧑🏻‍💼", role: "작은 가게의 주인",
+      turns: [
+        { bot: "Your total is twelve dollars and fifty cents.",
+          must: [["do you take", "do you accept", "can i pay", "credit card"]],
+          hint: "카드가 되는지 물어보세요.",
+          sample: "Do you take credit cards?" },
+        { bot: "Yes, we do. Card or mobile pay?",
+          must: [["card", "mobile", "phone", "this card", "by card"]],
+          hint: "어떻게 결제할지 답해 보세요.",
+          sample: "Card, please." },
+        { bot: "All done. Here's your receipt.",
+          must: [["thank", "thanks", "have a good"]],
+          hint: "감사 인사로 마무리하세요.",
+          sample: "Thank you. Have a good day!" }
+      ]
+    }
+  },
+  {
+    id: 42, category: "쇼핑",
+    en: "I'm just looking around, thanks.",
+    ko: "그냥 구경 중이에요, 감사합니다.",
+    situation: "점원이 도와주려 할 때 부담 없이 거절할 때",
+    tip: "look around = 둘러보다. 거절할 때도 thanks 를 붙이면 부드러워요.",
+    persona: {
+      name: "Clerk", emoji: "👩🏻‍💼", role: "다가와 말을 거는 점원",
+      turns: [
+        { bot: "Hi! Are you looking for anything special today?",
+          must: [["just looking", "i'm just looking", "looking around"], ["thank", "thanks"]],
+          hint: "‘그냥 구경 중이에요’ 라고 부드럽게 답해 보세요.",
+          sample: "I'm just looking around, thanks." },
+        { bot: "No problem. Let me know if you need any help.",
+          must: [["okay", "i will", "sure", "thank"]],
+          hint: "알겠다고 답하세요.",
+          sample: "Okay, I will. Thank you." },
+        { bot: "By the way, everything on this shelf is thirty percent off today.",
+          must: [["really", "oh", "that's", "i'll check", "thank"]],
+          hint: "관심을 보이며 답해 보세요.",
+          sample: "Really? I'll take a look. Thanks!" }
+      ]
+    }
+  },
+  {
+    id: 43, category: "여행·교통",
+    en: "Which bus goes to City Hall?",
+    ko: "시청 가는 버스가 몇 번이에요?",
+    situation: "버스 정류장에서 노선을 물을 때",
+    tip: "Which bus goes to ~? 는 번호를 묻는 가장 쉬운 표현이에요.",
+    persona: {
+      name: "Passerby", emoji: "🧑🏾", role: "정류장에 서 있는 아저씨",
+      turns: [
+        { bot: "Are you waiting for a bus? They come every ten minutes.",
+          must: [["which bus", "what bus", "which one"], ["city hall", "goes to", "to city"]],
+          hint: "시청 가는 버스를 물어보세요.",
+          sample: "Yes. Excuse me, which bus goes to City Hall?" },
+        { bot: "Number 402. It stops right here.",
+          must: [["how long", "how many stops", "when", "is it far"]],
+          hint: "얼마나 걸리는지 물어보세요.",
+          sample: "Thank you. How long does it take?" },
+        { bot: "About twenty minutes if there's no traffic.",
+          must: [["thank", "thanks", "appreciate"]],
+          hint: "감사 인사로 마무리하세요.",
+          sample: "Thank you so much for your help." }
+      ]
+    }
+  },
+  {
+    id: 44, category: "여행·교통",
+    en: "How long does it take to get there?",
+    ko: "거기까지 얼마나 걸려요?",
+    situation: "이동 시간을 물어볼 때",
+    tip: "How long does it take? 는 시간, How far is it? 는 거리를 묻습니다.",
+    persona: {
+      name: "Driver", emoji: "🧑🏻", role: "택시 기사님",
+      turns: [
+        { bot: "Where to, young lady?",
+          must: [["to the", "please", "i'd like to go", "take me to"]],
+          hint: "가고 싶은 곳을 말해 보세요.",
+          sample: "To the train station, please." },
+        { bot: "Sure thing. Hop in.",
+          must: [["how long does it take", "how long", "how much time"]],
+          hint: "시간이 얼마나 걸리는지 물어보세요.",
+          sample: "How long does it take to get there?" },
+        { bot: "About fifteen minutes at this hour.",
+          must: [["thank", "okay", "great", "i see"]],
+          hint: "알겠다고 답하며 마무리하세요.",
+          sample: "Okay, thank you." }
+      ]
+    }
+  },
+  {
+    id: 45, category: "여행·교통",
+    en: "Where should I transfer?",
+    ko: "어디서 갈아타야 하나요?",
+    situation: "지하철이나 버스를 환승할 때",
+    tip: "transfer = 환승하다. Where do I change trains? 도 같은 뜻이에요.",
+    persona: {
+      name: "Station staff", emoji: "🧑🏻‍✈️", role: "지하철역 직원",
+      turns: [
+        { bot: "Can I help you? You look confused.",
+          must: [["where should i transfer", "where do i transfer", "where can i change", "transfer"]],
+          hint: "어디서 갈아타야 하는지 물어보세요.",
+          sample: "Yes, please. Where should I transfer?" },
+        { bot: "Where are you going?",
+          must: [["i'm going to", "i want to go", "to"]],
+          hint: "목적지를 말해 보세요.",
+          sample: "I'm going to Seoul Station." },
+        { bot: "Then transfer at Sindorim Station to Line 1.",
+          must: [["thank", "got it", "i see", "okay"]],
+          hint: "알겠다고 답하며 마무리하세요.",
+          sample: "Got it. Thank you very much." }
+      ]
+    }
+  },
+  {
+    id: 46, category: "여행·교통",
+    en: "Is this seat taken?",
+    ko: "이 자리 비었나요?",
+    situation: "버스나 식당에서 빈자리인지 확인할 때",
+    tip: "taken = (자리가) 임자가 있는. 그대로 외워 두면 편한 표현이에요.",
+    persona: {
+      name: "Passenger", emoji: "👩🏼", role: "옆자리에 앉은 승객",
+      turns: [
+        { bot: "(The bus is crowded and there is one empty seat next to a woman.)",
+          must: [["is this seat taken", "is this seat free", "can i sit", "is anyone sitting"]],
+          hint: "자리가 비었는지 물어보세요.",
+          sample: "Excuse me, is this seat taken?" },
+        { bot: "No, go ahead. Please sit down.",
+          must: [["thank", "thanks"]],
+          hint: "고맙다고 말하세요.",
+          sample: "Thank you." },
+        { bot: "Are you going far? This bus goes all the way to the beach.",
+          must: [["yes", "no", "i'm going to", "just"]],
+          hint: "어디까지 가는지 답해 보세요.",
+          sample: "No, I'm just going to the library." }
+      ]
+    }
+  },
+  {
+    id: 47, category: "여행·교통",
+    en: "I think I'm lost.",
+    ko: "길을 잃은 것 같아요.",
+    situation: "낯선 곳에서 길을 잃었을 때 도움을 청할 때",
+    tip: "I think ~ 를 붙이면 훨씬 부드럽고 자연스러워요.",
+    persona: {
+      name: "Officer", emoji: "👮🏻", role: "거리에서 만난 경찰관",
+      turns: [
+        { bot: "Is everything all right? You've been standing here a while.",
+          must: [["i think i'm lost", "i'm lost", "i can't find", "i don't know where"]],
+          hint: "길을 잃었다고 말해 보세요.",
+          sample: "Actually, I think I'm lost." },
+        { bot: "Don't worry. Where are you trying to go?",
+          must: [["i'm trying to go", "i'm looking for", "i want to go", "to the"]],
+          hint: "가려던 곳을 말해 보세요.",
+          sample: "I'm looking for the Central Museum." },
+        { bot: "It's just two blocks that way, next to the park.",
+          must: [["thank", "thanks", "appreciate"]],
+          hint: "감사 인사로 마무리하세요.",
+          sample: "Thank you so much for your help." }
+      ]
+    }
+  },
+  {
+    id: 48, category: "여행·교통",
+    en: "Could you tell me where the restroom is?",
+    ko: "화장실이 어디인지 알려주시겠어요?",
+    situation: "공공장소에서 화장실 위치를 물을 때",
+    tip: "Could you tell me where ~ is? 는 길을 묻는 가장 정중한 형태예요.",
+    persona: {
+      name: "Staff", emoji: "🧑🏽‍💼", role: "박물관 안내 직원",
+      turns: [
+        { bot: "Welcome to the museum. Do you need any help?",
+          must: [["could you tell me", "can you tell me", "where is", "excuse me"], ["restroom", "bathroom", "toilet"]],
+          hint: "화장실 위치를 정중히 물어보세요.",
+          sample: "Yes, could you tell me where the restroom is?" },
+        { bot: "It's down the hall, on your left.",
+          must: [["thank", "thanks", "got it", "i see"]],
+          hint: "고맙다고 답하세요.",
+          sample: "Thank you very much." },
+        { bot: "Also, the second floor exhibit closes at five.",
+          must: [["thank", "okay", "i see", "got it", "good to know"]],
+          hint: "알겠다고 답하며 마무리하세요.",
+          sample: "Okay, good to know. Thanks again." }
+      ]
+    }
+  },
+  {
+    id: 49, category: "여행·교통",
+    en: "I'd like to check in, please.",
+    ko: "체크인하려고요.",
+    situation: "호텔에 도착해 방을 배정받을 때",
+    tip: "check in ↔ check out. 공항에서도 똑같이 씁니다.",
+    persona: {
+      name: "Receptionist", emoji: "🧑🏻‍💼", role: "호텔 프런트 직원",
+      turns: [
+        { bot: "Good afternoon! Welcome to Blue Sky Hotel.",
+          must: [["i'd like to check in", "i want to check in", "check in", "checking in"]],
+          hint: "체크인하고 싶다고 말해 보세요.",
+          sample: "Hello. I'd like to check in, please." },
+        { bot: "Of course. May I have your name?",
+          must: [["my name is", "i'm", "it's"]],
+          hint: "이름을 말해 보세요.",
+          sample: "My name is Minji Kim." },
+        { bot: "Thank you. Here's your key. Room 502, fifth floor.",
+          must: [["thank", "thanks", "got it"]],
+          hint: "감사 인사로 마무리하세요.",
+          sample: "Thank you very much." }
+      ]
+    }
+  },
+  {
+    id: 50, category: "여행·교통",
+    en: "What time is breakfast?",
+    ko: "아침 식사는 몇 시예요?",
+    situation: "호텔에서 식사 시간을 확인할 때",
+    tip: "What time is ~? 는 시각을 묻는 기본 표현이에요.",
+    persona: {
+      name: "Receptionist", emoji: "👩🏼‍💼", role: "호텔 프런트 직원",
+      turns: [
+        { bot: "Is there anything else I can help you with?",
+          must: [["what time is breakfast", "when is breakfast", "what time does breakfast"]],
+          hint: "아침 식사 시간을 물어보세요.",
+          sample: "Yes. What time is breakfast?" },
+        { bot: "From seven to ten in the morning, on the second floor.",
+          must: [["where", "do i need", "is it free", "included"]],
+          hint: "추가로 궁금한 점을 물어보세요.",
+          sample: "Is breakfast included in the room price?" },
+        { bot: "Yes, it's included for all guests.",
+          must: [["great", "thank", "perfect", "good"]],
+          hint: "기쁘게 답하며 마무리하세요.",
+          sample: "Great, thank you very much." }
+      ]
+    }
+  },
+  {
+    id: 51, category: "여행·교통",
+    en: "Where can I get a taxi?",
+    ko: "택시는 어디서 타나요?",
+    situation: "역이나 공항에서 택시 타는 곳을 찾을 때",
+    tip: "Where can I get ~? = ~는 어디서 구할/탈 수 있나요?",
+    persona: {
+      name: "Guard", emoji: "🧑🏿‍✈️", role: "공항 안내 직원",
+      turns: [
+        { bot: "Do you need directions? The exits are that way.",
+          must: [["where can i get a taxi", "where can i take a taxi", "where is the taxi"]],
+          hint: "택시 타는 곳을 물어보세요.",
+          sample: "Yes, where can I get a taxi?" },
+        { bot: "Go out through Gate 4 and turn right. The taxi stand is there.",
+          must: [["how much", "how long", "is it far", "about"]],
+          hint: "요금이나 거리를 물어보세요.",
+          sample: "Thank you. How much is it to downtown?" },
+        { bot: "About thirty dollars, depending on traffic.",
+          must: [["thank", "okay", "i see", "got it"]],
+          hint: "알겠다고 답하며 마무리하세요.",
+          sample: "I see. Thank you for your help." }
+      ]
+    }
+  },
+  {
+    id: 52, category: "여행·교통",
+    en: "Could you take a picture of us?",
+    ko: "저희 사진 좀 찍어 주시겠어요?",
+    situation: "여행지에서 지나가는 사람에게 사진을 부탁할 때",
+    tip: "take a picture of us = 우리를 찍다. for us 가 아니라 of us 예요.",
+    persona: {
+      name: "Tourist", emoji: "🧑🏼", role: "같은 관광지에 온 여행객",
+      turns: [
+        { bot: "(You and your friends are standing in front of a famous tower.)",
+          must: [["could you take a picture", "can you take a picture", "would you take a photo"]],
+          hint: "사진을 찍어 달라고 부탁해 보세요.",
+          sample: "Excuse me, could you take a picture of us?" },
+        { bot: "Sure! Just press this button, right?",
+          must: [["yes", "that's right", "just press", "exactly", "please"]],
+          hint: "어떻게 찍는지 알려 주세요.",
+          sample: "Yes, that's right. Just press the round button." },
+        { bot: "Okay, say cheese! ... Here you go.",
+          must: [["thank", "thanks", "perfect", "appreciate"]],
+          hint: "감사 인사로 마무리하세요.",
+          sample: "Thank you so much!" }
+      ]
+    }
+  },
+  {
+    id: 53, category: "여행·교통",
+    en: "Where is the boarding gate?",
+    ko: "탑승구가 어디예요?",
+    situation: "공항에서 비행기를 타러 갈 때",
+    tip: "boarding gate = 탑승구. 항공권(boarding pass)에 번호가 적혀 있어요.",
+    persona: {
+      name: "Staff", emoji: "👩🏽‍✈️", role: "공항 직원",
+      turns: [
+        { bot: "May I see your boarding pass, please?",
+          must: [["here it is", "here you are", "sure", "of course"]],
+          hint: "탑승권을 건네며 답해 보세요.",
+          sample: "Sure, here it is." },
+        { bot: "Thank you. Your flight leaves in an hour.",
+          must: [["where is the boarding gate", "where is the gate", "which gate"]],
+          hint: "탑승구가 어디인지 물어보세요.",
+          sample: "Where is the boarding gate?" },
+        { bot: "Gate 22, down the escalator and to the left.",
+          must: [["thank", "got it", "i see", "okay"]],
+          hint: "알겠다고 답하며 마무리하세요.",
+          sample: "Got it. Thank you very much." }
+      ]
+    }
+  },
+  {
+    id: 54, category: "여행·교통",
+    en: "I'm here on a school trip.",
+    ko: "수학여행으로 왔어요.",
+    situation: "여행 목적을 묻는 질문에 답할 때",
+    tip: "be here on ~ = ~때문에 와 있다. on vacation(휴가로) 도 같이 외워 두세요.",
+    persona: {
+      name: "Officer", emoji: "🧑🏻‍✈️", role: "입국 심사관",
+      turns: [
+        { bot: "Good morning. What's the purpose of your visit?",
+          must: [["i'm here on", "i'm here for", "school trip", "field trip"]],
+          hint: "수학여행으로 왔다고 답해 보세요.",
+          sample: "I'm here on a school trip." },
+        { bot: "How long will you stay?",
+          must: [["days", "a week", "for", "until", "nights"]],
+          hint: "머무는 기간을 말해 보세요.",
+          sample: "For five days." },
+        { bot: "Enjoy your stay. Welcome!",
+          must: [["thank", "thanks"]],
+          hint: "감사 인사로 마무리하세요.",
+          sample: "Thank you very much." }
+      ]
+    }
+  },
+  {
+    id: 55, category: "병원·건강",
+    en: "I don't feel well today.",
+    ko: "오늘 몸이 안 좋아요.",
+    situation: "몸이 안 좋다는 것을 알릴 때",
+    tip: "feel well 은 건강 상태를 말합니다. feel good 과 뉘앙스가 달라요.",
+    persona: {
+      name: "Nurse", emoji: "👩🏻‍⚕️", role: "학교 보건 선생님",
+      turns: [
+        { bot: "Come in and sit down. What brings you here?",
+          must: [["i don't feel well", "i feel sick", "i'm not feeling well", "i feel bad"]],
+          hint: "몸이 안 좋다고 말해 보세요.",
+          sample: "I don't feel well today." },
+        { bot: "Let me check your temperature. When did it start?",
+          must: [["this morning", "last night", "yesterday", "since", "about"]],
+          hint: "언제부터인지 말해 보세요.",
+          sample: "It started this morning." },
+        { bot: "You have a slight fever. Lie down and rest for a while.",
+          must: [["thank", "okay", "i will", "yes"]],
+          hint: "알겠다고 답하며 마무리하세요.",
+          sample: "Okay, thank you." }
+      ]
+    }
+  },
+  {
+    id: 56, category: "병원·건강",
+    en: "I have a sore throat.",
+    ko: "목이 아파요.",
+    situation: "아픈 곳을 정확히 설명할 때",
+    tip: "I have a + 증상. headache, stomachache, runny nose 등과 함께 써 보세요.",
+    persona: {
+      name: "Doctor", emoji: "🧑🏼‍⚕️", role: "동네 병원 의사 선생님",
+      turns: [
+        { bot: "Hello. What seems to be the problem?",
+          must: [["i have a sore throat", "sore throat", "my throat hurts"]],
+          hint: "목이 아프다고 말해 보세요.",
+          sample: "I have a sore throat." },
+        { bot: "Let me take a look. Do you have a cough too?",
+          must: [["yes", "no", "a little", "i do", "i don't"]],
+          hint: "기침이 나는지 답해 보세요.",
+          sample: "Yes, a little, especially at night." },
+        { bot: "It's just a cold. Drink warm water and get some sleep.",
+          must: [["thank", "okay", "i will", "yes"]],
+          hint: "알겠다고 답하며 마무리하세요.",
+          sample: "Okay, I will. Thank you, doctor." }
+      ]
+    }
+  },
+  {
+    id: 57, category: "병원·건강",
+    en: "You should get some rest.",
+    ko: "좀 쉬는 게 좋겠어.",
+    situation: "아파 보이는 사람에게 조언할 때",
+    tip: "should = ~하는 게 좋다. 강한 명령이 아니라 부드러운 권유예요.",
+    persona: {
+      name: "Taeho", emoji: "🧑🏻", role: "계속 기침하는 친구",
+      turns: [
+        { bot: "(Your friend keeps coughing during class.) I'm fine, really.",
+          must: [["you should get some rest", "you should rest", "you need to rest", "you should go"]],
+          hint: "쉬라고 권해 보세요.",
+          sample: "You don't look fine. You should get some rest." },
+        { bot: "But we have practice after school today.",
+          must: [["your health", "more important", "don't worry", "i'll tell", "just this once"]],
+          hint: "건강이 더 중요하다고 설득해 보세요.",
+          sample: "Your health is more important. Don't worry about practice." },
+        { bot: "Okay... maybe you're right.",
+          must: [["go home", "i'll tell", "take care", "feel better"]],
+          hint: "마무리 인사를 해 보세요.",
+          sample: "Go home and take care. Feel better soon!" }
+      ]
+    }
+  },
+  {
+    id: 58, category: "병원·건강",
+    en: "How often should I take this medicine?",
+    ko: "이 약을 얼마나 자주 먹어야 하나요?",
+    situation: "약을 받을 때 복용 방법을 확인할 때",
+    tip: "take medicine = 약을 먹다. eat medicine 이라고 하지 않아요.",
+    persona: {
+      name: "Pharmacist", emoji: "👨🏽‍⚕️", role: "약국 약사",
+      turns: [
+        { bot: "Here is your medicine. Two small bags a day.",
+          must: [["how often", "how many times", "when should i take"]],
+          hint: "얼마나 자주 먹어야 하는지 물어보세요.",
+          sample: "How often should I take this medicine?" },
+        { bot: "Twice a day, after breakfast and after dinner.",
+          must: [["how long", "how many days", "for how long", "should i"]],
+          hint: "며칠간 먹어야 하는지 물어보세요.",
+          sample: "For how many days should I take it?" },
+        { bot: "Three days. If you still feel sick, see the doctor again.",
+          must: [["thank", "okay", "i see", "got it"]],
+          hint: "알겠다고 답하며 마무리하세요.",
+          sample: "I see. Thank you very much." }
+      ]
+    }
+  },
+  {
+    id: 59, category: "병원·건강",
+    en: "I hope you feel better soon.",
+    ko: "빨리 낫길 바라.",
+    situation: "아픈 친구나 가족에게 마음을 전할 때",
+    tip: "I hope ~ = ~하길 바라. 문자나 카드에도 자주 쓰는 표현이에요.",
+    persona: {
+      name: "Jenny", emoji: "👧🏼", role: "감기로 결석한 친구",
+      turns: [
+        { bot: "(You are calling a friend who was absent today.) Hello?",
+          must: [["how are you", "are you okay", "how do you feel", "i heard"]],
+          hint: "안부를 먼저 물어보세요.",
+          sample: "Hi, Jenny. I heard you were sick. How are you?" },
+        { bot: "Not great. I've been in bed all day.",
+          must: [["i hope you feel better", "get well", "feel better soon", "take care"]],
+          hint: "‘빨리 낫길 바라’ 라고 말해 보세요.",
+          sample: "I hope you feel better soon." },
+        { bot: "Thanks. Can you tell me what we did in class?",
+          must: [["sure", "of course", "i'll send", "no problem", "i can"]],
+          hint: "도와주겠다고 답하세요.",
+          sample: "Of course. I'll send you my notes tonight." }
+      ]
+    }
+  },
+  {
+    id: 60, category: "병원·건강",
+    en: "Be careful! Watch your step.",
+    ko: "조심해! 발밑 조심해.",
+    situation: "위험한 상황에서 다른 사람에게 주의를 줄 때",
+    tip: "Watch your step. = 발밑 조심. Watch out! 은 더 급할 때 씁니다.",
+    persona: {
+      name: "Grandpa", emoji: "👴🏻", role: "계단을 내려가시는 할아버지",
+      turns: [
+        { bot: "(Your grandfather is walking down wet stairs.)",
+          must: [["be careful", "watch your step", "watch out", "careful"]],
+          hint: "조심하라고 말해 보세요.",
+          sample: "Grandpa, be careful! Watch your step." },
+        { bot: "Oh, thank you. The stairs are slippery today.",
+          must: [["let me help", "hold my", "take my", "i'll help"]],
+          hint: "도와드리겠다고 말해 보세요.",
+          sample: "Let me help you. Hold my arm." },
+        { bot: "You're such a kind child.",
+          must: [["it's nothing", "of course", "no problem", "you're welcome"]],
+          hint: "겸손하게 답해 보세요.",
+          sample: "It's nothing, Grandpa." }
+      ]
+    }
+  },
+  {
+    id: 61, category: "날씨·계절",
+    en: "What's the weather like today?",
+    ko: "오늘 날씨 어때?",
+    situation: "하루를 시작하며 날씨를 물을 때",
+    tip: "What's ~ like? = ~는 어때? 날씨, 사람, 장소 모두에 쓸 수 있어요.",
+    persona: {
+      name: "Mom", emoji: "👩🏻", role: "아침 식탁의 엄마",
+      turns: [
+        { bot: "Good morning! Did you sleep well?",
+          must: [["what's the weather like", "how's the weather", "what is the weather"]],
+          hint: "오늘 날씨를 물어보세요.",
+          sample: "Yes. What's the weather like today?" },
+        { bot: "It's cloudy now, but it may clear up later.",
+          must: [["should i", "do i need", "is it cold", "what should i wear"]],
+          hint: "무엇을 챙길지 물어보세요.",
+          sample: "Should I take a jacket?" },
+        { bot: "Yes, take a light one. It gets chilly in the evening.",
+          must: [["okay", "thank", "i will", "got it"]],
+          hint: "알겠다고 답하며 마무리하세요.",
+          sample: "Okay, I will. Thanks, Mom." }
+      ]
+    }
+  },
+  {
+    id: 62, category: "날씨·계절",
+    en: "It looks like it's going to rain.",
+    ko: "비가 올 것 같아.",
+    situation: "하늘을 보고 날씨를 예상할 때",
+    tip: "It looks like ~ = ~할 것 같다. 확신이 없을 때 쓰는 표현이에요.",
+    persona: {
+      name: "Sujin", emoji: "👧🏻", role: "같이 하교하는 친구",
+      turns: [
+        { bot: "The sky is getting really dark.",
+          must: [["it looks like", "i think it's going to", "it's going to rain", "might rain"]],
+          hint: "비가 올 것 같다고 말해 보세요.",
+          sample: "Yeah, it looks like it's going to rain." },
+        { bot: "Oh no, I didn't bring an umbrella.",
+          must: [["we can share", "i have one", "let's share", "don't worry", "use mine"]],
+          hint: "우산을 같이 쓰자고 제안해 보세요.",
+          sample: "Don't worry. We can share my umbrella." },
+        { bot: "Really? Thanks! You're a lifesaver.",
+          must: [["no problem", "you're welcome", "anytime", "of course"]],
+          hint: "괜찮다고 답하세요.",
+          sample: "No problem. Let's hurry home." }
+      ]
+    }
+  },
+  {
+    id: 63, category: "날씨·계절",
+    en: "It's freezing outside.",
+    ko: "밖이 엄청 추워.",
+    situation: "아주 추운 날씨를 표현할 때",
+    tip: "freezing = 얼어붙을 듯 추운. very cold 보다 생생한 표현이에요.",
+    persona: {
+      name: "Dad", emoji: "👨🏻", role: "현관에서 마주친 아빠",
+      turns: [
+        { bot: "You're going out? How is it out there?",
+          must: [["it's freezing", "it's so cold", "it's really cold", "freezing"]],
+          hint: "엄청 춥다고 말해 보세요.",
+          sample: "It's freezing outside." },
+        { bot: "Then put on your scarf and gloves.",
+          must: [["okay", "i will", "where is", "i already", "good idea"]],
+          hint: "알겠다고 답해 보세요.",
+          sample: "Okay, I will. Where are my gloves?" },
+        { bot: "They're in the drawer by the door.",
+          must: [["thank", "got it", "found them", "thanks"]],
+          hint: "찾았다고 답하며 마무리하세요.",
+          sample: "Found them. Thanks, Dad!" }
+      ]
+    }
+  },
+  {
+    id: 64, category: "날씨·계절",
+    en: "Don't forget to bring an umbrella.",
+    ko: "우산 챙기는 거 잊지 마.",
+    situation: "외출하는 사람에게 당부할 때",
+    tip: "forget to ~ = ~할 것을 잊다. Don't forget to ~ 는 잔소리가 아니라 다정한 당부예요.",
+    persona: {
+      name: "Minsu", emoji: "🧑🏻", role: "같이 소풍 가는 친구",
+      turns: [
+        { bot: "I'm all packed for tomorrow's picnic!",
+          must: [["don't forget", "remember to", "you should bring", "bring an umbrella"]],
+          hint: "우산을 챙기라고 말해 보세요.",
+          sample: "Don't forget to bring an umbrella." },
+        { bot: "Why? The weather app says it'll be sunny.",
+          must: [["it might", "the weather", "just in case", "you never know", "i heard"]],
+          hint: "이유를 설명해 보세요.",
+          sample: "Just in case. It might rain in the afternoon." },
+        { bot: "Good point. I'll put one in my bag.",
+          must: [["good", "see you", "great", "that's better"]],
+          hint: "마무리 인사를 해 보세요.",
+          sample: "Great. See you tomorrow!" }
+      ]
+    }
+  },
+  {
+    id: 65, category: "날씨·계절",
+    en: "Summer is my favorite season.",
+    ko: "여름이 내가 제일 좋아하는 계절이야.",
+    situation: "좋아하는 계절과 이유를 말할 때",
+    tip: "계절 이름 앞에는 the 를 붙이지 않아요.",
+    persona: {
+      name: "Lucas", emoji: "🧑🏼", role: "계절 이야기를 하는 친구",
+      turns: [
+        { bot: "I hate this cold weather. Which season do you like best?",
+          must: [["summer is my favorite", "my favorite season", "i like summer", "winter is my favorite"]],
+          hint: "좋아하는 계절을 말해 보세요.",
+          sample: "Summer is my favorite season." },
+        { bot: "Really? Why do you like it?",
+          must: [["because", "i can", "i love", "the sea", "vacation"]],
+          hint: "이유를 말해 보세요.",
+          sample: "Because I can go swimming during vacation." },
+        { bot: "That makes sense. I prefer fall, though. It's cool and quiet.",
+          must: [["that's nice", "i see", "sounds", "fall is", "me too"]],
+          hint: "친구의 말에 반응해 보세요.",
+          sample: "That's nice too. Fall has beautiful leaves." }
+      ]
+    }
+  },
+  {
+    id: 66, category: "가족·집",
+    en: "How many people are there in your family?",
+    ko: "가족이 몇 명이야?",
+    situation: "처음 만난 사람과 가족 이야기를 나눌 때",
+    tip: "How many people are there in ~? 는 인원을 묻는 기본 표현이에요.",
+    persona: {
+      name: "Olivia", emoji: "👩🏼", role: "자기소개 수업의 짝꿍",
+      turns: [
+        { bot: "We have to interview each other for this class. You go first!",
+          must: [["how many people", "how many members", "how big is your family"]],
+          hint: "가족이 몇 명인지 물어보세요.",
+          sample: "Okay. How many people are there in your family?" },
+        { bot: "There are four: my parents, my brother, and me. How about you?",
+          must: [["there are", "we have", "i have", "in my family", "people"]],
+          hint: "내 가족을 소개해 보세요.",
+          sample: "There are five people in my family." },
+        { bot: "Wow, five! Do you get along with your siblings?",
+          must: [["yes", "no", "sometimes", "we", "usually"]],
+          hint: "형제자매와 잘 지내는지 답해 보세요.",
+          sample: "Yes, usually. Sometimes we fight, though." }
+      ]
+    }
+  },
+  {
+    id: 67, category: "가족·집",
+    en: "I have to clean my room.",
+    ko: "방을 청소해야 해.",
+    situation: "해야 할 집안일을 말할 때",
+    tip: "have to ~ = ~해야 한다. 의무를 나타내는 가장 흔한 표현이에요.",
+    persona: {
+      name: "Sae", emoji: "👧🏻", role: "놀자고 전화한 친구",
+      turns: [
+        { bot: "Are you free now? Let's go to the park!",
+          must: [["i have to", "i need to", "i must", "sorry"], ["clean", "my room", "clean my room"]],
+          hint: "방을 청소해야 한다고 말해 보세요.",
+          sample: "Sorry, I have to clean my room first." },
+        { bot: "How long will that take?",
+          must: [["about", "an hour", "minutes", "maybe", "it'll take"]],
+          hint: "얼마나 걸릴지 말해 보세요.",
+          sample: "About an hour, I think." },
+        { bot: "Okay, I'll wait. Call me when you're done.",
+          must: [["i will", "okay", "sure", "thank"]],
+          hint: "알겠다고 답하며 마무리하세요.",
+          sample: "Okay, I will. Thanks for waiting!" }
+      ]
+    }
+  },
+  {
+    id: 68, category: "가족·집",
+    en: "Can I go out with my friends?",
+    ko: "친구들이랑 나가도 돼요?",
+    situation: "부모님께 외출 허락을 받을 때",
+    tip: "go out with ~ = ~와 밖에 나가다. 허락을 구할 땐 Can I ~? 로 시작해요.",
+    persona: {
+      name: "Mom", emoji: "👩🏻", role: "주말 오후의 엄마",
+      turns: [
+        { bot: "Your homework looks finished. What are you up to?",
+          must: [["can i go out", "may i go out", "is it okay if i go out", "can i meet"]],
+          hint: "외출해도 되는지 물어보세요.",
+          sample: "Mom, can I go out with my friends?" },
+        { bot: "Where are you going, and who with?",
+          must: [["to the", "with", "we're going", "my friends"]],
+          hint: "어디에 누구와 가는지 말해 보세요.",
+          sample: "To the park, with Jiho and Sumin." },
+        { bot: "All right, but be home before seven.",
+          must: [["i will", "okay", "i promise", "thank"]],
+          hint: "약속하며 답하세요.",
+          sample: "I promise. Thank you, Mom!" }
+      ]
+    }
+  },
+  {
+    id: 69, category: "가족·집",
+    en: "Dinner is ready!",
+    ko: "저녁 다 됐다!",
+    situation: "가족을 식탁으로 부를 때",
+    tip: "Dinner is ready. / Come and eat. 둘 다 자연스러운 표현이에요.",
+    persona: {
+      name: "Dad", emoji: "👨🏻", role: "부엌에서 요리하는 아빠",
+      turns: [
+        { bot: "(You finished cooking and want to call your family.)",
+          must: [["dinner is ready", "dinner's ready", "come and eat", "it's time to eat"]],
+          hint: "저녁이 준비됐다고 알려 보세요.",
+          sample: "Dinner is ready! Come and eat." },
+        { bot: "Coming! Wow, it smells great. What did you make?",
+          must: [["i made", "it's", "i cooked", "this is"]],
+          hint: "무엇을 만들었는지 말해 보세요.",
+          sample: "I made kimchi fried rice." },
+        { bot: "My favorite! Thank you for cooking today.",
+          must: [["you're welcome", "no problem", "i hope you like", "enjoy"]],
+          hint: "맛있게 드시라고 답하세요.",
+          sample: "You're welcome. I hope you like it!" }
+      ]
+    }
+  },
+  {
+    id: 70, category: "가족·집",
+    en: "I'll do the dishes tonight.",
+    ko: "오늘 밤엔 내가 설거지할게.",
+    situation: "집안일을 먼저 맡겠다고 나설 때",
+    tip: "do the dishes = 설거지하다. wash the dishes 도 같은 뜻이에요.",
+    persona: {
+      name: "Mom", emoji: "👩🏻", role: "식사 후 정리를 하는 엄마",
+      turns: [
+        { bot: "That was a big dinner. I'm so tired today.",
+          must: [["i'll do the dishes", "let me do the dishes", "i'll wash", "i'll clean up"]],
+          hint: "설거지를 하겠다고 말해 보세요.",
+          sample: "You rest, Mom. I'll do the dishes tonight." },
+        { bot: "Really? That's very kind of you.",
+          must: [["no problem", "of course", "you always", "it's my turn", "don't worry"]],
+          hint: "당연하다고 답해 보세요.",
+          sample: "Of course. You always do it for us." },
+        { bot: "Thank you, sweetie. Don't break anything!",
+          must: [["i won't", "don't worry", "okay", "i'll be careful"]],
+          hint: "조심하겠다고 답하세요.",
+          sample: "I won't. I'll be careful." }
+      ]
+    }
+  },
+  {
+    id: 71, category: "가족·집",
+    en: "What time do I have to be home?",
+    ko: "몇 시까지 집에 와야 해요?",
+    situation: "외출 전 귀가 시간을 확인할 때",
+    tip: "be home = 집에 있다. come home(집에 오다) 과 함께 알아 두세요.",
+    persona: {
+      name: "Dad", emoji: "👨🏻", role: "외출을 허락해 준 아빠",
+      turns: [
+        { bot: "Have fun at the movies, but don't stay out too late.",
+          must: [["what time do i have to be home", "what time should i be home", "when do i have to come home"]],
+          hint: "몇 시까지 들어와야 하는지 물어보세요.",
+          sample: "Okay. What time do I have to be home?" },
+        { bot: "By nine o'clock. Text me when the movie ends.",
+          must: [["i will", "okay", "yes", "got it"]],
+          hint: "알겠다고 답해 보세요.",
+          sample: "Okay, I will text you." },
+        { bot: "Good. And take the bus, not a taxi.",
+          must: [["i will", "okay", "sure", "don't worry"]],
+          hint: "알겠다고 답하며 마무리하세요.",
+          sample: "Don't worry, Dad. I'll take the bus." }
+      ]
+    }
+  },
+  {
+    id: 72, category: "전화·메시지",
+    en: "Hello, may I speak to Jiho?",
+    ko: "여보세요, 지호 좀 바꿔 주시겠어요?",
+    situation: "친구 집에 전화를 걸어 친구를 찾을 때",
+    tip: "May I speak to ~? 는 전화 통화의 정석 표현이에요.",
+    persona: {
+      name: "Jiho's mom", emoji: "👩🏻", role: "친구의 어머니",
+      turns: [
+        { bot: "Hello? Who's calling, please?",
+          must: [["may i speak to", "can i speak to", "is jiho there", "this is"]],
+          hint: "친구를 바꿔 달라고 정중히 부탁하세요.",
+          sample: "Hello, this is Minji. May I speak to Jiho?" },
+        { bot: "Oh, hi Minji! Just a moment. He's in his room.",
+          must: [["thank", "thanks", "okay"]],
+          hint: "고맙다고 답하세요.",
+          sample: "Thank you very much." },
+        { bot: "Here he is. Have a good evening!",
+          must: [["thank", "you too", "have a good", "goodbye"]],
+          hint: "인사를 건네며 마무리하세요.",
+          sample: "Thank you. You too!" }
+      ]
+    }
+  },
+  {
+    id: 73, category: "전화·메시지",
+    en: "Can I call you back later?",
+    ko: "이따 다시 전화해도 될까?",
+    situation: "지금 통화가 곤란할 때",
+    tip: "call back = 다시 전화하다. 바쁠 땐 이유를 한 줄 덧붙이면 좋아요.",
+    persona: {
+      name: "Sumin", emoji: "👧🏻", role: "전화를 건 친구",
+      turns: [
+        { bot: "Hey! Do you have a second? I need to ask you something.",
+          must: [["can i call you back", "i'll call you back", "could i call you back"]],
+          hint: "나중에 다시 전화하겠다고 말해 보세요.",
+          sample: "Sorry, can I call you back later?" },
+        { bot: "Sure. Is everything okay?",
+          must: [["i'm", "i have to", "i'm in the middle of", "right now", "busy"]],
+          hint: "지금 상황을 설명해 보세요.",
+          sample: "Yes, I'm just in the middle of dinner right now." },
+        { bot: "No problem. Call me whenever you're free.",
+          must: [["i will", "thank", "okay", "in an hour"]],
+          hint: "알겠다고 답하며 마무리하세요.",
+          sample: "I will. Thanks for understanding." }
+      ]
+    }
+  },
+  {
+    id: 74, category: "전화·메시지",
+    en: "Sorry, I missed your call.",
+    ko: "미안, 전화 못 받았어.",
+    situation: "부재중 전화를 확인하고 다시 걸 때",
+    tip: "miss a call = 전화를 놓치다. 사과를 먼저 하면 더 좋아요.",
+    persona: {
+      name: "Hyun", emoji: "🧑🏻", role: "전화를 세 번이나 건 친구",
+      turns: [
+        { bot: "Finally! I called you three times.",
+          must: [["sorry", "i'm sorry"], ["missed your call", "i missed", "i didn't see"]],
+          hint: "전화를 못 받아 미안하다고 말해 보세요.",
+          sample: "Sorry, I missed your call. My phone was on silent." },
+        { bot: "It's okay. I wanted to ask about tomorrow's practice.",
+          must: [["what about", "what do you", "sure", "go ahead", "ask"]],
+          hint: "무엇이 궁금한지 물어보세요.",
+          sample: "No problem. Go ahead, what about it?" },
+        { bot: "Is it at three or four? I forgot.",
+          must: [["it's at", "at three", "at four", "i think"]],
+          hint: "시간을 알려 주세요.",
+          sample: "It's at four in the gym." }
+      ]
+    }
+  },
+  {
+    id: 75, category: "전화·메시지",
+    en: "Text me when you get home.",
+    ko: "집에 도착하면 문자 줘.",
+    situation: "친구와 헤어지며 안전을 챙길 때",
+    tip: "text = 문자를 보내다(동사). get home = 집에 도착하다.",
+    persona: {
+      name: "Yeji", emoji: "👧🏽", role: "밤늦게 헤어지는 친구",
+      turns: [
+        { bot: "It's already nine. I should get going.",
+          must: [["text me", "let me know", "message me", "call me"], ["get home", "you're home", "arrive"]],
+          hint: "집에 도착하면 연락 달라고 말해 보세요.",
+          sample: "Okay. Text me when you get home." },
+        { bot: "I will. You be careful too. It's dark outside.",
+          must: [["i will", "don't worry", "thank", "you too"]],
+          hint: "알겠다고 답해 보세요.",
+          sample: "I will. Don't worry about me." },
+        { bot: "See you tomorrow at school!",
+          must: [["see you", "bye", "good night", "take care"]],
+          hint: "작별 인사로 마무리하세요.",
+          sample: "Good night! See you tomorrow." }
+      ]
+    }
+  },
+  {
+    id: 76, category: "전화·메시지",
+    en: "You've got the wrong number.",
+    ko: "전화 잘못 거셨어요.",
+    situation: "모르는 사람에게 전화가 잘못 걸려 왔을 때",
+    tip: "wrong number = 잘못 걸린 번호. 당황하지 말고 짧게 알려 주면 돼요.",
+    persona: {
+      name: "Caller", emoji: "🧑🏽", role: "모르는 사람",
+      turns: [
+        { bot: "Hello? Is this the Han Ju Restaurant?",
+          must: [["wrong number", "you've got the wrong", "i think you have the wrong", "this isn't"]],
+          hint: "전화를 잘못 걸었다고 알려 주세요.",
+          sample: "No, I think you've got the wrong number." },
+        { bot: "Oh, isn't this 010-1234-5678?",
+          must: [["no", "sorry", "this is", "it's not", "i'm afraid"]],
+          hint: "번호가 다르다고 답해 보세요.",
+          sample: "No, sorry. This is a different number." },
+        { bot: "I'm so sorry for bothering you.",
+          must: [["it's okay", "no problem", "that's all right", "don't worry"]],
+          hint: "괜찮다고 답하며 마무리하세요.",
+          sample: "That's all right. No problem." }
+      ]
+    }
+  },
+  {
+    id: 77, category: "감정·사과",
+    en: "I'm so excited about the field trip!",
+    ko: "소풍이 너무 기대돼!",
+    situation: "기대되는 일을 신나게 표현할 때",
+    tip: "be excited about ~ = ~이 기대되어 신나다. for 가 아니라 about 을 씁니다.",
+    persona: {
+      name: "Hajun", emoji: "🧑🏻", role: "같은 반 친구",
+      turns: [
+        { bot: "Only two days until the field trip!",
+          must: [["i'm so excited", "i can't wait", "i'm excited", "so excited"]],
+          hint: "기대된다고 말해 보세요.",
+          sample: "I know! I'm so excited about the field trip!" },
+        { bot: "Me too. What are you going to bring?",
+          must: [["i'm going to bring", "i'll bring", "i'm bringing", "my"]],
+          hint: "무엇을 가져갈지 말해 보세요.",
+          sample: "I'm going to bring my camera and some snacks." },
+        { bot: "Good idea. Let's sit together on the bus.",
+          must: [["sure", "let's", "okay", "sounds good", "i'd love to"]],
+          hint: "같이 앉자는 말에 답해 보세요.",
+          sample: "Sure! Let's sit in the back." }
+      ]
+    }
+  },
+  {
+    id: 78, category: "감정·사과",
+    en: "That's too bad.",
+    ko: "그거 참 안됐다.",
+    situation: "친구의 안 좋은 소식에 공감할 때",
+    tip: "That's too bad. = 안타깝다. I'm sorry to hear that. 도 같이 쓰면 좋아요.",
+    persona: {
+      name: "Nari", emoji: "👧🏻", role: "속상한 일이 있는 친구",
+      turns: [
+        { bot: "I couldn't join the soccer club. They were already full.",
+          must: [["that's too bad", "i'm sorry to hear", "that's a shame", "oh no"]],
+          hint: "안타까움을 표현해 보세요.",
+          sample: "Oh no, that's too bad." },
+        { bot: "I practiced all summer for it.",
+          must: [["i know", "you can try", "next time", "how about", "don't give up"]],
+          hint: "위로하거나 대안을 제안해 보세요.",
+          sample: "Don't give up. You can try again next semester." },
+        { bot: "Maybe you're right. Thanks for listening.",
+          must: [["anytime", "no problem", "of course", "i'm here"]],
+          hint: "언제든 들어주겠다고 답하세요.",
+          sample: "Anytime. I'm here for you." }
+      ]
+    }
+  },
+  {
+    id: 79, category: "감정·사과",
+    en: "I'm proud of you.",
+    ko: "네가 자랑스러워.",
+    situation: "친구나 동생의 성취를 칭찬할 때",
+    tip: "be proud of ~ = ~을 자랑스러워하다. 가족에게도 자주 쓰는 따뜻한 말이에요.",
+    persona: {
+      name: "Younger brother", emoji: "🧒🏻", role: "상을 받아 온 동생",
+      turns: [
+        { bot: "Look! I got first place in the writing contest!",
+          must: [["proud of you", "that's amazing", "congratulations", "well done"]],
+          hint: "자랑스럽다고 말해 주세요.",
+          sample: "Wow, I'm so proud of you!" },
+        { bot: "Thanks! I worked really hard on it.",
+          must: [["i know", "you did", "you deserve", "how did", "it shows"]],
+          hint: "노력을 인정해 주세요.",
+          sample: "I know you did. You deserve it." },
+        { bot: "Do you want to read my story?",
+          must: [["yes", "sure", "i'd love to", "of course"]],
+          hint: "읽어 보고 싶다고 답하세요.",
+          sample: "Of course! I'd love to read it." }
+      ]
+    }
+  },
+  {
+    id: 80, category: "감정·사과",
+    en: "Congratulations on your win!",
+    ko: "우승 축하해!",
+    situation: "좋은 일이 생긴 사람을 축하할 때",
+    tip: "Congratulations on + 명사. 뒤에 동사를 쓸 땐 on + -ing 형태로 씁니다.",
+    persona: {
+      name: "Team captain", emoji: "🧑🏽", role: "우승한 농구부 주장",
+      turns: [
+        { bot: "We did it! The trophy is finally ours!",
+          must: [["congratulations", "congrats"], ["your win", "winning", "the win", "on"]],
+          hint: "우승을 축하해 주세요.",
+          sample: "Congratulations on your win!" },
+        { bot: "Thank you! Everyone worked so hard.",
+          must: [["you deserve", "you played", "i watched", "amazing", "great"]],
+          hint: "경기를 칭찬해 보세요.",
+          sample: "You deserve it. Your last shot was amazing." },
+        { bot: "We're having a party tomorrow. You should come!",
+          must: [["i'd love to", "sure", "i'll be there", "of course"]],
+          hint: "가겠다고 답하며 마무리하세요.",
+          sample: "I'd love to. I'll be there!" }
+      ]
+    }
+  },
+  {
+    id: 81, category: "감정·사과",
+    en: "I'm nervous about the presentation.",
+    ko: "발표 때문에 긴장돼.",
+    situation: "긴장되는 마음을 솔직하게 털어놓을 때",
+    tip: "be nervous about ~ = ~때문에 긴장되다. worried about 과 비슷해요.",
+    persona: {
+      name: "Mina", emoji: "👧🏻", role: "같은 조 친구",
+      turns: [
+        { bot: "You've been quiet all morning. Something wrong?",
+          must: [["i'm nervous", "i'm worried", "i'm scared"], ["presentation", "speech", "about"]],
+          hint: "발표가 긴장된다고 말해 보세요.",
+          sample: "I'm nervous about the presentation." },
+        { bot: "You practiced so much, though. What are you worried about?",
+          must: [["i might", "what if", "i'm afraid", "i could", "forget"]],
+          hint: "무엇이 걱정인지 말해 보세요.",
+          sample: "What if I forget my lines in front of everyone?" },
+        { bot: "Then just look at me. I'll be in the front row.",
+          must: [["thank", "okay", "that helps", "i will"]],
+          hint: "고맙다고 답하며 마무리하세요.",
+          sample: "Thanks. That really helps." }
+      ]
+    }
+  },
+  {
+    id: 82, category: "감정·사과",
+    en: "Cheer up! Better luck next time.",
+    ko: "힘내! 다음엔 잘될 거야.",
+    situation: "실패해서 속상해하는 친구를 위로할 때",
+    tip: "Cheer up! 은 ‘기운 내’ 라는 뜻의 아주 짧고 강력한 응원이에요.",
+    persona: {
+      name: "Doyun", emoji: "🧑🏻", role: "시험을 망친 친구",
+      turns: [
+        { bot: "I studied all week and still failed the test.",
+          must: [["cheer up", "better luck next time", "don't be sad", "it's okay"]],
+          hint: "힘내라고 응원해 주세요.",
+          sample: "Cheer up! Better luck next time." },
+        { bot: "I feel like I'm just not smart enough.",
+          must: [["that's not true", "you are", "don't say", "everyone", "one test"]],
+          hint: "그렇지 않다고 말해 주세요.",
+          sample: "That's not true. One test doesn't decide everything." },
+        { bot: "Thanks. Maybe I'll try a different way of studying.",
+          must: [["good idea", "i can help", "let's", "that's the spirit"]],
+          hint: "함께하자고 제안해 보세요.",
+          sample: "Good idea. I can study with you next time." }
+      ]
+    }
+  },
+  {
+    id: 83, category: "의견·토론",
+    en: "What do you think about it?",
+    ko: "그거 어떻게 생각해?",
+    situation: "상대의 의견을 물을 때",
+    tip: "think about ~ 를 씁니다. think how 라고 하지 않도록 주의하세요.",
+    persona: {
+      name: "Eric", emoji: "🧑🏼", role: "토론 수업 짝",
+      turns: [
+        { bot: "Our topic is 'Should students wear school uniforms?'",
+          must: [["what do you think", "how do you feel", "what's your opinion"]],
+          hint: "상대의 생각을 물어보세요.",
+          sample: "Interesting. What do you think about it?" },
+        { bot: "I think uniforms are good because they save time in the morning.",
+          must: [["i agree", "i disagree", "i think", "in my opinion", "that's a good point"]],
+          hint: "내 생각을 말해 보세요.",
+          sample: "That's a good point, but I think students should choose freely." },
+        { bot: "Hmm, that's also fair. Let's write down both sides.",
+          must: [["sounds good", "okay", "let's", "good idea", "sure"]],
+          hint: "동의하며 마무리하세요.",
+          sample: "Good idea. Let's do that." }
+      ]
+    }
+  },
+  {
+    id: 84, category: "의견·토론",
+    en: "I agree with you.",
+    ko: "네 말에 동의해.",
+    situation: "상대의 의견에 찬성할 때",
+    tip: "agree with + 사람 / agree to + 계획. 전치사를 구분해 쓰세요.",
+    persona: {
+      name: "Sena", emoji: "👧🏻", role: "조별 과제 팀원",
+      turns: [
+        { bot: "I think we should finish the poster before the weekend.",
+          must: [["i agree with you", "i agree", "you're right", "i think so too"]],
+          hint: "동의한다고 말해 보세요.",
+          sample: "I agree with you." },
+        { bot: "Great. Who's going to draw the pictures?",
+          must: [["i can", "i'll", "how about", "let's ask", "maybe"]],
+          hint: "역할을 정해 보세요.",
+          sample: "I can draw them. I like drawing." },
+        { bot: "Perfect. Then I'll write the text part.",
+          must: [["sounds good", "okay", "let's", "great", "deal"]],
+          hint: "좋다고 답하며 마무리하세요.",
+          sample: "Sounds good. Let's start today." }
+      ]
+    }
+  },
+  {
+    id: 85, category: "의견·토론",
+    en: "I'm afraid I disagree.",
+    ko: "미안하지만 난 생각이 달라.",
+    situation: "정중하게 반대 의견을 말할 때",
+    tip: "I'm afraid ~ 를 붙이면 반대 의견도 부드럽게 들려요.",
+    persona: {
+      name: "Tom", emoji: "🧑🏻", role: "의견이 다른 조원",
+      turns: [
+        { bot: "I think we should just copy the example from the textbook.",
+          must: [["i'm afraid i disagree", "i disagree", "i don't think so", "i don't agree"]],
+          hint: "정중하게 반대해 보세요.",
+          sample: "I'm afraid I disagree." },
+        { bot: "Why not? It's much faster that way.",
+          must: [["because", "i think", "it would be", "we should", "our own"]],
+          hint: "이유를 설명해 보세요.",
+          sample: "Because I think we should make our own ideas." },
+        { bot: "Hmm. You have a point. Let's try something original.",
+          must: [["thank", "great", "let's", "i'm glad", "good"]],
+          hint: "함께 해 보자고 답하세요.",
+          sample: "Great. Let's brainstorm together." }
+      ]
+    }
+  },
+  {
+    id: 86, category: "의견·토론",
+    en: "In my opinion, we should start early.",
+    ko: "내 생각엔 일찍 시작해야 해.",
+    situation: "내 의견을 분명하게 밝힐 때",
+    tip: "In my opinion, ~ 뒤에는 쉼표를 찍고 문장을 씁니다.",
+    persona: {
+      name: "Rina", emoji: "👧🏼", role: "과제 마감이 급한 조원",
+      turns: [
+        { bot: "The project is due in two weeks. We have plenty of time.",
+          must: [["in my opinion", "i think", "i believe"], ["start early", "start now", "we should"]],
+          hint: "일찍 시작하자는 의견을 말해 보세요.",
+          sample: "In my opinion, we should start early." },
+        { bot: "Really? Why the rush?",
+          must: [["because", "if we", "we might", "there could be", "it's safer"]],
+          hint: "이유를 말해 보세요.",
+          sample: "Because we might need time to fix mistakes." },
+        { bot: "Okay, you convinced me. Let's meet tomorrow.",
+          must: [["great", "sounds good", "see you", "let's", "okay"]],
+          hint: "좋다고 답하며 마무리하세요.",
+          sample: "Great. See you tomorrow after school." }
+      ]
+    }
+  },
+  {
+    id: 87, category: "의견·토론",
+    en: "Can you give me an example?",
+    ko: "예를 들어 줄 수 있어?",
+    situation: "설명이 어려울 때 구체적인 예를 요청할 때",
+    tip: "give an example = 예를 들다. 수업 중에도 아주 유용한 질문이에요.",
+    persona: {
+      name: "Mr. Brown", emoji: "👨🏼‍🏫", role: "새 문법을 설명하는 선생님",
+      turns: [
+        { bot: "So, the present perfect connects the past and the present.",
+          must: [["can you give me an example", "could you give an example", "for example", "an example"]],
+          hint: "예를 들어 달라고 요청해 보세요.",
+          sample: "Can you give me an example, please?" },
+        { bot: "Sure. 'I have lived here for five years.'",
+          must: [["i see", "does it mean", "so", "that means", "got it"]],
+          hint: "이해한 내용을 확인해 보세요.",
+          sample: "I see. So it means I still live here now?" },
+        { bot: "Exactly! You've got it.",
+          must: [["thank", "great", "got it", "now i understand"]],
+          hint: "고맙다고 답하며 마무리하세요.",
+          sample: "Now I understand. Thank you!" }
+      ]
+    }
+  },
+  {
+    id: 88, category: "의견·토론",
+    en: "Let's decide by voting.",
+    ko: "투표로 정하자.",
+    situation: "의견이 갈릴 때 공정하게 정하자고 제안할 때",
+    tip: "by + -ing = ~함으로써. by voting, by talking 처럼 씁니다.",
+    persona: {
+      name: "Class president", emoji: "🧑🏽", role: "반 회의를 이끄는 반장",
+      turns: [
+        { bot: "Half of us want a movie day and half want a sports day.",
+          must: [["let's decide by voting", "let's vote", "why don't we vote", "we should vote"]],
+          hint: "투표로 정하자고 제안해 보세요.",
+          sample: "Let's decide by voting." },
+        { bot: "Good idea. How should we vote?",
+          must: [["raise our hands", "on paper", "secret", "by writing", "let's"]],
+          hint: "투표 방법을 제안해 보세요.",
+          sample: "Let's write it on paper so it's secret." },
+        { bot: "All right. I'll pass out the paper now.",
+          must: [["thank", "great", "sounds good", "okay"]],
+          hint: "좋다고 답하며 마무리하세요.",
+          sample: "Sounds good. Thank you." }
+      ]
+    }
+  },
+  {
+    id: 89, category: "부탁·전화",
+    en: "Could you help me with this box?",
+    ko: "이 상자 드는 것 좀 도와주시겠어요?",
+    situation: "무거운 물건을 옮길 때 도움을 청할 때",
+    tip: "help A with B = A가 B하는 것을 돕다. help 뒤에 사람을 먼저 씁니다.",
+    persona: {
+      name: "Teacher", emoji: "👩🏻‍🏫", role: "복도에서 마주친 선생님",
+      turns: [
+        { bot: "Oh, that looks heavy. Are you moving those to the art room?",
+          must: [["could you help me", "can you help me", "would you help me"], ["box", "with this", "carry"]],
+          hint: "도와 달라고 정중히 부탁해 보세요.",
+          sample: "Yes. Could you help me with this box?" },
+        { bot: "Of course. Should I take this one?",
+          must: [["yes please", "thank", "that one", "the big one", "if you could"]],
+          hint: "어느 것을 들어 달라고 답해 보세요.",
+          sample: "Yes, please. The big one is very heavy." },
+        { bot: "No problem. Let's take them together.",
+          must: [["thank", "thanks", "appreciate", "so kind"]],
+          hint: "감사 인사로 마무리하세요.",
+          sample: "Thank you so much for your help." }
+      ]
+    }
+  },
+  {
+    id: 90, category: "부탁·전화",
+    en: "Is it okay if I sit here?",
+    ko: "여기 앉아도 될까요?",
+    situation: "빈자리에 앉기 전 양해를 구할 때",
+    tip: "Is it okay if I ~? 는 가볍게 허락을 구할 때 쓰는 표현이에요.",
+    persona: {
+      name: "Student", emoji: "🧑🏻", role: "도서관에서 공부 중인 학생",
+      turns: [
+        { bot: "(All the tables are full except one empty chair.)",
+          must: [["is it okay if i sit", "can i sit", "may i sit", "do you mind if i sit"]],
+          hint: "앉아도 되는지 물어보세요.",
+          sample: "Excuse me, is it okay if I sit here?" },
+        { bot: "Sure, no one is sitting there.",
+          must: [["thank", "thanks"]],
+          hint: "고맙다고 말하세요.",
+          sample: "Thank you very much." },
+        { bot: "Are you studying for the English test too?",
+          must: [["yes", "no", "i am", "actually", "i'm studying"]],
+          hint: "무엇을 공부하는지 답해 보세요.",
+          sample: "Yes, I am. It's next week, right?" }
+      ]
+    }
+  },
+  {
+    id: 91, category: "부탁·전화",
+    en: "Would you mind closing the window?",
+    ko: "창문 좀 닫아 주시겠어요?",
+    situation: "아주 정중하게 부탁할 때",
+    tip: "Would you mind + -ing? 에 승낙할 땐 Not at all. 처럼 부정으로 답해요.",
+    persona: {
+      name: "Classmate", emoji: "👩🏽", role: "창가에 앉은 반 친구",
+      turns: [
+        { bot: "Brr, it's getting chilly in here.",
+          must: [["would you mind closing", "could you close", "can you close", "do you mind closing"]],
+          hint: "창문을 닫아 달라고 정중히 부탁해 보세요.",
+          sample: "Would you mind closing the window?" },
+        { bot: "Not at all. There you go.",
+          must: [["thank", "thanks", "appreciate"]],
+          hint: "고맙다고 말하세요.",
+          sample: "Thank you. That's much better." },
+        { bot: "No problem. Tell me if it gets too warm.",
+          must: [["i will", "okay", "sure", "thank"]],
+          hint: "알겠다고 답하며 마무리하세요.",
+          sample: "Okay, I will. Thanks again." }
+      ]
+    }
+  },
+  {
+    id: 92, category: "부탁·전화",
+    en: "Can you speak more slowly, please?",
+    ko: "좀 더 천천히 말해 주시겠어요?",
+    situation: "상대의 말이 너무 빨라 알아듣기 힘들 때",
+    tip: "more slowly = 더 천천히. 부끄러워하지 말고 꼭 요청하세요.",
+    persona: {
+      name: "Tourist", emoji: "🧑🏼", role: "길을 묻는 외국인 관광객",
+      turns: [
+        { bot: "ExcusemecouldyoutellmehowtogettotheNationalMuseumfromhere?",
+          must: [["speak more slowly", "speak slowly", "say that again", "slow down"]],
+          hint: "천천히 말해 달라고 부탁해 보세요.",
+          sample: "Sorry, can you speak more slowly, please?" },
+        { bot: "Oh, of course. How... do... I... get... to... the museum?",
+          must: [["go straight", "turn", "take the", "it's", "you can"]],
+          hint: "길을 알려 주세요.",
+          sample: "Go straight and turn left at the bank." },
+        { bot: "Thank you! Your English is very good.",
+          must: [["thank", "thanks", "i'm still learning", "that's kind"]],
+          hint: "고맙다고 답하며 마무리하세요.",
+          sample: "Thank you. I'm still learning." }
+      ]
+    }
+  },
+  {
+    id: 93, category: "부탁·전화",
+    en: "Let me give you a hand.",
+    ko: "내가 도와줄게.",
+    situation: "힘들어 보이는 사람에게 먼저 도움을 줄 때",
+    tip: "give someone a hand = ~를 도와주다. help 보다 친근한 표현이에요.",
+    persona: {
+      name: "Neighbor", emoji: "👵🏻", role: "장바구니를 든 이웃 할머니",
+      turns: [
+        { bot: "(Your neighbor is carrying heavy grocery bags up the stairs.)",
+          must: [["let me give you a hand", "let me help", "can i help", "do you need help"]],
+          hint: "먼저 도와주겠다고 말해 보세요.",
+          sample: "Let me give you a hand." },
+        { bot: "Oh, that's so kind of you. Thank you, dear.",
+          must: [["no problem", "it's nothing", "you're welcome", "of course", "my pleasure"]],
+          hint: "별것 아니라고 답해 보세요.",
+          sample: "It's nothing. Which floor are you on?" },
+        { bot: "The fourth floor. You're a lifesaver!",
+          must: [["no problem", "anytime", "happy to help", "let's go"]],
+          hint: "기꺼이 돕겠다고 답하세요.",
+          sample: "Happy to help. Let's go up together." }
+      ]
+    }
+  },
+  {
+    id: 94, category: "제안·약속",
+    en: "Are you free tomorrow afternoon?",
+    ko: "내일 오후에 시간 있어?",
+    situation: "약속을 잡기 전에 상대의 일정을 확인할 때",
+    tip: "Are you free ~? = 시간 있어? Do you have time? 도 같은 뜻이에요.",
+    persona: {
+      name: "Jenny", emoji: "👧🏼", role: "같이 놀 친구",
+      turns: [
+        { bot: "Hey, what's up?",
+          must: [["are you free", "do you have time", "are you busy"], ["tomorrow", "afternoon"]],
+          hint: "내일 오후에 시간이 있는지 물어보세요.",
+          sample: "Are you free tomorrow afternoon?" },
+        { bot: "I think so. Why? What's going on?",
+          must: [["let's", "why don't we", "how about", "do you want to", "i was thinking"]],
+          hint: "무엇을 하고 싶은지 제안해 보세요.",
+          sample: "Let's go to the new bookstore together." },
+        { bot: "Sounds fun! What time works for you?",
+          must: [["at", "around", "o'clock", "how about", "two"]],
+          hint: "시간을 정해 보세요.",
+          sample: "How about two o'clock?" }
+      ]
+    }
+  },
+  {
+    id: 95, category: "제안·약속",
+    en: "I'm afraid I can't make it.",
+    ko: "미안하지만 못 갈 것 같아.",
+    situation: "약속을 지키지 못하게 되어 미리 알릴 때",
+    tip: "make it = (약속 장소에) 가다, 시간 맞춰 가다. 아주 자주 쓰는 표현이에요.",
+    persona: {
+      name: "Sohee", emoji: "👧🏻", role: "생일 파티를 준비한 친구",
+      turns: [
+        { bot: "Don't forget my birthday party this Saturday!",
+          must: [["i'm afraid i can't", "i can't make it", "i'm sorry", "i won't be able"]],
+          hint: "못 간다고 미리 알려 보세요.",
+          sample: "I'm so sorry. I'm afraid I can't make it." },
+        { bot: "Oh no, really? What happened?",
+          must: [["i have to", "because", "my family", "i'm going to", "that day"]],
+          hint: "이유를 설명해 보세요.",
+          sample: "I have to visit my grandparents that day." },
+        { bot: "That's okay. Family comes first.",
+          must: [["thank", "i'm sorry", "i'll", "let's", "can we"]],
+          hint: "미안함을 전하고 대안을 제안해 보세요.",
+          sample: "Thank you for understanding. Can we meet next week?" }
+      ]
+    }
+  },
+  {
+    id: 96, category: "제안·약속",
+    en: "Can we reschedule?",
+    ko: "일정을 바꿀 수 있을까?",
+    situation: "약속 날짜나 시간을 옮기고 싶을 때",
+    tip: "reschedule = 일정을 다시 잡다. put off(미루다) 와 비슷해요.",
+    persona: {
+      name: "Study partner", emoji: "🧑🏻", role: "같이 공부하기로 한 친구",
+      turns: [
+        { bot: "See you at the library at three, right?",
+          must: [["can we reschedule", "could we change", "can we move", "is it okay if we change"]],
+          hint: "일정을 바꿀 수 있는지 물어보세요.",
+          sample: "Actually, can we reschedule?" },
+        { bot: "Sure, what happened?",
+          must: [["i have to", "my mom", "i forgot", "because", "something came up"]],
+          hint: "이유를 말해 보세요.",
+          sample: "Something came up. I have to help my mom." },
+        { bot: "No worries. When is good for you?",
+          must: [["how about", "tomorrow", "at", "would", "same time"]],
+          hint: "새 시간을 제안해 보세요.",
+          sample: "How about tomorrow at the same time?" }
+      ]
+    }
+  },
+  {
+    id: 97, category: "제안·약속",
+    en: "See you at the school gate.",
+    ko: "학교 정문에서 보자.",
+    situation: "만날 장소를 확정하며 대화를 마칠 때",
+    tip: "See you at + 장소 / See you at + 시각. 헤어질 때 가장 자연스러운 마무리예요.",
+    persona: {
+      name: "Kevin", emoji: "🧑🏼", role: "같이 등교할 친구",
+      turns: [
+        { bot: "So we're going to the science fair together tomorrow?",
+          must: [["yes", "that's right", "we are", "sure"]],
+          hint: "맞다고 답해 보세요.",
+          sample: "Yes, that's right." },
+        { bot: "Cool. Where should we meet?",
+          must: [["see you at", "let's meet at", "at the school gate", "in front of"]],
+          hint: "만날 장소를 정해 보세요.",
+          sample: "See you at the school gate." },
+        { bot: "Got it. Eight thirty, right?",
+          must: [["yes", "that's right", "exactly", "see you", "don't be late"]],
+          hint: "시간을 확인하며 마무리하세요.",
+          sample: "Exactly. Don't be late!" }
+      ]
+    }
+  },
+  {
+    id: 98, category: "인사·소개",
+    en: "Long time no see!",
+    ko: "오랜만이야!",
+    situation: "오랜만에 만난 사람과 반갑게 인사할 때",
+    tip: "Long time no see! 는 문법을 따지지 않는 굳어진 인사말이에요.",
+    persona: {
+      name: "Hyeon", emoji: "🧑🏻", role: "작년에 전학 간 친구",
+      turns: [
+        { bot: "Minji? Is that really you?",
+          must: [["long time no see", "it's been a long time", "it's been a while"]],
+          hint: "‘오랜만이야!’ 라고 인사해 보세요.",
+          sample: "Hyeon! Long time no see!" },
+        { bot: "It's been almost a year! How have you been?",
+          must: [["i've been", "i'm doing", "pretty good", "not bad", "great"]],
+          hint: "어떻게 지냈는지 답해 보세요.",
+          sample: "I've been pretty good. How about you?" },
+        { bot: "Busy, but happy. We should catch up sometime.",
+          must: [["let's", "sure", "i'd love to", "how about", "definitely"]],
+          hint: "다시 만나자고 답하세요.",
+          sample: "Definitely. Let's have lunch this weekend." }
+      ]
+    }
+  },
+  {
+    id: 99, category: "인사·소개",
+    en: "Take care of yourself.",
+    ko: "몸조심해.",
+    situation: "헤어질 때 상대를 걱정하며 건네는 인사",
+    tip: "Take care. 만 써도 됩니다. 편지나 메시지 끝에도 자주 씁니다.",
+    persona: {
+      name: "Aunt", emoji: "👩🏻", role: "공항에서 배웅하는 이모",
+      turns: [
+        { bot: "Well, this is my gate. I should go now.",
+          must: [["take care of yourself", "take care", "have a safe trip", "be careful"]],
+          hint: "몸조심하라고 인사해 보세요.",
+          sample: "Take care of yourself, Auntie." },
+        { bot: "I will. Call me when you miss me, okay?",
+          must: [["i will", "of course", "every day", "sure", "i promise"]],
+          hint: "연락하겠다고 답해 보세요.",
+          sample: "I will. I promise to call every week." },
+        { bot: "Good girl. See you next winter!",
+          must: [["see you", "bye", "have a safe", "i'll miss you"]],
+          hint: "작별 인사로 마무리하세요.",
+          sample: "See you next winter. I'll miss you!" }
+      ]
+    }
+  },
+  {
+    id: 100, category: "인사·소개",
+    en: "It was nice talking to you.",
+    ko: "얘기 즐거웠어.",
+    situation: "대화를 기분 좋게 마무리할 때",
+    tip: "It was nice + -ing. 처음 만난 사람과 헤어질 때 특히 좋은 마무리예요.",
+    persona: {
+      name: "Daniel", emoji: "🧑🏽", role: "캠프에서 처음 만난 친구",
+      turns: [
+        { bot: "Wow, we talked for almost an hour. My bus is here.",
+          must: [["it was nice talking to you", "nice talking to you", "i enjoyed talking"]],
+          hint: "‘얘기 즐거웠어’ 라고 말해 보세요.",
+          sample: "It was nice talking to you." },
+        { bot: "Same here! Can I get your number?",
+          must: [["sure", "of course", "yes", "here", "it's"]],
+          hint: "연락처를 알려 주겠다고 답하세요.",
+          sample: "Sure, of course. Here it is." },
+        { bot: "Great. I'll message you tonight. Bye!",
+          must: [["bye", "see you", "take care", "talk to you"]],
+          hint: "작별 인사로 마무리하세요.",
+          sample: "Bye! Talk to you soon." }
+      ]
+    }
+  }
+  /* ↑ 1~100번 완료. 더 늘리려면 같은 형식으로 이어 붙이세요. */
+];
+
+
+/* ==========================================================================
+   [ 2 ] 저장소 (localStorage)
+   ========================================================================== */
+const KEY = 'sy-everyday-english-100-v1';
+
+const store = {
+  data: { learned: [], rate: 0.9, voiceURI: '', scores: {} },
+
+  load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) Object.assign(this.data, JSON.parse(raw));
+    } catch (e) { console.warn('저장된 기록을 불러오지 못했습니다.', e); }
+  },
+  save() {
+    try { localStorage.setItem(KEY, JSON.stringify(this.data)); }
+    catch (e) { console.warn('저장 실패', e); }
+  },
+  isLearned(id) { return this.data.learned.includes(id); },
+  toggleLearned(id) {
+    const i = this.data.learned.indexOf(id);
+    if (i >= 0) this.data.learned.splice(i, 1);
+    else this.data.learned.push(id);
+    this.save();
+  },
+  setScore(id, score) {
+    const prev = this.data.scores[id] || 0;
+    if (score > prev) this.data.scores[id] = score;
+    this.save();
+  }
+};
+store.load();
+
+
+/* ==========================================================================
+   [ 3 ] 공통 유틸 — DOM은 createElement로 생성
+   ========================================================================== */
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined && text !== null) n.textContent = text;
+  return n;
+}
+const $ = (sel) => document.querySelector(sel);
+
+let toastTimer = null;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.add('hidden'), 2600);
+}
+
+function normalize(s) {
+  return ' ' + String(s).toLowerCase()
+    .replace(/[’`]/g, "'")
+    .replace(/[^a-z0-9' ]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim() + ' ';
+}
+
+
+/* ==========================================================================
+   [ 4 ] TTS — window.speechSynthesis
+   ========================================================================== */
+const TTS = {
+  voices: [],
+  init() {
+    const load = () => {
+      this.voices = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang));
+      this.renderSelect();
+    };
+    load();
+    if (typeof speechSynthesis.onvoiceschanged !== 'undefined') {
+      speechSynthesis.onvoiceschanged = load;
+    }
+  },
+  renderSelect() {
+    const sel = $('#voice');
+    if (!sel) return;
+    sel.replaceChildren();
+    if (!this.voices.length) {
+      sel.appendChild(el('option', '', '기본 음성'));
+      return;
+    }
+    this.voices.forEach(v => {
+      const o = el('option', '', v.name + '  (' + v.lang + ')');
+      o.value = v.voiceURI;
+      sel.appendChild(o);
+    });
+    // 저장된 음성 복원, 없으면 en-US 우선
+    const saved = store.data.voiceURI;
+    const fallback = (this.voices.find(v => /en-US/i.test(v.lang)) || this.voices[0]).voiceURI;
+    sel.value = this.voices.some(v => v.voiceURI === saved) ? saved : fallback;
+    store.data.voiceURI = sel.value;
+  },
+  speak(text, onEnd) {
+    if (!('speechSynthesis' in window)) { toast('이 브라우저는 음성 읽기를 지원하지 않아요.'); return; }
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = store.data.rate;
+    const v = this.voices.find(x => x.voiceURI === store.data.voiceURI);
+    if (v) u.voice = v;
+    if (onEnd) u.onend = onEnd;
+    speechSynthesis.speak(u);
+  }
+};
+
+
+/* ==========================================================================
+   [ 5 ] STT — webkitSpeechRecognition (미지원 시 텍스트 입력으로 대체)
+   ========================================================================== */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognizer = null;
+
+function listen(btn, onResult) {
+  if (!SR) { toast('음성 인식은 Chrome / Edge에서만 동작해요. 텍스트로 입력해 주세요.'); return; }
+  if (recognizer) { recognizer.stop(); return; }
+
+  recognizer = new SR();
+  recognizer.lang = 'en-US';
+  recognizer.interimResults = false;
+  recognizer.maxAlternatives = 1;
+
+  btn.classList.add('mic-on');
+  const original = btn.textContent;
+  btn.textContent = '⏹';
+
+  recognizer.onresult = (e) => onResult(e.results[0][0].transcript);
+  recognizer.onerror = (e) => {
+    if (e.error === 'not-allowed') toast('마이크 권한을 허용해 주세요.');
+    else if (e.error === 'no-speech') toast('소리가 들리지 않았어요. 다시 시도해 보세요.');
+    else toast('음성 인식 오류: ' + e.error);
+  };
+  recognizer.onend = () => {
+    btn.classList.remove('mic-on');
+    btn.textContent = original;
+    recognizer = null;
+  };
+  recognizer.start();
+}
+
+
+/* ==========================================================================
+   [ 6 ] 채점 엔진 — 규칙 기반 AI 시뮬레이션
+   --------------------------------------------------------------------------
+   ★ 실제 LLM(OpenAI 등) 연동으로 바꾸고 싶다면 ★
+   아래 evaluateLocal() 대신 evaluateWithAI() 를 호출하도록 한 줄만 바꾸면 됩니다.
+   단, 브라우저에 API 키를 그대로 박으면 누구나 볼 수 있으므로 반드시
+   학원 서버(프록시)를 한 단계 두고 호출하세요.
+
+   async function evaluateWithAI(userText, turn, expr) {
+     const res = await fetch('https://내학원서버.example.com/api/chat', {   // ← 프록시 주소
+       method : 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body   : JSON.stringify({
+         model: 'gpt-4o-mini',
+         messages: [
+           { role: 'system', content:
+               '너는 한국 중학생의 영어 회화 코치다. ' +
+               '학생의 답변을 100점 만점으로 채점하고, 칭찬 한 줄과 고칠 점 한 줄을 ' +
+               '반드시 한국어로 알려 준 뒤, 영어로 대화를 한 턴 더 이어가라. ' +
+               'JSON 형식 {"score":number,"feedback":string,"reply":string} 으로만 답하라.' },
+           { role: 'user', content:
+               '상황: ' + expr.situation + '\n' +
+               '상대의 말: ' + turn.bot + '\n' +
+               '모범 답안: ' + turn.sample + '\n' +
+               '학생의 답변: ' + userText }
+         ],
+         response_format: { type: 'json_object' }
+       })
+     });
+     const data = await res.json();
+     return JSON.parse(data.choices[0].message.content);   // {score, feedback, reply}
+   }
+   ========================================================================== */
+
+function evaluateLocal(userText, turn) {
+  const text = normalize(userText);
+  const words = text.trim() ? text.trim().split(' ') : [];
+
+  // (1) 필수 표현 그룹 매칭 — 70점
+  const groups = turn.must || [];
+  let hitGroups = 0;
+  const missed = [];
+  groups.forEach(group => {
+    const ok = group.some(k => text.includes(normalize(k).trim()));
+    if (ok) hitGroups++; else missed.push(group[0]);
+  });
+  const ratio = groups.length ? hitGroups / groups.length : 1;
+  let score = Math.round(ratio * 60);
+
+  // (2) 문장 길이 — 20점 (한 단어로 끝내지 않도록)
+  score += Math.min(20, words.length * 4);
+
+  // (3) 형식 점수 — 20점 (첫 글자 대문자 / 마침표·물음표)
+  const raw = userText.trim();
+  const capOK   = /^[A-Z]/.test(raw);
+  const punctOK = /[.!?]$/.test(raw);
+  if (capOK)   score += 10;
+  if (punctOK) score += 10;
+  score = Math.max(0, Math.min(100, score));
+
+  // (4) 고칠 점 — 하나라도 있으면 '완벽' 등급은 주지 않는다
+  const fixes = [];
+  if (missed.length) fixes.push('이 표현을 넣으면 더 자연스러워요 → “' + missed.join('”, “') + '”');
+  if (words.length < 3) fixes.push('한 단어로 끝내지 말고 문장으로 말해 보세요.');
+  if (raw && !capOK)   fixes.push('문장의 첫 글자는 대문자로 시작해요.');
+  if (raw && !punctOK) fixes.push('문장 끝에는 마침표(.)나 물음표(?)를 붙여요.');
+  if (/\bi\b/.test(raw)) fixes.push('“I”는 언제나 대문자로 씁니다.');
+
+  // (5) 중학생 눈높이 피드백
+  let level = score >= 85 ? 'great' : score >= 60 ? 'good' : 'try';
+  if (level === 'great' && fixes.length) level = 'good';   // 고칠 점이 남아 있으면 강등
+  const head = level === 'great' ? '🌟 완벽해요!' : level === 'good' ? '👍 잘했어요!' : '🤔 조금만 더!';
+
+  const notes = fixes.length ? fixes : ['핵심 표현·대소문자·문장부호까지 완벽해요. 발음도 또렷하게!'];
+
+  return { score, level, head, notes };
+}
+
+
+/* ==========================================================================
+   [ 7 ] 화면 전환
+   ========================================================================== */
+function switchView(name) {
+  $('#view-list').classList.toggle('hidden', name !== 'list');
+  $('#view-roleplay').classList.toggle('hidden', name !== 'roleplay');
+  document.querySelectorAll('.tab').forEach(b => {
+    const on = b.dataset.tab === name;
+    b.classList.toggle('tab-on', on);
+    b.classList.toggle('tab-off', !on);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+document.querySelectorAll('.tab').forEach(b => {
+  b.addEventListener('click', () => switchView(b.dataset.tab));
+});
+
+
+/* ==========================================================================
+   [ 8 ] 진행률
+   ========================================================================== */
+function renderProgress() {
+  const total = EXPRESSIONS.length;
+  const done = EXPRESSIONS.filter(e => store.isLearned(e.id)).length;
+  $('#progress-label').textContent = done + ' / ' + total + ' 문장';
+  $('#progress-bar').style.width = (total ? (done / total) * 100 : 0) + '%';
+}
+
+
+/* ==========================================================================
+   [ 9 ] VIEW 1 — 표현 카드 목록
+   ========================================================================== */
+let filterCategory = '전체';
+let keyword = '';
+
+function renderChips() {
+  const box = $('#chips');
+  box.replaceChildren();
+  const cats = ['전체', ...new Set(EXPRESSIONS.map(e => e.category))];
+  cats.forEach(c => {
+    const on = c === filterCategory;
+    const b = el('button',
+      'shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold border transition ' +
+      (on ? 'bg-teal-600 text-white border-teal-600 shadow-soft'
+          : 'bg-white text-ink/60 border-black/10 hover:border-teal-400'), c);
+    b.addEventListener('click', () => { filterCategory = c; renderChips(); renderCards(); });
+    box.appendChild(b);
+  });
+}
+
+function matchFilter(e) {
+  if (filterCategory !== '전체' && e.category !== filterCategory) return false;
+  if (!keyword) return true;
+  const k = keyword.toLowerCase();
+  return (e.en + e.ko + e.situation + e.category).toLowerCase().includes(k);
+}
+
+function renderCards() {
+  const box = $('#cards');
+  box.replaceChildren();
+  const list = EXPRESSIONS.filter(matchFilter);
+  $('#empty').classList.toggle('hidden', list.length > 0);
+
+  list.forEach(e => {
+    const done = store.isLearned(e.id);
+    const card = el('article',
+      'pop bg-white rounded-2xl shadow-soft p-4 flex flex-col gap-2 border-2 transition ' +
+      (done ? 'border-teal-400' : 'border-transparent'));
+
+    // 상단: 카테고리 + 완료 토글
+    const top = el('div', 'flex items-center justify-between gap-2');
+    top.appendChild(el('span', 'text-[10px] font-bold px-2 py-1 rounded-md bg-teal-50 text-teal-700', e.category));
+    const chk = el('button',
+      'text-[11px] px-2.5 py-1 rounded-lg font-bold transition ' +
+      (done ? 'bg-teal-600 text-white' : 'bg-black/5 text-ink/45 hover:bg-black/10'),
+      done ? '✓ 학습완료' : '학습완료');
+    chk.addEventListener('click', () => {
+      store.toggleLearned(e.id);
+      renderCards(); renderProgress();
+    });
+    top.appendChild(chk);
+    card.appendChild(top);
+
+    // 영어 문장
+    card.appendChild(el('p', 'font-en font-extrabold text-[17px] leading-snug', e.en));
+    // 한국어
+    card.appendChild(el('p', 'text-sm text-ink/70', e.ko));
+    // 상황
+    card.appendChild(el('p', 'text-xs text-ink/45 leading-relaxed', '💬 ' + e.situation));
+    if (e.tip) card.appendChild(el('p', 'text-[11px] text-sun-500 bg-sun-100/60 rounded-lg px-2.5 py-1.5 leading-relaxed', '📌 ' + e.tip));
+
+    // 최고 점수
+    const best = store.data.scores[e.id];
+    if (best) card.appendChild(el('p', 'text-[11px] font-bold text-teal-600', '🏅 역할극 최고 점수 ' + best + '점'));
+
+    // 버튼 줄
+    const row = el('div', 'flex gap-2 mt-auto pt-1');
+
+    const bSpeak = el('button', 'flex-1 py-2 rounded-xl bg-teal-600 text-white text-xs font-bold hover:bg-teal-700 transition', '🔊 듣기');
+    bSpeak.addEventListener('click', () => TTS.speak(e.en.replace(/—/g, ',')));
+    row.appendChild(bSpeak);
+
+    const bMic = el('button', 'flex-1 py-2 rounded-xl bg-sun-400 text-white text-xs font-bold hover:bg-sun-500 transition', '🎤 따라하기');
+    bMic.addEventListener('click', () => {
+      listen(bMic, (said) => {
+        const target = normalize(e.en).trim().split(' ');
+        const mine = normalize(said).trim().split(' ');
+        const hit = target.filter(w => mine.includes(w)).length;
+        const pct = Math.round((hit / Math.max(1, target.length)) * 100);
+        toast('🎧 인식: “' + said + '” · 일치율 ' + pct + '%');
+      });
+    });
+    row.appendChild(bMic);
+
+    const bPlay = el('button', 'flex-1 py-2 rounded-xl bg-black/5 text-xs font-bold hover:bg-black/10 transition', '🎭 역할극');
+    bPlay.addEventListener('click', () => { switchView('roleplay'); startRoleplay(e.id); });
+    row.appendChild(bPlay);
+
+    card.appendChild(row);
+    box.appendChild(card);
+  });
+}
+
+
+/* ==========================================================================
+   [ 10 ] VIEW 2 — 역할극
+   ========================================================================== */
+const rp = { expr: null, turn: 0, scores: [], finished: false };
+
+let rpCategory = '전체';
+
+function renderRoleplayCats() {
+  const sel = $('#rp-cat');
+  sel.replaceChildren();
+  ['전체', ...new Set(EXPRESSIONS.map(e => e.category))].forEach(c => {
+    const o = el('option', '', c === '전체' ? '전체 상황 (' + EXPRESSIONS.length + '개)' : c);
+    o.value = c;
+    sel.appendChild(o);
+  });
+  sel.value = rpCategory;
+}
+
+function renderRoleplayList() {
+  const box = $('#rp-list');
+  box.replaceChildren();
+  EXPRESSIONS.filter(e => rpCategory === '전체' || e.category === rpCategory).forEach(e => {
+    const card = el('button', 'pop text-left bg-white rounded-2xl shadow-soft p-4 hover:ring-2 hover:ring-teal-400/50 transition flex gap-3 items-start');
+    card.appendChild(el('div', 'w-11 h-11 rounded-2xl bg-teal-50 grid place-items-center text-2xl shrink-0', e.persona.emoji));
+    const info = el('div', 'min-w-0');
+    info.appendChild(el('p', 'font-en font-bold text-sm', e.persona.name + ' · ' + e.category));
+    info.appendChild(el('p', 'text-xs text-ink/55 leading-relaxed mt-0.5', e.persona.role));
+    info.appendChild(el('p', 'text-[11px] text-ink/40 mt-1 truncate', '🎯 ' + e.en));
+    card.appendChild(info);
+    card.addEventListener('click', () => startRoleplay(e.id));
+    box.appendChild(card);
+  });
+}
+
+function startRoleplay(id) {
+  rp.expr = EXPRESSIONS.find(e => e.id === id);
+  rp.turn = 0; rp.scores = []; rp.finished = false;
+
+  $('#rp-picker').classList.add('hidden');
+  $('#rp-stage').classList.remove('hidden');
+  $('#rp-input').classList.remove('hidden');
+  $('#rp-avatar').textContent = rp.expr.persona.emoji;
+  $('#rp-name').textContent = rp.expr.persona.name;
+  $('#rp-role').textContent = rp.expr.persona.role;
+  $('#chat').replaceChildren();
+  $('#answer').value = '';
+
+  addSystem('🎬 ' + rp.expr.situation);
+  addSystem('🎯 목표 표현 : ' + rp.expr.en);
+  botSpeaks();
+}
+
+function backToPicker() {
+  speechSynthesis.cancel();
+  $('#rp-stage').classList.add('hidden');
+  $('#rp-picker').classList.remove('hidden');
+}
+
+function scrollChat() { const c = $('#chat'); c.scrollTop = c.scrollHeight; }
+
+function addSystem(text) {
+  const p = el('p', 'pop text-[11px] text-center text-ink/40 bg-black/[.03] rounded-lg py-1.5 px-2', text);
+  $('#chat').appendChild(p); scrollChat();
+}
+
+function addBot(text) {
+  const row = el('div', 'pop flex gap-2 items-end');
+  row.appendChild(el('div', 'w-8 h-8 rounded-xl bg-teal-50 grid place-items-center text-lg shrink-0', rp.expr.persona.emoji));
+  const bubble = el('div', 'max-w-[78%] bg-black/[.04] rounded-2xl rounded-bl-md px-3.5 py-2.5');
+  bubble.appendChild(el('p', 'font-en text-[15px] leading-snug', text));
+  const b = el('button', 'text-[11px] text-teal-600 mt-1 hover:underline', '🔊 다시 듣기');
+  b.addEventListener('click', () => TTS.speak(text));
+  bubble.appendChild(b);
+  row.appendChild(bubble);
+  $('#chat').appendChild(row); scrollChat();
+}
+
+function addUser(text) {
+  const row = el('div', 'pop flex justify-end');
+  const bubble = el('div', 'max-w-[78%] bg-teal-600 text-white rounded-2xl rounded-br-md px-3.5 py-2.5');
+  bubble.appendChild(el('p', 'font-en text-[15px] leading-snug', text));
+  row.appendChild(bubble);
+  $('#chat').appendChild(row); scrollChat();
+}
+
+function addFeedback(r, sample) {
+  const tone = r.level === 'great' ? 'bg-teal-50 border-teal-400'
+             : r.level === 'good'  ? 'bg-sun-100/70 border-sun-400'
+             :                        'bg-black/[.04] border-black/10';
+  const box = el('div', 'pop border-l-4 rounded-xl px-3.5 py-2.5 ' + tone);
+  const head = el('div', 'flex items-center justify-between gap-2');
+  head.appendChild(el('p', 'text-xs font-bold', r.head));
+  head.appendChild(el('p', 'font-en text-sm font-extrabold', r.score + ' / 100'));
+  box.appendChild(head);
+  r.notes.forEach(n => box.appendChild(el('p', 'text-[11px] text-ink/60 mt-1 leading-relaxed', '· ' + n)));
+  const s = el('p', 'text-[11px] text-ink/70 mt-2 font-en bg-white/70 rounded-lg px-2 py-1.5', '모범답안 : ' + sample);
+  box.appendChild(s);
+  $('#chat').appendChild(box); scrollChat();
+}
+
+function botSpeaks() {
+  const turn = rp.expr.persona.turns[rp.turn];
+  addBot(turn.bot);
+  TTS.speak(turn.bot);
+}
+
+function submitAnswer(text) {
+  if (rp.finished) return;
+  const value = (text || '').trim();
+  if (!value) { toast('영어로 한 문장 말해 보세요!'); return; }
+
+  const turn = rp.expr.persona.turns[rp.turn];
+  addUser(value);
+  $('#answer').value = '';
+
+  /* ▼ 실제 LLM을 쓰려면 이 한 줄을 evaluateWithAI(...) 로 교체하세요 (위 주석 참고) */
+  const result = evaluateLocal(value, turn);
+
+  rp.scores.push(result.score);
+  addFeedback(result, turn.sample);
+
+  rp.turn++;
+  if (rp.turn < rp.expr.persona.turns.length) {
+    setTimeout(botSpeaks, 700);
+  } else {
+    setTimeout(finishRoleplay, 700);
+  }
+}
+
+function finishRoleplay() {
+  rp.finished = true;
+  const avg = Math.round(rp.scores.reduce((a, b) => a + b, 0) / rp.scores.length);
+  store.setScore(rp.expr.id, avg);
+
+  const medal = avg >= 85 ? '🥇' : avg >= 60 ? '🥈' : '🥉';
+  const box = el('div', 'pop bg-white border-2 border-teal-400 rounded-2xl p-4 text-center');
+  box.appendChild(el('p', 'text-3xl', medal));
+  box.appendChild(el('p', 'font-en font-extrabold text-2xl mt-1', avg + ' / 100'));
+  box.appendChild(el('p', 'text-xs text-ink/55 mt-1',
+    avg >= 85 ? '원어민처럼 자연스러웠어요!' : avg >= 60 ? '핵심 표현을 잘 썼어요. 한 번 더!' : '모범답안을 소리 내어 3번 읽고 다시 도전!'));
+
+  const row = el('div', 'flex gap-2 mt-3');
+  const again = el('button', 'flex-1 py-2.5 rounded-xl bg-teal-600 text-white text-xs font-bold', '🔁 다시 연습');
+  again.addEventListener('click', () => startRoleplay(rp.expr.id));
+  const mark = el('button', 'flex-1 py-2.5 rounded-xl bg-black/5 text-xs font-bold', '✓ 학습완료로 표시');
+  mark.addEventListener('click', () => {
+    if (!store.isLearned(rp.expr.id)) store.toggleLearned(rp.expr.id);
+    renderCards(); renderProgress(); toast('학습완료로 저장했어요!');
+  });
+  const back = el('button', 'flex-1 py-2.5 rounded-xl bg-black/5 text-xs font-bold', '📋 다른 상황');
+  back.addEventListener('click', backToPicker);
+  row.append(again, mark, back);
+  box.appendChild(row);
+
+  $('#chat').appendChild(box);
+  $('#rp-input').classList.add('hidden');
+  scrollChat();
+  renderCards(); renderProgress();
+}
+
+
+/* ==========================================================================
+   [ 11 ] 이벤트 바인딩
+   ========================================================================== */
+$('#rate').addEventListener('input', (ev) => {
+  store.data.rate = parseFloat(ev.target.value);
+  $('#rate-val').textContent = store.data.rate.toFixed(2);
+  store.save();
+});
+
+$('#voice').addEventListener('change', (ev) => {
+  store.data.voiceURI = ev.target.value;
+  store.save();
+  TTS.speak('Hello! This is my voice.');
+});
+
+$('#search').addEventListener('input', (ev) => { keyword = ev.target.value.trim(); renderCards(); });
+
+$('#btn-reset').addEventListener('click', () => {
+  if (!confirm('학습 기록(완료 체크·점수)을 모두 지울까요?')) return;
+  store.data.learned = []; store.data.scores = {}; store.save();
+  renderCards(); renderProgress(); toast('기록을 초기화했어요.');
+});
+
+$('#btn-send').addEventListener('click', () => submitAnswer($('#answer').value));
+$('#answer').addEventListener('keydown', (ev) => { if (ev.key === 'Enter') submitAnswer($('#answer').value); });
+$('#btn-mic').addEventListener('click', () => {
+  listen($('#btn-mic'), (said) => { $('#answer').value = said; submitAnswer(said); });
+});
+$('#btn-hint').addEventListener('click', () => {
+  if (rp.finished || !rp.expr) return;
+  addSystem('💡 ' + rp.expr.persona.turns[rp.turn].hint);
+});
+$('#btn-sample').addEventListener('click', () => {
+  if (rp.finished || !rp.expr) return;
+  const s = rp.expr.persona.turns[rp.turn].sample;
+  addSystem('📝 모범답안 : ' + s);
+  TTS.speak(s);
+});
+$('#btn-replay').addEventListener('click', () => {
+  if (!rp.expr) return;
+  const t = rp.expr.persona.turns[Math.min(rp.turn, rp.expr.persona.turns.length - 1)];
+  TTS.speak(t.bot);
+});
+$('#rp-back').addEventListener('click', backToPicker);
+$('#rp-cat').addEventListener('change', (ev) => { rpCategory = ev.target.value; renderRoleplayList(); });
+
+
+/* ==========================================================================
+   [ 12 ] 시작
+   ========================================================================== */
+(function init() {
+  $('#rate').value = store.data.rate;
+  $('#rate-val').textContent = Number(store.data.rate).toFixed(2);
+  TTS.init();
+  renderChips();
+  renderCards();
+  renderRoleplayCats();
+  renderRoleplayList();
+  renderProgress();
+  switchView('list');
+  if (!SR) console.info('이 브라우저는 음성 인식을 지원하지 않습니다. 텍스트 입력으로 연습하세요.');
+})();
+</script>
+</body>
+</html>
