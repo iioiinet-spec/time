@@ -1,0 +1,849 @@
+<title>자료의 디지털 표현</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* 인쇄 기준 A4. ①권과 동일한 교재 레이아웃. */
+:root{
+  --ink:#16161c;
+  --ink-soft:#4b4b5c;
+  --ink-faint:#7b7b90;
+  --rule:#d8d8e4;
+  --rule-soft:#ececf3;
+  --accent:#1d4ed8;
+  --accent-wash:#eef3ff;
+  --warn:#9a3412;
+  --warn-wash:#fdf2ec;
+  --ok:#0f6b4f;
+  --paper:#ffffff;
+  --sans:"Noto Sans KR","Noto Sans CJK KR","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"D2Coding",Menlo,monospace;
+  color-scheme:light;
+}
+
+@page{
+  size:A4;
+  margin:17mm 15mm 18mm;
+  @bottom-left{
+    content:"세영코딩연구소  저자 : 컴퓨터공학박사 KIM";
+    font-family:"Noto Sans KR","Noto Sans CJK KR",sans-serif;
+    font-size:7.5pt;
+    color:#8a8a9c;
+  }
+  @bottom-right{
+    content:counter(page);
+    font-family:"IBM Plex Mono",monospace;
+    font-size:8pt;
+    color:#8a8a9c;
+  }
+}
+@page:first{ @bottom-left{content:""} @bottom-right{content:""} }
+
+*{box-sizing:border-box}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:10.5pt;
+  line-height:1.75;
+  margin:0;
+  word-break:keep-all;
+  -webkit-text-size-adjust:100%;
+}
+.sheet{
+  max-width:780px;
+  margin:0 auto;
+  padding-block:40px 70px;
+  padding-left:22px;
+  padding-right:22px;
+}
+@media print{ .sheet{max-width:none;padding:0} }
+
+.cover{
+  border-top:5px solid var(--ink);
+  border-bottom:1px solid var(--rule);
+  padding-block:30px 26px;
+  margin-bottom:34px;
+  break-after:page;
+}
+.cover .series{
+  font-family:var(--mono);
+  font-size:8.5pt;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--accent);
+  margin:0 0 20px;
+}
+.cover h1{
+  font-size:27pt;
+  font-weight:900;
+  line-height:1.26;
+  letter-spacing:-.02em;
+  margin:0 0 8px;
+}
+.cover .vol{font-size:12pt;font-weight:500;color:var(--ink-soft);margin:0 0 30px}
+.cover .imprint{
+  border-top:1px solid var(--rule);
+  padding-top:16px;
+  font-size:9.5pt;
+  color:var(--ink-soft);
+  line-height:1.9;
+}
+.cover .imprint strong{color:var(--ink);font-weight:700}
+
+.toc{break-after:page}
+.toc ol{list-style:none;margin:0;padding:0;counter-reset:ch}
+.toc > ol > li{counter-increment:ch;border-bottom:1px solid var(--rule-soft);padding:9px 0}
+.toc > ol > li::before{
+  content:counter(ch) "장";
+  font-family:var(--mono);
+  font-size:8.5pt;
+  color:var(--accent);
+  display:inline-block;
+  width:44px;
+}
+.toc > ol > li > span{font-weight:700}
+.toc .sub{display:block;margin-left:44px;font-size:9.5pt;color:var(--ink-faint);line-height:1.7}
+
+h2{
+  font-size:16.5pt;
+  font-weight:900;
+  letter-spacing:-.015em;
+  line-height:1.35;
+  margin:0 0 4px;
+  padding-top:16px;
+  border-top:3px solid var(--ink);
+  break-before:page;
+  break-after:avoid;
+}
+h2 .chno{
+  display:block;
+  font-family:var(--mono);
+  font-size:8.5pt;
+  font-weight:600;
+  letter-spacing:.12em;
+  color:var(--accent);
+  margin-bottom:7px;
+}
+h2 + .chlede{
+  color:var(--ink-soft);
+  font-size:10pt;
+  margin:0 0 24px;
+  padding-bottom:16px;
+  border-bottom:1px solid var(--rule-soft);
+}
+h3{font-size:12pt;font-weight:700;margin:30px 0 8px;break-after:avoid}
+h4{font-size:10.5pt;font-weight:700;color:var(--accent);margin:20px 0 6px;break-after:avoid}
+p{margin:0 0 12px}
+strong{font-weight:700}
+em{font-style:normal;font-weight:700;color:var(--warn)}
+ul,ol{margin:0 0 14px;padding-left:20px}
+li{margin-bottom:5px}
+li::marker{color:var(--ink-faint)}
+
+.term{font-weight:700;border-bottom:2px solid var(--accent-wash)}
+.en{font-family:var(--mono);font-size:9pt;color:var(--ink-faint)}
+.mono{font-family:var(--mono);font-size:9pt}
+
+.scroll{overflow-x:auto;margin:16px 0 18px}
+table{border-collapse:collapse;width:100%;font-size:9.5pt;line-height:1.6;break-inside:avoid}
+caption{
+  caption-side:top;text-align:left;font-size:9pt;font-weight:700;
+  color:var(--ink-soft);padding-bottom:7px;
+}
+th,td{border:1px solid var(--rule);padding:8px 10px;text-align:left;vertical-align:top}
+thead th{background:var(--accent-wash);font-size:8.5pt;font-weight:700;color:var(--ink)}
+tbody th{background:#f7f7fb;font-weight:700;white-space:nowrap}
+td.c{text-align:center}
+td.r{text-align:right;font-family:var(--mono);font-size:9pt}
+table.num td{font-variant-numeric:tabular-nums}
+
+.box{
+  border:1px solid var(--rule);
+  border-left:4px solid var(--accent);
+  background:#fbfcff;
+  padding:15px 17px;
+  margin:18px 0;
+  break-inside:avoid;
+}
+.box .boxhead{
+  font-size:8.5pt;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--accent);font-family:var(--mono);margin-bottom:7px;
+}
+.box p:last-child,.box ul:last-child,.box ol:last-child,.box table:last-child{margin-bottom:0}
+.box.exam{border-left-color:var(--warn);background:var(--warn-wash)}
+.box.exam .boxhead{color:var(--warn)}
+.box.trap{border-left-color:#b45309;background:#fdf8ec}
+.box.trap .boxhead{color:#b45309}
+
+/* 계산 전개 */
+.calc{
+  font-family:var(--mono);
+  font-size:9.5pt;
+  line-height:2;
+  background:#f7f7fb;
+  border:1px solid var(--rule);
+  padding:12px 15px;
+  margin:14px 0;
+  break-inside:avoid;
+  overflow-x:auto;
+}
+.calc .hl{color:var(--accent);font-weight:600}
+.formula{
+  text-align:center;
+  font-family:var(--mono);
+  font-size:10.5pt;
+  background:var(--accent-wash);
+  border:1px solid #c5d5f7;
+  padding:12px 14px;
+  margin:14px 0;
+  break-inside:avoid;
+}
+
+.check{border-top:2px solid var(--ink);margin-top:30px;padding-top:14px;break-inside:avoid}
+.check h4{margin-top:0;color:var(--ink);font-size:10pt}
+.check ol{padding-left:22px}
+.check li{margin-bottom:8px}
+.answer{
+  font-family:var(--mono);font-size:8.5pt;color:var(--ok);
+  border-top:1px dashed var(--rule);padding-top:9px;margin-top:12px;line-height:1.9;
+}
+
+figure{margin:20px 0;break-inside:avoid}
+figure svg{display:block;width:100%;height:auto;max-width:100%}
+figcaption{font-size:8.5pt;color:var(--ink-faint);margin-top:8px;text-align:center}
+
+.summary{border:2px solid var(--ink);padding:18px 20px;margin-top:22px}
+.summary h3{margin-top:0}
+.summary ul{margin-bottom:0}
+
+.colophon{
+  border-top:1px solid var(--rule);margin-top:46px;padding-top:16px;
+  font-size:8.5pt;color:var(--ink-faint);line-height:1.9;
+}
+</style>
+
+<div class="sheet">
+
+<!-- ════════ 표지 ════════ -->
+<section class="cover">
+  <p class="series">디미고 소질·적성검사 대비 이론서 · 정보 ②</p>
+  <h1>자료의<br>디지털 표현</h1>
+  <p class="vol">중학교 정보 교과 기반 · 한국디지털미디어고 일반전형 2단계 대비</p>
+  <div class="imprint">
+    <strong>세영코딩연구소</strong> &nbsp; 저자 : 컴퓨터공학박사 KIM<br>
+    2026년 10월 · 1판<br>
+    대상 : 중학교 3학년 · 분량 : 6강(강당 90분) · 부속 교재 : 필수유형 30 ②권
+  </div>
+</section>
+
+<!-- ════════ 목차 ════════ -->
+<section class="toc">
+  <h3 style="margin-top:0;font-size:13pt;border-bottom:2px solid var(--ink);padding-bottom:9px">목차</h3>
+  <ol>
+    <li><span>왜 0과 1인가</span>
+      <span class="sub">아날로그와 디지털 · 두 상태로 버티는 이유 · 디지털화의 세 걸음</span></li>
+    <li><span>2진수와 16진수</span>
+      <span class="sub">자리값의 원리 · 2진↔10진 변환 · 16진수를 쓰는 이유 · 변환표</span></li>
+    <li><span>비트와 바이트</span>
+      <span class="sub">n비트로 몇 가지인가 · 2의 거듭제곱 · 용량 단위 · 최소 비트 수 구하기</span></li>
+    <li><span>문자의 표현</span>
+      <span class="sub">아스키 코드 · 유니코드와 UTF-8 · 한 글자가 몇 바이트인가</span></li>
+    <li><span>이미지의 디지털화</span>
+      <span class="sub">픽셀과 해상도 · 색을 비트로 · 파일 크기 계산 · 비트맵과 벡터</span></li>
+    <li><span>소리의 디지털화</span>
+      <span class="sub">표본화 · 양자화 · 부호화 · 음질과 용량의 교환</span></li>
+    <li><span>압축</span>
+      <span class="sub">중복이 있어야 줄어든다 · 무손실과 손실 · 반복 묶기 · 압축률</span></li>
+  </ol>
+  <h3 style="font-size:13pt;border-bottom:2px solid var(--ink);padding-bottom:9px">부록</h3>
+  <ol style="counter-reset:none;list-style:none;padding:0">
+    <li style="border-bottom:1px solid var(--rule-soft);padding:9px 0">
+      <span style="font-family:var(--mono);font-size:8.5pt;color:var(--accent);display:inline-block;width:44px">A</span>
+      <span style="font-weight:700">진법 변환표와 2의 거듭제곱</span>
+      <span class="sub">0~15 대조표 · 2⁰부터 2²⁰까지 · 외워 둘 값</span></li>
+    <li style="border-bottom:1px solid var(--rule-soft);padding:9px 0">
+      <span style="font-family:var(--mono);font-size:8.5pt;color:var(--accent);display:inline-block;width:44px">B</span>
+      <span style="font-weight:700">공식 모음과 자기 점검표</span>
+      <span class="sub">용량 계산 공식 전부 · 한 장 요약 · 시험 전날 확인용</span></li>
+  </ol>
+
+  <div class="box exam" style="margin-top:28px">
+    <div class="boxhead">이 책을 쓰는 법</div>
+    <p>이 단원은 소질·적성검사에서 <strong>수리추론 문항의 재료</strong>로 쓰입니다. 그래서 변환을 빨리 하는 요령이 아니라 <strong>표현 방식 자체</strong>를 이해하는 데 무게를 둡니다.</p>
+    <p>핵심 질문은 하나로 모입니다. <em>"이것을 0과 1로 적으려면 자리가 몇 개 필요한가?"</em> 색의 개수도, 글자의 종류도, 소리의 세기도 모두 같은 질문의 변형입니다. 이 질문에 답할 수 있으면 처음 보는 소재가 나와도 풀립니다.</p>
+  </div>
+</section>
+
+<!-- ════════ 1장 ════════ -->
+<h2><span class="chno">Chapter 01</span>왜 0과 1인가</h2>
+<p class="chlede">컴퓨터가 0과 1만 쓰는 것은 불편을 감수한 선택이 아니라, 가장 튼튼한 선택이었기 때문입니다.</p>
+
+<h3>1.1 아날로그와 디지털</h3>
+<p><span class="term">아날로그</span>는 값이 끊기지 않고 이어집니다. 수은 온도계의 눈금은 23도와 24도 사이에 무한히 많은 값을 가집니다. <span class="term">디지털</span>은 값을 띄엄띄엄 끊어서 나타냅니다. 전자 온도계가 23.4도라고 찍으면 그 사이의 값은 버린 것입니다.</p>
+
+<div class="scroll">
+<table>
+  <caption>표 1-1 아날로그와 디지털</caption>
+  <thead><tr><th style="width:20%">비교</th><th style="width:40%">아날로그</th><th>디지털</th></tr></thead>
+  <tbody>
+    <tr><th>값의 형태</th><td>연속적</td><td>띄엄띄엄 끊어짐(이산적)</td></tr>
+    <tr><th>예</th><td>바늘 시계, 수은 온도계, LP 음반</td><td>디지털 시계, 전자 온도계, 음원 파일</td></tr>
+    <tr><th>복제</th><td>복사할수록 품질이 떨어짐</td><td>몇 번을 복사해도 원본과 같음</td></tr>
+    <tr><th>잡음</th><td>섞이면 되돌리기 어려움</td><td>조금 섞여도 0인지 1인지 판단해 되살림</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>1.2 두 상태로 버티는 이유</h3>
+<p>컴퓨터 안에서 자료는 전기 신호로 다닙니다. 만약 0부터 9까지 열 단계를 전압의 높낮이로 구별한다면, 신호가 조금만 흔들려도 3인지 4인지 헷갈립니다. 반면 <strong>"전압이 높으면 1, 낮으면 0"</strong> 두 가지만 쓰면, 신호가 상당히 흔들려도 둘 중 어느 쪽에 가까운지 판단하기 쉽습니다.</p>
+<p>그래서 컴퓨터는 두 상태만 쓰고, 대신 그 두 상태를 <strong>여러 자리 늘어놓아</strong> 많은 값을 나타냅니다. 자리가 늘면 표현할 수 있는 경우의 수가 두 배씩 불어납니다. 이것이 3장에서 다룰 핵심입니다.</p>
+
+<h3>1.3 디지털화의 세 걸음</h3>
+<p>소리든 그림이든 온도든, 바깥 세상의 연속적인 값을 컴퓨터 안으로 들이는 절차는 같습니다.</p>
+
+<figure>
+<svg viewBox="0 0 560 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="표본화, 양자화, 부호화 세 단계 흐름도.">
+  <g font-family="Noto Sans KR, sans-serif">
+    <rect x="6" y="28" width="150" height="56" rx="3" fill="#eef3ff" stroke="#1d4ed8" stroke-width="1.4"/>
+    <text x="81" y="52" text-anchor="middle" font-size="13" fill="#16161c" font-weight="700">① 표본화</text>
+    <text x="81" y="71" text-anchor="middle" font-size="10.5" fill="#4b4b5c">일정 간격으로 값을 뽑음</text>
+    <path d="M160 56 L194 56" stroke="#4b4b5c" stroke-width="2"/><polygon points="202,56 192,51 192,61" fill="#4b4b5c"/>
+    <rect x="206" y="28" width="150" height="56" rx="3" fill="#eef3ff" stroke="#1d4ed8" stroke-width="1.4"/>
+    <text x="281" y="52" text-anchor="middle" font-size="13" fill="#16161c" font-weight="700">② 양자화</text>
+    <text x="281" y="71" text-anchor="middle" font-size="10.5" fill="#4b4b5c">뽑은 값을 단계에 맞춤</text>
+    <path d="M360 56 L394 56" stroke="#4b4b5c" stroke-width="2"/><polygon points="402,56 392,51 392,61" fill="#4b4b5c"/>
+    <rect x="406" y="28" width="150" height="56" rx="3" fill="#eef3ff" stroke="#1d4ed8" stroke-width="1.4"/>
+    <text x="481" y="52" text-anchor="middle" font-size="13" fill="#16161c" font-weight="700">③ 부호화</text>
+    <text x="481" y="71" text-anchor="middle" font-size="10.5" fill="#4b4b5c">단계를 2진수로 적음</text>
+    <text x="281" y="106" text-anchor="middle" font-size="10.5" fill="#7b7b90">표본을 촘촘히, 단계를 잘게 할수록 원본에 가까워지고 용량은 커진다</text>
+  </g>
+</svg>
+<figcaption>그림 1-1 디지털화의 세 단계</figcaption>
+</figure>
+
+<p>6장의 소리뿐 아니라 5장의 이미지도 같은 틀입니다. 이미지에서는 화면을 작은 칸으로 쪼개는 것이 표본화이고, 각 칸의 색을 정해진 단계 중 하나로 정하는 것이 양자화입니다.</p>
+
+<div class="check">
+  <h4>확인 문제</h4>
+  <ol>
+    <li>디지털 자료를 여러 번 복사해도 품질이 떨어지지 않는 이유를 쓰시오.</li>
+    <li>컴퓨터가 열 가지 상태 대신 두 가지 상태를 쓰는 까닭은?</li>
+    <li>디지털화의 세 단계를 순서대로 쓰고, 각 단계에서 하는 일을 한 줄로 설명하시오.</li>
+  </ol>
+  <p class="answer">정답 1. 값이 0과 1 두 가지로만 구분돼 있어, 신호가 흔들려도 어느 쪽인지 판단해 원래 값을 그대로 되살릴 수 있기 때문 │ 2. 두 상태만 구분하면 잡음에 강해 안정적이기 때문 │ 3. 표본화(일정 간격으로 값을 뽑음) → 양자화(뽑은 값을 정해진 단계에 맞춤) → 부호화(그 단계를 2진수로 적음)</p>
+</div>
+
+<!-- ════════ 2장 ════════ -->
+<h2><span class="chno">Chapter 02</span>2진수와 16진수</h2>
+<p class="chlede">변환 공식을 외우려 하지 마십시오. 10진수에서 이미 쓰고 있는 자리값 원리가 그대로 적용될 뿐입니다.</p>
+
+<h3>2.1 자리값이라는 원리</h3>
+<p>우리가 쓰는 10진수 <span class="mono">352</span>는 사실 이런 뜻입니다.</p>
+<div class="calc">352 = 3×10<span class="hl">²</span> + 5×10<span class="hl">¹</span> + 2×10<span class="hl">⁰</span> = 300 + 50 + 2</div>
+<p>자리마다 <strong>10의 거듭제곱</strong>이 곱해집니다. 쓰는 숫자가 0~9 열 가지라서 10진수입니다. 2진수는 쓰는 숫자가 0과 1 두 가지뿐이므로, 자리마다 <strong>2의 거듭제곱</strong>이 곱해집니다. 원리는 똑같습니다.</p>
+
+<h3>2.2 2진수를 10진수로</h3>
+<p>각 자리의 자리값을 적고, 1이 있는 자리의 값만 더하면 됩니다.</p>
+<div class="calc">1101<sub>(2)</sub><br>
+자리값 &nbsp; <span class="hl">8</span> &nbsp; <span class="hl">4</span> &nbsp; 2 &nbsp; <span class="hl">1</span><br>
+숫자 &nbsp;&nbsp;&nbsp;&nbsp; 1 &nbsp; 1 &nbsp; 0 &nbsp; 1<br>
+→ 8 + 4 + 0 + 1 = <span class="hl">13</span></div>
+<p>한 번 더 해 봅니다.</p>
+<div class="calc">10110101<sub>(2)</sub><br>
+자리값 &nbsp; 128 &nbsp; 64 &nbsp; 32 &nbsp; 16 &nbsp; 8 &nbsp; 4 &nbsp; 2 &nbsp; 1<br>
+숫자 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 &nbsp;&nbsp;&nbsp; 0 &nbsp;&nbsp; 1 &nbsp;&nbsp; 1 &nbsp;&nbsp;0 &nbsp;1 &nbsp;0 &nbsp;1<br>
+→ 128 + 32 + 16 + 4 + 1 = <span class="hl">181</span></div>
+
+<h3>2.3 10진수를 2진수로</h3>
+<p>두 가지 방법이 있고, 둘 다 답은 같습니다. 자신에게 맞는 쪽을 고르면 됩니다.</p>
+
+<h4>방법 1 — 2로 계속 나누기</h4>
+<p>몫이 0이 될 때까지 2로 나누고, 나머지를 <strong>아래에서 위로</strong> 읽습니다.</p>
+<div class="calc">45 ÷ 2 = 22 … 나머지 <span class="hl">1</span>  ↑<br>
+22 ÷ 2 = 11 … 나머지 <span class="hl">0</span>  │<br>
+11 ÷ 2 = &nbsp;5 … 나머지 <span class="hl">1</span>  │<br>
+&nbsp;5 ÷ 2 = &nbsp;2 … 나머지 <span class="hl">1</span>  │ 읽는 방향<br>
+&nbsp;2 ÷ 2 = &nbsp;1 … 나머지 <span class="hl">0</span>  │<br>
+&nbsp;1 ÷ 2 = &nbsp;0 … 나머지 <span class="hl">1</span>  │<br>
+→ 45 = <span class="hl">101101</span><sub>(2)</sub></div>
+
+<h4>방법 2 — 큰 자리값부터 빼기</h4>
+<p>45보다 작거나 같은 가장 큰 2의 거듭제곱부터 차례로 빼면서, 뺐으면 1, 못 뺐으면 0을 적습니다.</p>
+<div class="calc">45 − 32 = 13 &nbsp;→ 32자리 <span class="hl">1</span><br>
+13 &lt; 16 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ 16자리 <span class="hl">0</span><br>
+13 − 8 = 5 &nbsp;&nbsp;&nbsp;→ 8자리 <span class="hl">1</span><br>
+5 − 4 = 1 &nbsp;&nbsp;&nbsp;&nbsp;→ 4자리 <span class="hl">1</span><br>
+1 &lt; 2 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ 2자리 <span class="hl">0</span><br>
+1 − 1 = 0 &nbsp;&nbsp;&nbsp;&nbsp;→ 1자리 <span class="hl">1</span><br>
+→ <span class="hl">101101</span><sub>(2)</sub></div>
+
+<div class="box">
+  <div class="boxhead">시험장에서 더 빠른 쪽</div>
+  <p>자리값(1, 2, 4, 8, 16, 32, 64, 128)을 외우고 있다면 <strong>방법 2가 훨씬 빠릅니다.</strong> 나눗셈을 여섯 번 하는 대신 뺄셈 서너 번으로 끝나고, 자릿수를 세다가 틀릴 일도 없습니다. 부록 A의 거듭제곱 표를 128까지는 암기하십시오.</p>
+</div>
+
+<h3>2.4 16진수를 쓰는 이유</h3>
+<p>2진수는 컴퓨터에게 편하지만 사람에게는 너무 깁니다. <span class="mono">11001110</span>을 전화로 불러 준다고 생각해 보십시오. 그래서 <strong>2진수 네 자리를 한 글자로 묶어</strong> 적는 방법을 씁니다. 네 자리로 나타낼 수 있는 값이 16가지이므로 16진수가 됩니다.</p>
+<p>16진수는 0~9에 더해 10부터 15까지를 <strong>A, B, C, D, E, F</strong>로 적습니다.</p>
+
+<div class="calc">11001110<sub>(2)</sub><br>
+네 자리씩 끊기 → <span class="hl">1100</span> &nbsp; <span class="hl">1110</span><br>
+각각 10진수로 → &nbsp;&nbsp;12 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 14<br>
+16진수 기호로 → &nbsp;&nbsp;&nbsp;C &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; E<br>
+→ <span class="hl">CE</span><sub>(16)</sub> &nbsp; (10진수로는 206)</div>
+
+<p>여덟 자리가 두 글자로 줄었습니다. 색을 나타내는 <span class="mono">#FF8800</span> 같은 표기, 메모리 주소 표기가 모두 이 이유로 16진수를 씁니다.</p>
+
+<div class="scroll">
+<table class="num">
+  <caption>표 2-1 0~15 대조표 — 이 표는 통째로 외우십시오</caption>
+  <thead><tr>
+    <th style="width:11%">10진</th><th style="width:17%">2진</th><th style="width:11%">16진</th>
+    <th style="width:11%">10진</th><th style="width:17%">2진</th><th>16진</th>
+  </tr></thead>
+  <tbody>
+    <tr><td class="r">0</td><td class="r">0000</td><td class="r">0</td><td class="r">8</td><td class="r">1000</td><td class="r">8</td></tr>
+    <tr><td class="r">1</td><td class="r">0001</td><td class="r">1</td><td class="r">9</td><td class="r">1001</td><td class="r">9</td></tr>
+    <tr><td class="r">2</td><td class="r">0010</td><td class="r">2</td><td class="r">10</td><td class="r">1010</td><td class="r">A</td></tr>
+    <tr><td class="r">3</td><td class="r">0011</td><td class="r">3</td><td class="r">11</td><td class="r">1011</td><td class="r">B</td></tr>
+    <tr><td class="r">4</td><td class="r">0100</td><td class="r">4</td><td class="r">12</td><td class="r">1100</td><td class="r">C</td></tr>
+    <tr><td class="r">5</td><td class="r">0101</td><td class="r">5</td><td class="r">13</td><td class="r">1101</td><td class="r">D</td></tr>
+    <tr><td class="r">6</td><td class="r">0110</td><td class="r">6</td><td class="r">14</td><td class="r">1110</td><td class="r">E</td></tr>
+    <tr><td class="r">7</td><td class="r">0111</td><td class="r">7</td><td class="r">15</td><td class="r">1111</td><td class="r">F</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="box trap">
+  <div class="boxhead">자주 틀리는 지점</div>
+  <p>2진수를 네 자리씩 끊을 때는 <em>반드시 오른쪽부터</em> 끊습니다. <span class="mono">1100111</span>처럼 자릿수가 모자라면 왼쪽을 0으로 채워 <span class="mono">0110 0111</span>로 만든 뒤 변환합니다. 왼쪽부터 끊으면 완전히 다른 값이 나옵니다.</p>
+</div>
+
+<div class="check">
+  <h4>확인 문제</h4>
+  <ol>
+    <li><span class="mono">10110101</span><sub>(2)</sub>을 10진수로 바꾸시오.</li>
+    <li>10진수 45를 2진수로 바꾸시오.</li>
+    <li><span class="mono">11001110</span><sub>(2)</sub>을 16진수로 바꾸시오.</li>
+    <li>16진수 한 자리가 2진수 몇 자리에 해당하는가? 그 이유도 쓰시오.</li>
+  </ol>
+  <p class="answer">정답 1. 181 │ 2. 101101₍₂₎ │ 3. CE₍₁₆₎ │ 4. 네 자리. 2진수 네 자리로 나타낼 수 있는 값이 2⁴ = 16가지이고, 16진수 한 자리가 나타내는 값도 16가지이기 때문</p>
+</div>
+
+<!-- ════════ 3장 ════════ -->
+<h2><span class="chno">Chapter 03</span>비트와 바이트</h2>
+<p class="chlede">이 장의 공식 하나가 이 책 전체에서 가장 많이 쓰입니다. 수리추론 문항의 출발점이기도 합니다.</p>
+
+<h3>3.1 비트 — 0과 1을 담는 한 칸</h3>
+<p><span class="term">비트</span> <span class="en">bit</span>는 0 또는 1을 담는 가장 작은 단위입니다. 한 비트는 두 가지를 구별할 수 있습니다. 켜짐과 꺼짐, 참과 거짓, 예와 아니요.</p>
+<p>비트가 두 개면 <span class="mono">00, 01, 10, 11</span> 네 가지입니다. 세 개면 여덟 가지입니다. 비트 하나가 늘 때마다 <strong>경우의 수가 두 배</strong>가 됩니다.</p>
+
+<div class="formula">n비트로 나타낼 수 있는 경우의 수 = 2<sup>n</sup></div>
+
+<div class="scroll">
+<table class="num">
+  <caption>표 3-1 비트 수와 경우의 수</caption>
+  <thead><tr><th style="width:16%">비트 수</th><th style="width:26%">경우의 수</th><th>이것으로 무엇을 나타낼 수 있나</th></tr></thead>
+  <tbody>
+    <tr><td class="r">1</td><td class="r">2</td><td>흑백 두 가지</td></tr>
+    <tr><td class="r">2</td><td class="r">4</td><td>동서남북 네 방향</td></tr>
+    <tr><td class="r">3</td><td class="r">8</td><td>요일 일곱 가지(한 자리 남음)</td></tr>
+    <tr><td class="r">4</td><td class="r">16</td><td>16진수 한 자리</td></tr>
+    <tr><td class="r">7</td><td class="r">128</td><td>아스키 문자 전체</td></tr>
+    <tr><td class="r">8</td><td class="r">256</td><td>회색 단계 256가지</td></tr>
+    <tr><td class="r">10</td><td class="r">1,024</td><td>1,000가지를 담고도 남음</td></tr>
+    <tr><td class="r">16</td><td class="r">65,536</td><td>한글을 포함한 많은 문자</td></tr>
+    <tr><td class="r">24</td><td class="r">16,777,216</td><td>사람이 구별하기 어려운 수준의 색</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>3.2 거꾸로 묻는 문제 — 최소 비트 수</h3>
+<p>시험에서 더 자주 나오는 형태는 반대 방향입니다. <strong>"m가지를 나타내려면 최소 몇 비트가 필요한가?"</strong> 2의 거듭제곱을 키워 가며 m 이상이 되는 첫 지점을 찾으면 됩니다.</p>
+
+<div class="calc">100가지를 나타내려면?<br>
+2<sup>6</sup> = 64 &nbsp;&nbsp;→ 100보다 작다. 부족<br>
+2<sup>7</sup> = <span class="hl">128</span> → 100 이상. 충분<br>
+→ 최소 <span class="hl">7비트</span></div>
+
+<div class="box trap">
+  <div class="boxhead">자주 틀리는 지점</div>
+  <p>"넉넉하게" 잡으려다 8비트라고 쓰면 틀립니다. <em>최소</em>를 물었으므로 조건을 만족하는 가장 작은 값이어야 합니다. 반대로 2<sup>6</sup>=64가 100에 가깝다고 6비트를 쓰는 것도 틀립니다. 64가지로는 100가지를 구별할 수 없습니다. <strong>딱 맞거나 넘어서는 첫 지점</strong>을 고르십시오.</p>
+</div>
+
+<h3>3.3 바이트와 용량 단위</h3>
+<p>비트 여덟 개를 묶은 것이 <span class="term">바이트</span> <span class="en">byte</span>입니다. 8비트이므로 한 바이트는 2<sup>8</sup> = <strong>256가지</strong>를 나타냅니다. 컴퓨터가 자료를 다루는 기본 묶음 단위입니다.</p>
+<p>바이트가 많아지면 큰 단위로 묶습니다. 묶는 배수는 <strong>1,024</strong>인데, 이는 2<sup>10</sup>입니다. 1,000이 아니라 1,024인 것은 컴퓨터가 2의 거듭제곱으로 세기 때문입니다.</p>
+
+<div class="scroll">
+<table class="num">
+  <caption>표 3-2 용량 단위</caption>
+  <thead><tr><th style="width:17%">단위</th><th style="width:30%">크기</th><th>대략 어느 정도</th></tr></thead>
+  <tbody>
+    <tr><th>1 bit</th><td class="r">0 또는 1</td><td>예/아니요 하나</td></tr>
+    <tr><th>1 Byte</th><td class="r">8 bit</td><td>영문자 한 글자</td></tr>
+    <tr><th>1 KB</th><td class="r">1,024 Byte</td><td>짧은 글 한 쪽</td></tr>
+    <tr><th>1 MB</th><td class="r">1,024 KB</td><td>사진 한 장, 책 한 권 분량의 글</td></tr>
+    <tr><th>1 GB</th><td class="r">1,024 MB</td><td>고화질 영상 몇 분</td></tr>
+    <tr><th>1 TB</th><td class="r">1,024 GB</td><td>노트북 저장장치 한 대 분량</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="box">
+  <div class="boxhead">저장장치 용량이 광고보다 작아 보이는 이유</div>
+  <p>1TB 하드디스크를 사서 연결하면 931GB 정도로 표시됩니다. 제조사는 1TB를 1,000<sup>4</sup>바이트로 계산해 팔고, 운영체제는 1,024<sup>4</sup>바이트로 나눠 보여 주기 때문입니다. 속인 것이 아니라 <strong>세는 기준이 다른 것</strong>입니다.</p>
+</div>
+
+<div class="check">
+  <h4>확인 문제</h4>
+  <ol>
+    <li>5비트로 나타낼 수 있는 경우의 수는?</li>
+    <li>300가지 색을 구별하려면 최소 몇 비트가 필요한가?</li>
+    <li>1바이트로 나타낼 수 있는 가짓수와, 그 이유를 쓰시오.</li>
+    <li>용량 단위가 1,000이 아니라 1,024 배수인 까닭은?</li>
+  </ol>
+  <p class="answer">정답 1. 2⁵ = 32가지 │ 2. 9비트 (2⁸=256 &lt; 300 ≤ 512=2⁹) │ 3. 256가지. 8비트이므로 2⁸ = 256 │ 4. 1,024가 2¹⁰이고, 컴퓨터는 2의 거듭제곱 단위로 자료를 세기 때문</p>
+</div>
+
+<!-- ════════ 4장 ════════ -->
+<h2><span class="chno">Chapter 04</span>문자의 표현</h2>
+<p class="chlede">글자 자체를 저장하는 것이 아닙니다. 글자마다 번호를 붙여 두고, 그 번호를 2진수로 저장합니다.</p>
+
+<h3>4.1 아스키 코드</h3>
+<p><span class="term">아스키</span> <span class="en">ASCII</span>는 영문자·숫자·기호에 번호를 붙인 가장 오래된 약속입니다. <strong>7비트</strong>를 쓰므로 2<sup>7</sup> = 128가지를 나타냅니다. 실제 저장할 때는 1바이트(8비트)를 쓰고 남는 한 비트는 비워 둡니다.</p>
+
+<div class="scroll">
+<table class="num">
+  <caption>표 4-1 외워 둘 아스키 기준점</caption>
+  <thead><tr><th style="width:22%">문자</th><th style="width:22%">10진수</th><th>알아 둘 점</th></tr></thead>
+  <tbody>
+    <tr><th>'0'</th><td class="r">48</td><td>'1'은 49, '9'는 57로 이어짐</td></tr>
+    <tr><th>'A'</th><td class="r">65</td><td>'B'는 66, 'Z'는 90</td></tr>
+    <tr><th>'a'</th><td class="r">97</td><td>대문자보다 정확히 32 큼</td></tr>
+    <tr><th>공백</th><td class="r">32</td><td>눈에 안 보여도 한 글자를 차지함</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="box">
+  <div class="boxhead">기준점 세 개만 외우면 된다</div>
+  <p><span class="mono">'0'=48, 'A'=65, 'a'=97</span>. 나머지는 순서대로 1씩 더하면 됩니다. 'E'의 번호를 묻는다면 A부터 네 칸 뒤이므로 65+4 = 69입니다. 대문자와 소문자의 차이가 <strong>항상 32</strong>라는 점도 자주 출제됩니다.</p>
+</div>
+
+<h3>4.2 유니코드 — 세계의 모든 문자</h3>
+<p>128가지로는 한글도 한자도 담을 수 없습니다. 나라마다 자기 방식을 만들어 쓰다 보니 문서를 주고받을 때 글자가 깨졌습니다. 이를 해결하려고 <strong>세상의 모든 문자에 번호를 붙인</strong> 것이 <span class="term">유니코드</span> <span class="en">Unicode</span>입니다.</p>
+<p>유니코드는 번호를 정하는 약속이고, 그 번호를 <strong>실제로 몇 바이트에 담을지</strong>는 또 다른 약속입니다. 그 방식 중 가장 널리 쓰이는 것이 <span class="term">UTF-8</span>입니다.</p>
+
+<h3>4.3 한 글자가 몇 바이트인가</h3>
+<p>시험에서 자주 묻는 지점입니다. <strong>정답은 "방식에 따라 다르다"</strong>입니다.</p>
+
+<div class="scroll">
+<table class="num">
+  <caption>표 4-2 저장 방식별 한 글자의 크기</caption>
+  <thead><tr><th style="width:22%">저장 방식</th><th style="width:22%">영문자 1자</th><th style="width:22%">한글 1자</th><th>특징</th></tr></thead>
+  <tbody>
+    <tr><th>아스키</th><td class="r">1 Byte</td><td class="r">표현 불가</td><td>영문·숫자·기호만</td></tr>
+    <tr><th>EUC-KR</th><td class="r">1 Byte</td><td class="r">2 Byte</td><td>한국에서 쓰던 방식</td></tr>
+    <tr><th>UTF-8</th><td class="r">1 Byte</td><td class="r">3 Byte</td><td>현재 표준. 글자마다 길이가 다름</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>UTF-8이 영문자에 1바이트만 쓰는 것은 아스키와 똑같이 맞춰 두었기 때문입니다. 덕분에 기존 영문 문서를 그대로 읽을 수 있습니다. 대신 한글·한자처럼 번호가 큰 글자는 3바이트를 씁니다.</p>
+
+<h4>용량 계산 예제</h4>
+<div class="calc">"Hello" (영문 5자) → 5 × 1 = <span class="hl">5 Byte</span><br><br>
+"안녕하세요" (한글 5자)<br>
+&nbsp;&nbsp;EUC-KR → 5 × 2 = <span class="hl">10 Byte</span><br>
+&nbsp;&nbsp;UTF-8 &nbsp;→ 5 × 3 = <span class="hl">15 Byte</span></div>
+
+<div class="box trap">
+  <div class="boxhead">자주 틀리는 지점</div>
+  <p>"한글 한 글자는 2바이트다"라고만 외우면 UTF-8 문제에서 틀립니다. <em>문제에 저장 방식이 명시돼 있는지 먼저 확인</em>하십시오. 명시가 없으면 대체로 교과서 기준인 2바이트로 풀되, UTF-8이라는 말이 보이면 3바이트입니다. 또 공백과 문장부호도 한 글자로 센다는 점을 빠뜨리지 마십시오.</p>
+</div>
+
+<div class="check">
+  <h4>확인 문제</h4>
+  <ol>
+    <li>'A'의 아스키 코드가 65일 때 'D'의 값은?</li>
+    <li>'a'의 값이 97일 때 'A'와의 차이는 얼마이며, 이 규칙은 모든 알파벳에 적용되는가?</li>
+    <li>UTF-8로 "AI 코딩"을 저장하면 몇 바이트인가? (공백 포함, 한글 2자)</li>
+    <li>유니코드가 만들어진 이유를 한 문장으로 쓰시오.</li>
+  </ol>
+  <p class="answer">정답 1. 68 │ 2. 32, 적용됨 │ 3. 'A''I'=2, 공백=1, 한글 2자=6 → 9 Byte │ 4. 나라마다 다른 문자 표현 방식 때문에 문서 교환 시 글자가 깨지는 문제를 없애려고, 세상의 모든 문자에 고유 번호를 하나씩 붙이기 위해</p>
+</div>
+
+<!-- ════════ 5장 ════════ -->
+<h2><span class="chno">Chapter 05</span>이미지의 디지털화</h2>
+<p class="chlede">그림을 작은 칸으로 쪼개고, 칸마다 색의 번호를 적어 두는 것. 그게 전부입니다.</p>
+
+<h3>5.1 픽셀과 해상도</h3>
+<p>디지털 이미지는 <span class="term">픽셀</span> <span class="en">pixel</span>이라는 작은 네모 칸들이 바둑판처럼 모인 것입니다. 각 픽셀은 색 하나만 가집니다. <span class="term">해상도</span>는 가로와 세로에 픽셀이 몇 개씩 있는지를 나타냅니다. <span class="mono">1920 × 1080</span>이면 가로 1,920개, 세로 1,080개입니다.</p>
+<p>해상도가 높을수록 같은 면적에 칸이 촘촘해져 선명해지고, 칸 수만큼 저장할 색 정보도 늘어 용량이 커집니다.</p>
+
+<h3>5.2 색을 비트로 나타내기</h3>
+<p>한 픽셀의 색을 적는 데 비트를 몇 개 쓰느냐에 따라 표현 가능한 색의 수가 달라집니다. 3장의 공식이 그대로 쓰입니다.</p>
+
+<div class="scroll">
+<table class="num">
+  <caption>표 5-1 픽셀당 비트 수와 색</caption>
+  <thead><tr><th style="width:20%">픽셀당 비트</th><th style="width:26%">표현 가능한 색</th><th>어떤 이미지인가</th></tr></thead>
+  <tbody>
+    <tr><td class="r">1</td><td class="r">2</td><td>흑백 두 가지만. 팩스 문서 같은 그림</td></tr>
+    <tr><td class="r">8</td><td class="r">256</td><td>회색 256단계의 흑백 사진</td></tr>
+    <tr><td class="r">24</td><td class="r">16,777,216</td><td>RGB 각 8비트. 일반 컬러 사진</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>컬러는 빨강·초록·파랑 세 가지 빛을 섞어 만듭니다. 이것을 <span class="term">RGB</span>라고 합니다. 각 색마다 8비트씩 쓰면 한 색당 256단계이고, 세 가지를 합쳐 8 × 3 = 24비트가 됩니다. 섞을 수 있는 경우의 수는 2<sup>24</sup> = 약 1,677만 가지입니다.</p>
+<p>이 24비트를 16진수로 적은 것이 웹에서 보는 <span class="mono">#FF8800</span> 같은 색 표기입니다. 두 자리씩 끊어 각각 빨강·초록·파랑의 세기를 나타냅니다.</p>
+
+<h3>5.3 이미지 용량 계산</h3>
+<div class="formula">용량(Byte) = 가로 픽셀 × 세로 픽셀 × 픽셀당 비트 ÷ 8</div>
+<p>마지막에 8로 나누는 것은 비트를 바이트로 바꾸기 위해서입니다. 이 한 단계를 빠뜨리는 실수가 가장 흔합니다.</p>
+
+<div class="calc">800 × 600 크기, 24비트 컬러 이미지<br><br>
+= 800 × 600 × 24 ÷ 8<br>
+= 11,520,000 ÷ 8<br>
+= <span class="hl">1,440,000 Byte</span><br><br>
+KB로 : 1,440,000 ÷ 1,024 = 약 <span class="hl">1,406 KB</span><br>
+MB로 : 1,406 ÷ 1,024 = 약 <span class="hl">1.37 MB</span></div>
+
+<div class="calc">1920 × 1080 (풀HD), 24비트<br>
+= 1920 × 1080 × 24 ÷ 8 = <span class="hl">6,220,800 Byte</span> ≈ 5.93 MB</div>
+
+<h3>5.4 비트맵과 벡터</h3>
+<div class="scroll">
+<table>
+  <caption>표 5-2 두 가지 이미지 방식</caption>
+  <thead><tr><th style="width:18%">비교</th><th style="width:41%">비트맵(래스터)</th><th>벡터</th></tr></thead>
+  <tbody>
+    <tr><th>저장 내용</th><td>픽셀마다의 색</td><td>점·선·도형을 그리는 수학적 정보</td></tr>
+    <tr><th>확대하면</th><td>계단처럼 깨짐</td><td>아무리 키워도 매끈함</td></tr>
+    <tr><th>적합한 대상</th><td>사진처럼 색이 복잡한 그림</td><td>로고, 글꼴, 도형</td></tr>
+    <tr><th>파일 형식</th><td class="mono">JPG, PNG, GIF, BMP</td><td class="mono">SVG, AI</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="check">
+  <h4>확인 문제</h4>
+  <ol>
+    <li>한 픽셀에 8비트를 쓰면 몇 가지 색을 나타낼 수 있는가?</li>
+    <li>400 × 300 크기의 24비트 이미지의 용량을 바이트 단위로 구하시오.</li>
+    <li>로고를 아주 크게 확대해 간판에 쓰려고 한다. 비트맵과 벡터 중 무엇을 쓰고, 그 이유는?</li>
+    <li>RGB 24비트에서 각 색이 가질 수 있는 단계 수는?</li>
+  </ol>
+  <p class="answer">정답 1. 2⁸ = 256가지 │ 2. 400×300×24÷8 = 360,000 Byte │ 3. 벡터. 도형을 수식으로 저장하므로 확대해도 깨지지 않기 때문 │ 4. 각 8비트이므로 256단계</p>
+</div>
+
+<!-- ════════ 6장 ════════ -->
+<h2><span class="chno">Chapter 06</span>소리의 디지털화</h2>
+<p class="chlede">1장에서 본 세 단계가 가장 선명하게 드러나는 곳입니다. 소리는 원래 끊김 없는 파동이기 때문입니다.</p>
+
+<h3>6.1 표본화 — 얼마나 자주 뽑는가</h3>
+<p>소리는 공기의 떨림이고, 그래프로 그리면 끊김 없는 물결입니다. 이것을 그대로 저장할 수는 없으므로 <strong>일정한 시간 간격마다 값을 하나씩 뽑습니다.</strong> 이것이 <span class="term">표본화</span> <span class="en">sampling</span>입니다.</p>
+<p>1초에 몇 번 뽑는지를 <span class="term">표본화율</span>이라 하고 Hz로 적습니다. CD 음질은 <span class="mono">44,100 Hz</span>, 즉 1초에 44,100번 뽑습니다. 자주 뽑을수록 원래 파형에 가까워지고 용량은 커집니다.</p>
+
+<h3>6.2 양자화 — 얼마나 잘게 나누는가</h3>
+<p>뽑은 값은 보통 딱 떨어지지 않습니다. 그래서 미리 정해 둔 단계 중 가장 가까운 쪽으로 맞춥니다. 이것이 <span class="term">양자화</span> <span class="en">quantization</span>입니다. 단계를 몇 개로 나눌지는 쓰는 비트 수가 정합니다. 이를 <span class="term">비트 깊이</span>라고 하며, 16비트면 2<sup>16</sup> = 65,536단계입니다.</p>
+<p>단계가 성글면 원래 값과의 오차가 커져 소리가 거칠어집니다. 이 오차를 양자화 잡음이라고 합니다.</p>
+
+<h3>6.3 부호화</h3>
+<p>정해진 단계 번호를 2진수로 적는 단계입니다. 여기까지 끝나면 소리가 0과 1의 나열이 됩니다.</p>
+
+<h3>6.4 용량 계산</h3>
+<div class="formula">용량(Byte) = 표본화율 × 비트 깊이 × 채널 수 × 시간(초) ÷ 8</div>
+<p><strong>채널 수</strong>는 스피커가 몇 갈래인지입니다. 모노는 1, 스테레오는 2입니다. 스테레오는 같은 시간 동안 두 벌의 자료를 저장하므로 용량이 두 배가 됩니다.</p>
+
+<div class="calc">CD 음질 (44,100 Hz · 16비트 · 스테레오) 10초<br><br>
+= 44,100 × 16 × 2 × 10 ÷ 8<br>
+= 14,112,000 ÷ 8<br>
+= <span class="hl">1,764,000 Byte</span> ≈ 1.68 MB<br><br>
+1분(60초)이면 = <span class="hl">10,584,000 Byte</span> ≈ 10.09 MB</div>
+
+<div class="box">
+  <div class="boxhead">두 공식은 사실 같은 공식</div>
+  <p>이미지와 소리의 용량 공식이 달라 보이지만 구조가 같습니다. <strong>(표본의 개수) × (표본 하나당 비트 수) ÷ 8</strong>입니다. 이미지에서 표본의 개수는 가로×세로이고, 소리에서는 표본화율×시간×채널입니다. 공식 두 개를 외우지 말고 이 한 줄을 이해하십시오.</p>
+</div>
+
+<div class="check">
+  <h4>확인 문제</h4>
+  <ol>
+    <li>표본화율을 두 배로 높이면 용량은 어떻게 되는가?</li>
+    <li>비트 깊이가 8비트일 때 소리의 세기를 몇 단계로 나눌 수 있는가?</li>
+    <li>22,050 Hz · 8비트 · 모노로 10초를 녹음하면 몇 바이트인가?</li>
+    <li>음질을 높이면 용량이 커지는 이유를 표본화와 양자화 두 측면에서 설명하시오.</li>
+  </ol>
+  <p class="answer">정답 1. 두 배가 된다 │ 2. 2⁸ = 256단계 │ 3. 22,050×8×1×10÷8 = 220,500 Byte │ 4. 표본화율을 높이면 1초에 저장할 값의 개수가 늘고, 비트 깊이를 늘리면 값 하나당 쓰는 비트가 늘기 때문</p>
+</div>
+
+<!-- ════════ 7장 ════════ -->
+<h2><span class="chno">Chapter 07</span>압축</h2>
+<p class="chlede">압축은 마술이 아닙니다. 자료 안에 이미 들어 있던 낭비를 걷어내는 일입니다.</p>
+
+<h3>7.1 중복이 있어야 줄어든다</h3>
+<p>압축이 가능한 까닭은 대부분의 자료에 <strong>반복되거나 뻔한 부분</strong>이 있기 때문입니다. 하늘 사진은 위쪽 절반이 거의 같은 파랑이고, 문서에는 같은 단어가 수없이 되풀이됩니다. 이 되풀이를 "같은 것이 몇 번"이라고 짧게 적으면 자리를 아낄 수 있습니다.</p>
+<p>거꾸로 말하면, <em>중복이 전혀 없는 자료는 압축해도 줄지 않습니다.</em> 이미 압축된 파일을 다시 압축해도 크기가 거의 그대로이거나 오히려 조금 커지는 이유입니다.</p>
+
+<h3>7.2 반복 묶기 — 가장 단순한 압축</h3>
+<p>같은 글자가 이어지면 "글자 + 개수"로 적는 방법입니다. 원리를 보기에 가장 좋습니다.</p>
+
+<div class="calc">원본 : <span class="hl">AAAAAAABBBCCCCCCCCCC</span> &nbsp;(20자)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; A가 7개, B가 3개, C가 10개<br><br>
+압축 : <span class="hl">A7B3C10</span> &nbsp;(7자)<br><br>
+압축률 = 7 ÷ 20 × 100 = <span class="hl">35%</span> &nbsp;(원본의 35% 크기로 줄어듦)</div>
+
+<div class="box trap">
+  <div class="boxhead">자주 틀리는 지점</div>
+  <p><strong>압축률</strong>이라는 말은 문제에 따라 두 가지로 쓰입니다. "원본 대비 줄어든 크기의 비율"로 묻는 경우와 "압축 후 크기가 원본의 몇 퍼센트인지"로 묻는 경우입니다. 위 예에서 전자는 65%, 후자는 35%입니다. <em>문제의 문장을 먼저 읽고 어느 쪽인지 정한 뒤 계산하십시오.</em></p>
+  <p>또 하나. <span class="mono">ABABABAB</span>처럼 같은 글자가 연달아 있지 않으면 반복 묶기로는 줄지 않습니다. <span class="mono">A1B1A1B1A1B1A1B1</span>이 되어 오히려 길어집니다.</p>
+</div>
+
+<h3>7.3 무손실과 손실</h3>
+<div class="scroll">
+<table>
+  <caption>표 7-1 두 가지 압축 방식</caption>
+  <thead><tr><th style="width:17%">비교</th><th style="width:40%">무손실 압축</th><th>손실 압축</th></tr></thead>
+  <tbody>
+    <tr><th>원리</th><td>중복을 짧게 적되 정보는 하나도 버리지 않음</td><td>사람이 알아채기 어려운 정보를 버림</td></tr>
+    <tr><th>되돌리면</th><td>원본과 완전히 같음</td><td>원본으로 되돌릴 수 없음</td></tr>
+    <tr><th>줄어드는 정도</th><td>적음</td><td>많음</td></tr>
+    <tr><th>쓰는 곳</th><td>문서, 프로그램, 압축 파일</td><td>사진, 음악, 영상</td></tr>
+    <tr><th>파일 형식</th><td class="mono">ZIP, PNG, GIF, FLAC</td><td class="mono">JPG, MP3, MP4</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>문서나 프로그램은 한 글자만 달라져도 뜻이 바뀌거나 아예 실행되지 않으므로 반드시 무손실이어야 합니다. 반면 음악에서 사람 귀에 들리지 않는 아주 높은 음을 지워도 듣는 데 지장이 없습니다. 그래서 손실 압축을 쓰고, 그만큼 크게 줄일 수 있습니다.</p>
+
+<div class="box">
+  <div class="boxhead">JPG를 저장할 때마다 조금씩 나빠지는 이유</div>
+  <p>손실 압축은 되돌릴 수 없습니다. JPG 사진을 열어 조금 고치고 다시 JPG로 저장하면, 이미 정보를 버린 상태에서 또 버립니다. 이것을 반복하면 눈에 띄게 뭉개집니다. 편집 중에는 무손실인 PNG로 두고 마지막에 한 번만 JPG로 내보내는 것이 좋은 이유입니다.</p>
+</div>
+
+<div class="check">
+  <h4>확인 문제</h4>
+  <ol>
+    <li><span class="mono">XXXXYYZZZZZZ</span>를 반복 묶기로 압축하고, 압축 후 크기가 원본의 몇 퍼센트인지 구하시오.</li>
+    <li>이미 ZIP으로 압축된 파일을 다시 압축해도 거의 줄지 않는 이유는?</li>
+    <li>프로그램 설치 파일에 손실 압축을 쓰면 안 되는 이유를 쓰시오.</li>
+    <li>MP3와 FLAC 중 원본 음질을 그대로 보존하는 쪽은?</li>
+  </ol>
+  <p class="answer">정답 1. X4Y2Z6 (6자), 6÷12 = 50% │ 2. 압축 과정에서 중복이 이미 제거돼 더 걷어낼 반복이 거의 남아 있지 않기 때문 │ 3. 일부 정보가 사라지면 프로그램이 손상돼 실행되지 않기 때문 │ 4. FLAC</p>
+</div>
+
+<!-- ════════ 부록 A ════════ -->
+<h2><span class="chno">Appendix A</span>진법 변환표와 2의 거듭제곱</h2>
+<p class="chlede">이 두 표는 시험장에서 꺼내 쓸 수 없습니다. 외워서 들어가야 하는 부분입니다.</p>
+
+<h3>2의 거듭제곱</h3>
+<div class="scroll">
+<table class="num">
+  <thead><tr><th style="width:14%">n</th><th style="width:25%">2ⁿ</th><th>자주 쓰이는 자리</th></tr></thead>
+  <tbody>
+    <tr><td class="r">0</td><td class="r">1</td><td>2진수 첫째 자리</td></tr>
+    <tr><td class="r">1</td><td class="r">2</td><td></td></tr>
+    <tr><td class="r">2</td><td class="r">4</td><td></td></tr>
+    <tr><td class="r">3</td><td class="r">8</td><td>1바이트 = 8비트</td></tr>
+    <tr><td class="r">4</td><td class="r">16</td><td>16진수 한 자리</td></tr>
+    <tr><td class="r">5</td><td class="r">32</td><td>대·소문자 아스키 차이</td></tr>
+    <tr><td class="r">6</td><td class="r">64</td><td></td></tr>
+    <tr><td class="r">7</td><td class="r">128</td><td>아스키 문자 수</td></tr>
+    <tr><td class="r">8</td><td class="r">256</td><td>1바이트의 가짓수, 색 한 채널 단계</td></tr>
+    <tr><td class="r">9</td><td class="r">512</td><td></td></tr>
+    <tr><td class="r">10</td><td class="r">1,024</td><td>KB·MB·GB의 배수</td></tr>
+    <tr><td class="r">16</td><td class="r">65,536</td><td>16비트 단계 수</td></tr>
+    <tr><td class="r">20</td><td class="r">1,048,576</td><td>1 MB의 바이트 수</td></tr>
+    <tr><td class="r">24</td><td class="r">16,777,216</td><td>24비트 컬러의 색 수</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="box">
+  <div class="boxhead">최소한 여기까지</div>
+  <p>2<sup>0</sup>부터 2<sup>10</sup>까지(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024)는 <strong>순서대로 입에서 바로 나와야</strong> 합니다. 2진 변환, 최소 비트 수, 용량 계산이 전부 이 열한 개 숫자 위에서 돌아갑니다.</p>
+</div>
+
+<h3>자릿수가 늘어나는 2진수 자리값</h3>
+<div class="calc" style="text-align:center">
+128 &nbsp; 64 &nbsp; 32 &nbsp; 16 &nbsp; 8 &nbsp; 4 &nbsp; 2 &nbsp; 1<br>
+<span style="font-size:8.5pt;color:#7b7b90">왼쪽이 큰 자리 · 1바이트(8비트)의 자리값</span>
+</div>
+
+<!-- ════════ 부록 B ════════ -->
+<h2><span class="chno">Appendix B</span>공식 모음과 자기 점검표</h2>
+<p class="chlede">시험 전날에는 이 두 쪽만 보십시오.</p>
+
+<h3>공식 전부</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th style="width:27%">구하는 것</th><th>공식</th></tr></thead>
+  <tbody>
+    <tr><th>n비트의 경우의 수</th><td class="mono">2ⁿ</td></tr>
+    <tr><th>m가지에 필요한 최소 비트</th><td class="mono">2ⁿ ≥ m 을 만족하는 가장 작은 n</td></tr>
+    <tr><th>이미지 용량</th><td class="mono">가로 × 세로 × 픽셀당 비트 ÷ 8 (Byte)</td></tr>
+    <tr><th>소리 용량</th><td class="mono">표본화율 × 비트 깊이 × 채널 수 × 초 ÷ 8 (Byte)</td></tr>
+    <tr><th>문자 용량</th><td class="mono">글자 수 × 글자당 바이트 (공백·부호 포함)</td></tr>
+    <tr><th>압축 후 비율</th><td class="mono">압축 크기 ÷ 원본 크기 × 100 (%)</td></tr>
+    <tr><th>단위 환산</th><td class="mono">Byte → KB → MB → GB, 각 단계마다 ÷ 1,024</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="summary">
+  <h3>꼭 기억할 것</h3>
+  <ul>
+    <li><strong>n비트 = 2ⁿ가지.</strong> 이 책의 거의 모든 문제가 여기서 출발한다.</li>
+    <li><strong>1바이트 = 8비트 = 256가지</strong>, 용량 단위는 1,024(=2¹⁰) 배수.</li>
+    <li><strong>2진→10진</strong>은 1이 있는 자리의 자리값만 더한다. <strong>10진→2진</strong>은 큰 자리값부터 빼 나간다.</li>
+    <li><strong>16진수 한 자리 = 2진수 네 자리.</strong> 끊을 때는 반드시 오른쪽부터.</li>
+    <li><strong>아스키 기준점</strong>: '0'=48, 'A'=65, 'a'=97. 대소문자 차이는 항상 32.</li>
+    <li><strong>한글 한 글자</strong>는 EUC-KR 2바이트, UTF-8 3바이트. 방식을 확인하고 계산한다.</li>
+    <li><strong>RGB 24비트</strong> = 각 8비트 × 3 = 약 1,677만 색.</li>
+    <li><strong>용량 공식의 본질</strong>은 (표본 개수) × (표본당 비트) ÷ 8 하나뿐이다.</li>
+    <li><strong>디지털화 3단계</strong>: 표본화 → 양자화 → 부호화.</li>
+    <li><strong>압축은 중복을 걷어내는 일.</strong> 중복이 없으면 줄지 않는다.</li>
+    <li><strong>무손실</strong>(ZIP·PNG·FLAC)은 원본 복원 가능, <strong>손실</strong>(JPG·MP3·MP4)은 불가능.</li>
+  </ul>
+</div>
+
+<h3 style="margin-top:28px">자기 점검표</h3>
+<p>설명할 수 있으면 ○, 머뭇거리면 △, 모르면 ×를 적으십시오. △와 ×만 다시 보면 됩니다.</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th style="width:9%">장</th><th>스스로에게 던지는 질문</th><th style="width:11%">○△×</th></tr></thead>
+  <tbody>
+    <tr><td class="c mono">1</td><td>컴퓨터가 두 상태만 쓰는 이유를 잡음과 연결해 설명할 수 있다</td><td></td></tr>
+    <tr><td class="c mono">1</td><td>표본화·양자화·부호화가 각각 무엇을 하는지 말할 수 있다</td><td></td></tr>
+    <tr><td class="c mono">2</td><td>2⁰부터 2¹⁰까지를 막힘없이 말할 수 있다</td><td></td></tr>
+    <tr><td class="c mono">2</td><td>세 자리 10진수를 30초 안에 2진수로 바꿀 수 있다</td><td></td></tr>
+    <tr><td class="c mono">2</td><td>16진수 한 자리가 왜 2진수 네 자리인지 설명할 수 있다</td><td></td></tr>
+    <tr><td class="c mono">3</td><td>"m가지에 필요한 최소 비트"를 묻는 문제를 틀리지 않는다</td><td></td></tr>
+    <tr><td class="c mono">3</td><td>용량 단위가 1,024 배수인 이유를 안다</td><td></td></tr>
+    <tr><td class="c mono">4</td><td>'0' 'A' 'a'의 아스키 값을 외우고 있다</td><td></td></tr>
+    <tr><td class="c mono">4</td><td>한글 한 글자의 크기를 저장 방식별로 구분해 말할 수 있다</td><td></td></tr>
+    <tr><td class="c mono">5</td><td>이미지 용량 계산에서 ÷8을 빠뜨리지 않는다</td><td></td></tr>
+    <tr><td class="c mono">5</td><td>비트맵과 벡터를 쓰임새로 구분할 수 있다</td><td></td></tr>
+    <tr><td class="c mono">6</td><td>소리 용량 공식의 네 요소를 모두 댈 수 있다</td><td></td></tr>
+    <tr><td class="c mono">7</td><td>반복 묶기로 압축하고 비율까지 계산할 수 있다</td><td></td></tr>
+    <tr><td class="c mono">7</td><td>무손실과 손실을 파일 형식과 함께 짝지을 수 있다</td><td></td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="box exam">
+  <div class="boxhead">다음 단계</div>
+  <p>이 이론서를 1회독한 뒤 <strong>「필수유형 30 ②권 — 자료 표현」</strong>을 푸십시오. 이 단원은 읽어서 아는 것과 손으로 푸는 것의 차이가 특히 큽니다. 변환과 용량 계산은 <strong>반드시 손으로 30문제 이상</strong> 통과시켜야 시험장에서 시간 안에 나옵니다.</p>
+</div>
+
+<div class="colophon">
+  <strong>자료의 디지털 표현</strong> — 디미고 소질·적성검사 대비 이론서 정보 ②<br>
+  세영코딩연구소 &nbsp; 저자 : 컴퓨터공학박사 KIM<br>
+  2026년 10월 1판 · 중학교 정보 교과 기반<br>
+  출제 경향은 한국디지털미디어고등학교 입학공지(2026.08.10, 기출문제 공개)를 참고해 정리했습니다.
+</div>
+
+</div>
