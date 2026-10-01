@@ -1,0 +1,542 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>디미고 소질·적성 46일 커리큘럼</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: single narrow column; a fixed-width "검사 사양" rail at the top, then week blocks stacked as a countdown ladder. */
+:root{
+  --bg:#f6f6fa;
+  --surface:#ffffff;
+  --fg:#17161f;
+  --muted:#60607a;
+  --line:#e3e2ee;
+  --accent:#4327c9;
+  --accent-wash:#ece9fb;
+  --signal:#b4410a;
+  --signal-wash:#fcefe6;
+  --ok:#0f6d52;
+  --display:"Gothic A1","Noto Sans KR",system-ui,sans-serif;
+  --body:"Noto Sans KR",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#121119;
+    --surface:#1b1a25;
+    --fg:#eceaf4;
+    --muted:#a4a2bd;
+    --line:#2e2c3e;
+    --accent:#a996ff;
+    --accent-wash:#241f45;
+    --signal:#ff9a63;
+    --signal-wash:#3a2113;
+    --ok:#5fd6ad;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121119;
+  --surface:#1b1a25;
+  --fg:#eceaf4;
+  --muted:#a4a2bd;
+  --line:#2e2c3e;
+  --accent:#a996ff;
+  --accent-wash:#241f45;
+  --signal:#ff9a63;
+  --signal-wash:#3a2113;
+  --ok:#5fd6ad;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--bg);
+  color:var(--fg);
+  font-family:var(--body);
+  font-size:16px;
+  line-height:1.72;
+  margin:0;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{
+  max-width:860px;
+  margin:0 auto;
+  padding-block:40px 72px;
+  padding-left:20px;
+  padding-right:20px;
+}
+
+/* ---- masthead ---- */
+.eyebrow{
+  font-family:var(--mono);
+  font-size:.72rem;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--accent);
+  margin:0 0 14px;
+}
+h1{
+  font-family:var(--display);
+  font-weight:900;
+  font-size:clamp(1.9rem,6vw,2.9rem);
+  line-height:1.18;
+  letter-spacing:-.02em;
+  text-wrap:balance;
+  margin:0 0 14px;
+}
+.standfirst{
+  font-size:1.03rem;
+  color:var(--muted);
+  max-width:60ch;
+  margin:0 0 8px;
+}
+.byline{
+  font-family:var(--mono);
+  font-size:.74rem;
+  color:var(--muted);
+  border-top:1px solid var(--line);
+  padding-top:14px;
+  margin-top:26px;
+}
+
+/* ---- spec rail ---- */
+.spec{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:1px;
+  background:var(--line);
+  border:1px solid var(--line);
+  border-radius:3px;
+  margin:34px 0 10px;
+  overflow:hidden;
+}
+.spec div{
+  background:var(--surface);
+  padding:16px 18px;
+  min-width:0;
+}
+.spec dt{
+  font-family:var(--mono);
+  font-size:.68rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin:0 0 6px;
+}
+.spec dd{
+  margin:0;
+  font-family:var(--display);
+  font-weight:700;
+  font-size:1.22rem;
+  letter-spacing:-.01em;
+  font-variant-numeric:tabular-nums;
+}
+.spec dd small{
+  display:block;
+  font-family:var(--body);
+  font-weight:400;
+  font-size:.78rem;
+  color:var(--muted);
+  letter-spacing:0;
+  line-height:1.5;
+  margin-top:3px;
+}
+.dday dd{color:var(--signal)}
+
+h2{
+  font-family:var(--display);
+  font-weight:900;
+  font-size:1.42rem;
+  letter-spacing:-.015em;
+  text-wrap:balance;
+  margin:56px 0 6px;
+  padding-top:22px;
+  border-top:2px solid var(--fg);
+}
+h2 .num{
+  font-family:var(--mono);
+  font-weight:600;
+  font-size:.8rem;
+  color:var(--accent);
+  display:block;
+  margin-bottom:6px;
+  letter-spacing:.1em;
+}
+h3{
+  font-family:var(--display);
+  font-weight:700;
+  font-size:1.03rem;
+  margin:30px 0 8px;
+}
+p{margin:0 0 14px;max-width:66ch}
+.lede{color:var(--muted);margin-bottom:22px}
+
+/* ---- tables ---- */
+.scroll{overflow-x:auto;margin:18px 0 10px;border:1px solid var(--line);border-radius:3px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.88rem}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{
+  font-family:var(--mono);
+  font-size:.68rem;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+  color:var(--muted);
+  font-weight:600;
+  background:var(--accent-wash);
+  border-bottom:1px solid var(--line);
+}
+tbody tr:last-child td{border-bottom:none}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--accent);font-weight:600}
+td.w{white-space:nowrap}
+
+/* ---- week ladder ---- */
+.week{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-left:4px solid var(--accent);
+  border-radius:3px;
+  padding:20px 22px;
+  margin-bottom:14px;
+}
+.week.final{border-left-color:var(--signal)}
+.week-head{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  gap:8px 14px;
+  margin-bottom:4px;
+}
+.week-tag{
+  font-family:var(--mono);
+  font-size:.72rem;
+  font-weight:600;
+  letter-spacing:.08em;
+  color:var(--accent);
+  white-space:nowrap;
+}
+.week.final .week-tag{color:var(--signal)}
+.week-date{
+  font-family:var(--mono);
+  font-size:.72rem;
+  color:var(--muted);
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.week-title{
+  font-family:var(--display);
+  font-weight:700;
+  font-size:1.08rem;
+  margin:0;
+  flex:1 1 220px;
+  min-width:0;
+}
+.week dl{
+  display:grid;
+  grid-template-columns:minmax(72px,auto) 1fr;
+  gap:6px 16px;
+  margin:14px 0 0;
+  font-size:.9rem;
+}
+.week dt{
+  font-family:var(--mono);
+  font-size:.68rem;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+  color:var(--muted);
+  padding-top:5px;
+}
+.week dd{margin:0;min-width:0}
+.week dd ul{margin:0;padding-left:18px}
+.week dd li{margin-bottom:3px}
+.out{
+  font-family:var(--mono);
+  font-size:.78rem;
+  color:var(--ok);
+  font-weight:600;
+}
+
+/* ---- callout ---- */
+.note{
+  background:var(--signal-wash);
+  border:1px solid var(--line);
+  border-left:4px solid var(--signal);
+  border-radius:3px;
+  padding:18px 20px;
+  margin:24px 0;
+}
+.note p:last-child{margin-bottom:0}
+.note strong{color:var(--signal)}
+.quiet{
+  background:var(--accent-wash);
+  border-radius:3px;
+  padding:18px 20px;
+  margin:22px 0;
+}
+.quiet p:last-child{margin-bottom:0}
+
+ul.plain{margin:0 0 16px;padding-left:20px;max-width:66ch}
+ul.plain li{margin-bottom:6px}
+
+.src{
+  font-size:.8rem;
+  color:var(--muted);
+  border-top:1px solid var(--line);
+  margin-top:50px;
+  padding-top:18px;
+}
+.src a{color:var(--accent)}
+.src p{max-width:none;margin-bottom:6px}
+
+@media (max-width:460px){
+  .week{padding:16px 15px}
+  .week dl{grid-template-columns:1fr;gap:2px 0}
+  .week dt{padding-top:10px}
+}
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">세영코딩연구소 · 디미고 일반전형 대비</p>
+  <h1>디미고 소질·적성검사<br>46일 역산 커리큘럼</h1>
+  <p class="standfirst">2027학년도 한국디지털미디어고 일반전형 2단계. 학교가 공개한 평가 역량 6가지와 2023·2024 기출 문항을 기준으로, 시험 당일까지 주차별로 역산해 구성했습니다.</p>
+
+  <dl class="spec">
+    <div><dt>검사일시</dt><dd>11.16 <small>월 14:00 · 본교 오프라인</small></dd></div>
+    <div class="dday"><dt>남은 기간</dt><dd>D-46 <small>2026.10.01 기준 · 약 6.5주</small></dd></div>
+    <div><dt>문항 / 시간</dt><dd>30 / 50′ <small>문항당 평균 100초</small></dd></div>
+    <div><dt>출제 범위</dt><dd>중학 교육과정 <small>정보 교과서 기반 · 선행 불필요</small></dd></div>
+  </dl>
+  <p class="byline">세영코딩연구소 &nbsp; 저자 : 컴퓨터공학박사 KIM<br>작성 2026.10.01 · 출처: 한국디지털미디어고 입학공지(2026.08.10 / 2026.08.07)</p>
+
+  <h2><span class="num">01</span>시험이 실제로 요구하는 것</h2>
+  <p class="lede">학교는 이 시험을 교과 성취도 평가가 아니라고 못 박았습니다. 평가하는 역량 6가지를 공식적으로 공개했고, 커리큘럼은 이 6가지를 문항 유형으로 번역하는 데서 출발합니다.</p>
+
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>학교가 밝힌 평가 역량</th><th>실제 문항 형태</th><th>훈련 방법</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>정보·IT 기초 이해력</td><td>용어·원리 식별, 개념 적용</td><td>중학 정보 교과서 전 단원 개념 정리 + 용어 변별 훈련</td></tr>
+        <tr><td>문제해결능력</td><td>조건 여러 개를 동시에 만족시키기</td><td>조건 표로 옮겨 적고 소거하는 절차 고정</td></tr>
+        <tr><td>논리적 사고력</td><td>참·거짓, 순서 배열, 대응 관계</td><td>진술 논리 퍼즐 + 반례 찾기</td></tr>
+        <tr><td>독해 및 정보이해능력</td><td>긴 지문·규칙문 핵심 추출</td><td>규칙문 요약 → 자기 말로 재진술</td></tr>
+        <tr><td>수리추론능력</td><td>규칙성, 경우의 수, 관계 추론</td><td>중학 수학 범위 내 패턴·조합 문제</td></tr>
+        <tr><td>창의융합사고력</td><td>배운 개념을 낯선 상황에 이식</td><td>같은 개념, 처음 보는 맥락으로 변형 출제</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>공개된 기출 2문항이 알려주는 것</h3>
+  <p><strong>2023년 · 영어+정보 융합.</strong> IT 장비를 설명하는 영문 지문 세 문장을 주고, 그 장비가 무엇인지 보기에서 고르게 했습니다. 정답은 라우터였고, 지문은 로컬 IP 할당·주소 변환·패킷 전달이라는 세 가지 기능을 늘어놓았습니다. 영어 단어 수준은 평이하지만, 라우터·허브·프록시의 역할 차이를 모르면 지문을 다 읽어도 못 고릅니다. <em>영어 실력 문제가 아니라 정보 개념 문제</em>라는 뜻입니다.</p>
+  <p><strong>2024년 · 수학+정보 융합.</strong> 번호 붙은 규칙 7단계를 주고, 공이 쌓인 통 (가)에서 (나)·(다)로 옮겨질 때 (다)에 남는 순서를 묻습니다. 조건 분기와 반복이 들어간 의사코드를 손으로 따라가는 추적 문제이고, 통에서 맨 위부터 꺼내는 구조라 자료구조를 배운 학생에게는 스택으로 보입니다. 다만 학교는 이산수학 지식 없이도 풀리게 출제한다고 명시했습니다. <em>필요한 건 알고리즘 용어가 아니라 추적을 틀리지 않는 손</em>입니다.</p>
+
+  <div class="note">
+    <p><strong>일정상 가장 중요한 사실:</strong> 2단계 대상자 발표는 11.14(토) 18:00, 소질·적성검사는 11.16(월) 14:00입니다. 발표 후 준비 가능한 시간은 <strong>만 하루 반</strong>뿐입니다. 1단계는 내신·학생부로만 2배수를 뽑으므로, 소질·적성 준비는 발표를 기다리지 않고 지금부터 병행해야 합니다.</p>
+  </div>
+
+  <h2><span class="num">02</span>주차별 커리큘럼</h2>
+  <p class="lede">주 2회 90분 수업 + 회차당 자기주도 과제 60분 기준입니다. 앞 4주는 역량을 쌓고, 뒤 2주는 전부 시간 압박 아래 실전으로 돌립니다.</p>
+
+  <div class="week">
+    <div class="week-head">
+      <span class="week-tag">0주차</span>
+      <span class="week-date">10.01 – 10.05</span>
+      <h3 class="week-title">진단 — 어디가 비었는지부터</h3>
+    </div>
+    <dl>
+      <dt>목표</dt><dd>공개 기출 2문항 + 유사 문항 30개로 50분 진단, 6역량별 점수화</dd>
+      <dt>내용</dt><dd><ul>
+        <li>진단 모의 1회 (50분, 실제 환경 그대로)</li>
+        <li>오답을 "몰라서" / "못 읽어서" / "시간 없어서" 3분류</li>
+        <li>중학 정보 교과서 목차 훑기 — 아는 단원·모르는 단원 표시</li>
+      </ul></dd>
+      <dt>산출물</dt><dd><span class="out">진단지 + 역량 레이더 1장</span></dd>
+    </dl>
+  </div>
+
+  <div class="week">
+    <div class="week-head">
+      <span class="week-tag">1주차</span>
+      <span class="week-date">10.06 – 10.12</span>
+      <h3 class="week-title">정보 ① 컴퓨팅 시스템과 네트워크</h3>
+    </div>
+    <dl>
+      <dt>목표</dt><dd>2023 기출(라우터)이 정확히 이 구간입니다. 장비·계층·프로토콜을 역할로 구분</dd>
+      <dt>내용</dt><dd><ul>
+        <li>하드웨어 구성(CPU·주기억·보조기억·입출력)과 역할 분담</li>
+        <li>운영체제가 하는 일, 응용 소프트웨어와의 경계</li>
+        <li>네트워크: 허브·스위치·라우터·공유기 비교, IP와 사설/공인 주소, 유무선 통신</li>
+        <li>인터넷 서비스 동작 순서(주소 입력부터 화면 표시까지)</li>
+      </ul></dd>
+      <dt>산출물</dt><dd><span class="out">필수유형 30 ①권 — 시스템·네트워크</span></dd>
+    </dl>
+  </div>
+
+  <div class="week">
+    <div class="week-head">
+      <span class="week-tag">2주차</span>
+      <span class="week-date">10.13 – 10.19</span>
+      <h3 class="week-title">정보 ② 자료의 디지털 표현</h3>
+    </div>
+    <dl>
+      <dt>목표</dt><dd>수 변환을 계산이 아니라 "표현 방식"으로 이해. 수리추론 문항의 재료가 되는 구간</dd>
+      <dt>내용</dt><dd><ul>
+        <li>2진수·16진수 변환, 비트와 바이트, 용량 단위</li>
+        <li>문자 표현(아스키·유니코드), 한 글자가 몇 바이트인가</li>
+        <li>이미지(해상도·픽셀·색 표현)와 소리(표본화·양자화)의 디지털화</li>
+        <li>압축이 왜 가능한지 — 중복 제거라는 아이디어</li>
+      </ul></dd>
+      <dt>산출물</dt><dd><span class="out">필수유형 30 ②권 — 자료 표현</span></dd>
+    </dl>
+  </div>
+
+  <div class="week">
+    <div class="week-head">
+      <span class="week-tag">3주차</span>
+      <span class="week-date">10.20 – 10.26</span>
+      <h3 class="week-title">알고리즘 추적 — 2024 기출 유형 집중</h3>
+    </div>
+    <dl>
+      <dt>목표</dt><dd>번호 붙은 규칙문을 손으로 따라가 틀리지 않기. 이 주가 배점상 가장 남는 구간입니다</dd>
+      <dt>내용</dt><dd><ul>
+        <li>추적표 작성 규칙 고정: 단계·변수·현재 상태를 세로로 적는 양식 하나로 통일</li>
+        <li>조건 분기(~이면 A, 아니면 B)와 반복(~로 돌아간다)이 섞인 규칙문 20종</li>
+        <li>쌓기 구조(맨 위부터 꺼냄)와 줄서기 구조(먼저 넣은 것부터) 비교</li>
+        <li>순서도 읽기, 같은 동작을 규칙문 ↔ 순서도로 상호 변환</li>
+        <li>정렬·탐색의 동작 과정(용어 암기 아님, 과정 추적)</li>
+      </ul></dd>
+      <dt>산출물</dt><dd><span class="out">필수유형 30 ③권 — 규칙 추적 · 순서도</span></dd>
+    </dl>
+  </div>
+
+  <div class="week">
+    <div class="week-head">
+      <span class="week-tag">4주차</span>
+      <span class="week-date">10.27 – 11.02</span>
+      <h3 class="week-title">수리추론과 논리</h3>
+    </div>
+    <dl>
+      <dt>목표</dt><dd>중학 수학 범위 안에서, 계산이 아니라 관계를 찾는 문제에 적응</dd>
+      <dt>내용</dt><dd><ul>
+        <li>규칙성: 수열형 패턴, 도형 반복, n번째 항 추론</li>
+        <li>경우의 수: 곱의 법칙과 합의 법칙, 중복 제외</li>
+        <li>논리: 참·거짓 진술, 순서 배열, 대응표로 푸는 조건 퍼즐</li>
+        <li>나머지와 배수 판정 — 분기 조건에 자주 섞여 나옵니다</li>
+        <li>자료 해석: 표·그래프에서 필요한 값만 뽑기</li>
+      </ul></dd>
+      <dt>산출물</dt><dd><span class="out">필수유형 30 ④권 — 수리추론 · 논리</span></dd>
+    </dl>
+  </div>
+
+  <div class="week">
+    <div class="week-head">
+      <span class="week-tag">5주차</span>
+      <span class="week-date">11.03 – 11.09</span>
+      <h3 class="week-title">교과융합 독해 + 정보윤리·AI</h3>
+    </div>
+    <dl>
+      <dt>목표</dt><dd>영문 IT 지문을 개념으로 환원하는 훈련. 동시에 남은 정보 교과 단원 마감</dd>
+      <dt>내용</dt><dd><ul>
+        <li>IT 영어 핵심 어휘 150개 (network, encrypt, device, assign, packet 수준)</li>
+        <li>영문 지문 → 핵심 기능 3개 추출 → 해당 용어 지목하는 2023 기출 포맷 반복</li>
+        <li>긴 국어 지문·규칙 설명문에서 조건만 뽑아내는 연습</li>
+        <li>정보윤리: 개인정보, 저작권, 보안(암호화·인증), 디지털 발자국</li>
+        <li>데이터와 AI 기초 개념 — 중학 교과서 수준</li>
+      </ul></dd>
+      <dt>산출물</dt><dd><span class="out">필수유형 30 ⑤권 — 융합독해 · 정보윤리</span></dd>
+    </dl>
+  </div>
+
+  <div class="week">
+    <div class="week-head">
+      <span class="week-tag">6주차</span>
+      <span class="week-date">11.10 – 11.15</span>
+      <h3 class="week-title">실전 — 50분을 몸에 넣는 주</h3>
+    </div>
+    <dl>
+      <dt>목표</dt><dd>새 개념 학습 중단. 전부 시간 압박 아래 반복. 원서접수(11.12–11.13)와 겹치므로 수업 분량은 줄이고 밀도만 올립니다</dd>
+      <dt>내용</dt><dd><ul>
+        <li>실전 모의 5회 (50분 30문항), 매회 직후 오답 30분</li>
+        <li>시간 배분 고정: 1차 35분 — 막히면 20초에 넘기고 표시</li>
+        <li>2차 10분 — 표시 문항만, 남은 5분은 마킹 검수</li>
+        <li>반복 오답 유형만 뽑은 개인별 최종 15문항</li>
+      </ul></dd>
+      <dt>산출물</dt><dd><span class="out">실전 모의 5세트 + 개인 오답 노트</span></dd>
+    </dl>
+  </div>
+
+  <div class="week final">
+    <div class="week-head">
+      <span class="week-tag">D-2 ~ 당일</span>
+      <span class="week-date">11.14 – 11.16</span>
+      <h3 class="week-title">2단계 확정 후 — 검사와 면접 동시 대비</h3>
+    </div>
+    <dl>
+      <dt>상황</dt><dd>11.14(토) 18:00 2단계 대상자 발표 → 11.16(월) 14:00 검사, 15:00 면접. 같은 날 연달아 치릅니다</dd>
+      <dt>내용</dt><dd><ul>
+        <li>11.15(일): 오전 모의 1회(14:00 시작 시간에 맞춰), 오후는 면접 리허설</li>
+        <li>새 문제 금지. 개인 오답 노트 1회독 + 정보 용어 1장 요약만</li>
+        <li>당일: 검사 종료 직후 면접이므로, 검사 결과를 머리에서 끊는 연습 포함</li>
+      </ul></dd>
+      <dt>산출물</dt><dd><span class="out">최종 요약 1장 + 면접 답변 카드</span></dd>
+    </dl>
+  </div>
+
+  <h2><span class="num">03</span>50분을 쓰는 법</h2>
+  <p class="lede">30문항 50분이면 문항당 100초입니다. 지문이 긴 융합 문항과 추적 문항이 섞여 있어, 균등 배분하면 반드시 뒤가 밀립니다.</p>
+
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>구간</th><th>시간</th><th>하는 일</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="w">1차 통과</td><td class="n">35분</td><td>처음부터 끝까지. 20초 안에 접근법이 안 보이면 표시하고 넘김. 추적 문항은 추적표를 반드시 손으로 그림</td></tr>
+        <tr><td class="w">2차 회수</td><td class="n">10분</td><td>표시 문항만. 남은 개수로 1문항당 쓸 시간을 먼저 계산하고 들어감</td></tr>
+        <tr><td class="w">검수</td><td class="n">5분</td><td>답안 밀림 확인, 빈칸 없애기. 끝까지 비워두지 않음</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2><span class="num">04</span>교재 구성</h2>
+  <p class="lede">기존 "필수예제 30" 포맷 그대로, 주제별 30문항 + 정답·해설 + 인쇄용 HTML 한 권씩. 6권이면 180문항이고, 여기에 실전 모의 5세트 150문항이 붙습니다.</p>
+
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>권</th><th>주제</th><th>구성</th><th>투입 주차</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="n">①</td><td>컴퓨팅 시스템 · 네트워크</td><td>개념 30 + 해설</td><td class="w">1주차</td></tr>
+        <tr><td class="n">②</td><td>자료의 디지털 표현</td><td>개념 20 + 계산 10</td><td class="w">2주차</td></tr>
+        <tr><td class="n">③</td><td>규칙 추적 · 순서도</td><td>추적 30 + 추적표 양식</td><td class="w">3주차</td></tr>
+        <tr><td class="n">④</td><td>수리추론 · 논리</td><td>규칙성 10 · 경우의 수 10 · 논리 10</td><td class="w">4주차</td></tr>
+        <tr><td class="n">⑤</td><td>융합독해 · 정보윤리</td><td>영문 지문 15 + 윤리·AI 15</td><td class="w">5주차</td></tr>
+        <tr><td class="n">⑥</td><td>실전 모의</td><td>50분 30문항 × 5세트</td><td class="w">6주차</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2><span class="num">05</span>학원 운영상 짚어둘 점</h2>
+  <div class="quiet">
+    <p>학교는 공지에서 입학 준비를 위한 사교육을 지양한다고 명시했고, 코딩·프로그래밍·이산수학을 미리 배워야 하는 시험이 아니라고 거듭 밝혔습니다. 그래서 이 커리큘럼은 <strong>선행이나 올림피아드 알고리즘이 아니라, 중학 정보 교과서 개념 정리와 사고력 훈련</strong>으로 짰습니다. 학부모 설명 시에도 같은 기준으로 안내하는 편이 안전하고, 실제로 그쪽이 점수에도 더 유리합니다.</p>
+  </div>
+  <ul class="plain">
+    <li><strong>KOI 준비반과 섞지 말 것.</strong> 정올 대비생은 추적·논리 구간은 이미 과잉이고, 오히려 정보 교과서 용어(네트워크 장비, 자료 표현 단위, 정보윤리)에서 실점합니다. 해당 학생은 1·2·5주차만 압축 투입하는 변형 과정이 맞습니다.</li>
+    <li><strong>1단계 통과 가능성과 무관하게 시작할 것.</strong> 발표 후엔 하루 반뿐이므로, 내신상 경계선에 있는 학생도 지금 합류시켜야 합니다.</li>
+    <li><strong>배점은 비공개입니다.</strong> 2단계에서 검사와 면접의 반영 비율은 전형요항 PDF를 확인해야 합니다. 필요하시면 받아서 정리해 드리겠습니다.</li>
+    <li><strong>면접도 기출이 공개돼 있습니다.</strong> 같은 게시판에 "일반면접과 심층면접, 어떻게 진행되나요? [기출문항 포함]"(2026.08.24) 글이 있어, 같은 날 치르는 만큼 묶어서 과정화하는 편이 낫습니다.</li>
+  </ul>
+
+  <div class="src">
+    <p>출처</p>
+    <p><a href="https://dimigo-h.goeas.kr/dimigo-h/na/ntt/selectNttInfo.do?mi=13631&amp;bbsId=6915&amp;nttSn=1523628">일반전형 소질·적성검사란 무엇인가요? (기출문제 공개) — 한국디지털미디어고 입학공지, 2026.08.10</a></p>
+    <p><a href="https://dimigo-h.goeas.kr/dimigo-h/na/ntt/selectNttInfo.do?mi=13631&amp;bbsId=6915&amp;nttSn=1523584">2027학년도 입학 전형 일정 안내 — 한국디지털미디어고 입학공지, 2026.08.07</a></p>
+    <p><a href="https://dimigo-h.goeas.kr/dimigo-h/na/ntt/selectNttList.do?mi=13631&amp;bbsId=6915">입학공지사항 게시판 전체</a></p>
+  </div>
+
+</div>
+
+</body></html>
