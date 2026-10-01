@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0F6459" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<title>중3 필수 영단어 2000 · 3단계 세션 학습</title>
+
+<!-- 외부 의존성은 CDN 2개뿐 (Tailwind + 웹폰트). 그 외 100% 바닐라 JS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+
+<script>
+  /* CDN이 막히거나 오프라인이어도 스크립트 오류가 나지 않도록 방어 */
+  if (window.tailwind) tailwind.config = {
+    theme: { extend: {
+      fontFamily: { sans: ['Noto Sans KR','system-ui','sans-serif'], en: ['Nunito','Noto Sans KR','sans-serif'] },
+      colors: {
+        ivory:'#FBF8F1', ink:'#2A2622',
+        teal:{50:'#EAF7F5',100:'#CFEDE8',400:'#3FB0A0',500:'#22998A',600:'#158073',700:'#0F6459'},
+        sun:{50:'#FFF9EC',100:'#FFF1D6',400:'#F5B841',500:'#E9A522'},
+        rose:{50:'#FDEEEE',400:'#E4756B',500:'#D4584C'}
+      },
+      boxShadow:{ soft:'0 6px 24px -8px rgba(42,38,34,.18)' }
+    } }
+  };
+</script>
+
+<style>
+  /* Tailwind CDN이 로드되지 않아도 최소한 화면 전환은 동작하도록 */
+  .hidden { display: none !important; }
+
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: contain; }
+
+  /* 모바일: iOS가 입력 시 화면을 확대하지 않도록 글자 크기를 16px 이상으로 */
+  input, select, textarea, button { font-size: 16px; font-family: inherit; }
+
+  /* 모바일: 손가락으로 누르기 좋은 최소 크기 */
+  .tap { min-height: 44px; }
+
+  /* 아이폰 노치/홈바 영역 확보 */
+  .safe-b { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
+  .safe-t { padding-top: env(safe-area-inset-top, 0px); }
+
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-thumb { background: #d9d2c4; border-radius: 9px; }
+
+  @keyframes pop { 0% { transform: translateY(8px); opacity: 0 } 100% { transform: none; opacity: 1 } }
+  .pop { animation: pop .22s ease-out both; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+  .shake { animation: shake .3s; }
+
+  .step-done { background:#158073; color:#fff; }
+  .step-now  { background:#F5B841; color:#2A2622; }
+  .step-wait { background:rgba(0,0,0,.06); color:#9a9289; }
+  input[type=range] { accent-color:#158073; }
+</style>
+</head>
+
+<body class="bg-ivory text-ink font-sans min-h-screen">
+
+<!-- ═══════════ HEADER ═══════════ -->
+<header class="sticky top-0 z-30 bg-ivory/95 backdrop-blur border-b border-black/5 safe-t">
+  <div class="max-w-3xl mx-auto px-4 py-2.5 flex items-center gap-2.5">
+    <div class="w-9 h-9 rounded-xl bg-teal-600 text-white grid place-items-center text-lg shrink-0">📘</div>
+    <div class="min-w-0 flex-1">
+      <h1 class="font-en font-extrabold text-base leading-tight">Middle 3 Vocab 2000</h1>
+      <p id="sess-label" class="text-[11px] text-ink/50 truncate">세션 1 · 단어 1~10</p>
+    </div>
+    <button id="btn-note" class="tap text-[11px] px-2.5 rounded-lg border border-black/10 text-ink/60 hover:bg-white transition">오답노트</button>
+    <button id="btn-menu" class="tap text-[11px] px-2.5 rounded-lg border border-black/10 text-ink/60 hover:bg-white transition">메뉴</button>
+  </div>
+
+  <!-- 단계 표시 -->
+  <div class="max-w-3xl mx-auto px-4 pb-2.5 grid grid-cols-3 gap-1.5">
+    <div id="pill-1" class="step-now  rounded-lg py-1.5 text-center text-[11px] font-bold">1단계 · 단어</div>
+    <div id="pill-2" class="step-wait rounded-lg py-1.5 text-center text-[11px] font-bold">2단계 · 암기확인</div>
+    <div id="pill-3" class="step-wait rounded-lg py-1.5 text-center text-[11px] font-bold">3단계 · 유사단어</div>
+  </div>
+  <div class="h-1 bg-black/5"><div id="bar" class="h-full w-0 bg-teal-600 transition-all duration-500"></div></div>
+</header>
+
+<main class="max-w-3xl mx-auto px-4 py-4 pb-40">
+
+  <!-- ═══════════ 1단계 ═══════════ -->
+  <section id="step1">
+    <div class="bg-white rounded-2xl shadow-soft p-4 mb-3">
+      <p class="text-sm font-bold mb-1">1단계 · 오늘의 단어 10개</p>
+      <p class="text-xs text-ink/55 leading-relaxed">소리 내어 읽고 뜻을 익혀 보자. 🔊를 누르면 원어민 발음으로 읽어 줄게. 다 외웠으면 맨 아래 <b>암기 완료</b> 버튼을 눌러!</p>
+      <div class="flex items-center gap-3 mt-3 pt-3 border-t border-black/5">
+        <span class="text-[11px] font-bold text-ink/50 shrink-0">🐢 읽기 속도</span>
+        <input id="rate" type="range" min="0.5" max="1.2" step="0.05" value="0.85" class="flex-1" />
+        <span id="rate-val" class="text-[11px] font-en font-bold text-teal-600 w-8 text-right">0.85</span>
+      </div>
+    </div>
+    <div id="word-list" class="flex flex-col gap-2.5"></div>
+  </section>
+
+  <!-- ═══════════ 2단계 ═══════════ -->
+  <section id="step2" class="hidden">
+    <div class="bg-white rounded-2xl shadow-soft p-4 mb-3">
+      <p class="text-sm font-bold mb-1">2단계 · 암기 확인 (주관식 5문제)</p>
+      <p class="text-xs text-ink/55 leading-relaxed">방금 공부한 10개 중 5개를 골랐어. 각 단어의 <b>한국어 뜻</b>을 적어 보자. 뜻이 여러 개면 하나만 써도 정답이야!</p>
+    </div>
+    <div id="quiz-list" class="flex flex-col gap-2.5"></div>
+    <div id="quiz-result" class="hidden mt-3"></div>
+  </section>
+
+  <!-- ═══════════ 3단계 ═══════════ -->
+  <section id="step3" class="hidden">
+    <div class="bg-white rounded-2xl shadow-soft p-4 mb-3">
+      <p class="text-sm font-bold mb-1">3단계 · 유사단어 &amp; 헷갈리는 단어 (4지 선다 3문제)</p>
+      <p class="text-xs text-ink/55 leading-relaxed">시험에 자주 나오는 동의어·반의어·혼동어 문제야. 보기를 하나 고르면 바로 해설을 보여 줄게.</p>
+    </div>
+    <div id="cq-list" class="flex flex-col gap-3"></div>
+    <div id="final" class="hidden mt-3"></div>
+  </section>
+
+  <!-- ═══════════ 오답노트 ═══════════ -->
+  <section id="note" class="hidden">
+    <div class="bg-white rounded-2xl shadow-soft p-4 mb-3 flex items-center justify-between gap-2">
+      <div>
+        <p class="text-sm font-bold">📕 오답노트</p>
+        <p id="note-count" class="text-xs text-ink/55 mt-0.5"></p>
+      </div>
+      <button id="note-close" class="tap text-[11px] px-3 rounded-lg bg-teal-600 text-white font-bold">학습으로</button>
+    </div>
+    <div id="note-list" class="flex flex-col gap-2.5"></div>
+  </section>
+
+  <!-- ═══════════ 메뉴 ═══════════ -->
+  <section id="menu" class="hidden">
+    <div class="bg-white rounded-2xl shadow-soft p-4 mb-3 flex items-center justify-between gap-2">
+      <p class="text-sm font-bold">⚙️ 메뉴</p>
+      <button id="menu-close" class="tap text-[11px] px-3 rounded-lg bg-teal-600 text-white font-bold">학습으로</button>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-soft p-4 mb-3">
+      <p class="text-sm font-bold mb-2">세션 이동</p>
+      <p class="text-xs text-ink/55 mb-2.5">공부한 세션은 ✓ 로 표시돼. 번호를 누르면 그 세션으로 이동해.</p>
+      <div id="sess-grid" class="grid grid-cols-6 sm:grid-cols-10 gap-1.5"></div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-soft p-4 mb-3">
+      <p class="text-sm font-bold mb-2">단어 추가하기 (2,000개까지 확장)</p>
+      <p class="text-xs text-ink/55 leading-relaxed mb-2">
+        한 줄에 한 단어씩, <code class="bg-black/5 px-1 rounded">단어 / 품사 / 뜻 / 예문 / 해석</code> 순서로
+        <b>탭이나 쉼표</b>로 구분해 붙여 넣어. 엑셀에서 복사해 붙여 넣어도 돼.
+        추가한 단어는 이 기기에 저장되고 맨 뒤 세션으로 이어 붙어.
+      </p>
+      <textarea id="import-box" rows="4" placeholder="abandon&#9;v.&#9;버리다&#9;He abandoned the plan.&#9;그는 그 계획을 버렸다."
+        class="w-full px-3 py-2 rounded-xl border border-black/10 text-xs outline-none focus:ring-2 focus:ring-teal-400/40"></textarea>
+      <div class="flex gap-2 mt-2">
+        <button id="import-go" class="tap flex-1 rounded-xl bg-teal-600 text-white text-xs font-bold">추가하기</button>
+        <button id="import-clear" class="tap px-3 rounded-xl bg-black/5 text-xs font-bold">추가분 삭제</button>
+      </div>
+      <p id="import-msg" class="text-[11px] mt-2"></p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-soft p-4">
+      <p class="text-sm font-bold mb-2">기록</p>
+      <p id="stat" class="text-xs text-ink/60 leading-relaxed mb-2.5"></p>
+      <button id="btn-reset" class="tap w-full rounded-xl border border-rose-400 text-rose-500 text-xs font-bold">모든 학습 기록 초기화</button>
+    </div>
+  </section>
+</main>
+
+<!-- ═══════════ 하단 고정 버튼 ═══════════ -->
+<div id="actionbar" class="fixed bottom-0 left-0 right-0 z-30 bg-ivory/95 backdrop-blur border-t border-black/10 safe-b pt-3 px-4">
+  <div class="max-w-3xl mx-auto flex gap-2">
+    <button id="btn-prev" class="tap px-4 rounded-xl bg-black/5 text-xs font-bold">◀ 이전</button>
+    <button id="btn-main" class="tap flex-1 rounded-xl bg-teal-600 text-white text-sm font-extrabold">암기 완료 ▶</button>
+  </div>
+</div>
+
+<footer class="pb-28 text-center text-[11px] text-ink/40">
+  세영코딩연구소 &nbsp;&nbsp; 저자 : Ph.D KIM
+</footer>
+
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-24 z-50 hidden px-4 py-2.5 rounded-xl bg-ink text-white text-xs shadow-lg max-w-[90%] text-center"></div>
+
+<script>
+/* ==========================================================================
+   중3 필수 영단어 2000 · 3단계 세션 학습   (Single HTML File)
+   1단계 단어 제시 → 2단계 주관식 암기 확인 → 3단계 유사단어 4지선다
+   TTS: window.speechSynthesis / 저장: localStorage / 외부 서버 불필요
+   ========================================================================== */
+
+/* === [1] 단어 데이터 ===================================================
+   형식: [단어, 품사, 뜻, 예문, 해석]
+   ★ 확장 방법 ★
+   ① 앱 안의 [메뉴 → 단어 추가하기] 에 엑셀/텍스트를 붙여 넣으면 즉시 추가됨
+   ② 또는 아래 WORDS 배열에 같은 형식으로 계속 이어 붙이면 됨
+      (10개마다 자동으로 한 세션이 만들어지므로 화면 코드는 고칠 필요 없음)
+   ====================================================================== */
+const WORDS = [
+  ["achieve", "v.", "이루다, 달성하다", "She achieved her goal at last.", "그녀는 마침내 목표를 이루었다."],
+  ["admit", "v.", "인정하다, 시인하다", "He admitted that he was wrong.", "그는 자기가 틀렸다고 인정했다."],
+  ["allow", "v.", "허락하다, 허용하다", "My parents allow me to play games on Sunday.", "부모님은 일요일에 게임하는 걸 허락하신다."],
+  ["appear", "v.", "나타나다, ~처럼 보이다", "A rainbow appeared after the rain.", "비가 온 뒤 무지개가 나타났다."],
+  ["avoid", "v.", "피하다", "You should avoid eating too much sugar.", "너는 설탕을 너무 많이 먹는 것을 피해야 한다."],
+  ["belong", "v.", "속하다, ~의 것이다", "This bag belongs to my sister.", "이 가방은 내 여동생의 것이다."],
+  ["borrow", "v.", "빌리다", "Can I borrow your pencil?", "네 연필을 빌려도 될까?"],
+  ["cause", "v./n.", "유발하다; 원인", "Smoking causes many diseases.", "흡연은 많은 질병을 유발한다."],
+  ["compare", "v.", "비교하다", "Don't compare yourself with others.", "너 자신을 남과 비교하지 마라."],
+  ["complain", "v.", "불평하다", "He always complains about the weather.", "그는 항상 날씨에 대해 불평한다."],
+  ["consider", "v.", "고려하다, ~라고 여기다", "I'm considering joining the club.", "나는 그 동아리에 드는 것을 고려 중이다."],
+  ["continue", "v.", "계속하다", "The rain continued all night.", "비가 밤새 계속 내렸다."],
+  ["decrease", "v.", "줄다, 감소하다", "The number of students decreased last year.", "작년에 학생 수가 줄었다."],
+  ["describe", "v.", "묘사하다, 설명하다", "Can you describe the man you saw?", "당신이 본 남자를 묘사해 줄 수 있나요?"],
+  ["discover", "v.", "발견하다", "Scientists discovered a new planet.", "과학자들이 새로운 행성을 발견했다."],
+  ["expect", "v.", "기대하다, 예상하다", "I expect you to do your best.", "나는 네가 최선을 다하길 기대한다."],
+  ["explain", "v.", "설명하다", "Please explain the rule again.", "그 규칙을 다시 설명해 주세요."],
+  ["improve", "v.", "향상시키다, 나아지다", "Reading books improves your writing.", "책을 읽으면 글쓰기가 향상된다."],
+  ["include", "v.", "포함하다", "The price includes breakfast.", "그 가격은 아침 식사를 포함한다."],
+  ["increase", "v.", "증가하다, 늘리다", "Online classes increased during the pandemic.", "전염병 유행 동안 온라인 수업이 증가했다."],
+  ["anxious", "a.", "불안한, 걱정하는", "She felt anxious before the test.", "그녀는 시험 전에 불안했다."],
+  ["brave", "a.", "용감한", "The brave boy saved the puppy.", "그 용감한 소년이 강아지를 구했다."],
+  ["curious", "a.", "호기심이 많은", "Children are curious about everything.", "아이들은 모든 것에 호기심이 많다."],
+  ["disappointed", "a.", "실망한", "I was disappointed with my score.", "나는 내 점수에 실망했다."],
+  ["embarrassed", "a.", "당황한, 창피한", "He was embarrassed when he fell down.", "그는 넘어졌을 때 창피했다."],
+  ["generous", "a.", "너그러운, 관대한", "My grandmother is very generous.", "우리 할머니는 아주 너그러우시다."],
+  ["honest", "a.", "정직한", "An honest mistake is forgivable.", "정직한 실수는 용서받을 수 있다."],
+  ["nervous", "a.", "긴장한", "I get nervous before speaking in public.", "나는 사람들 앞에서 말하기 전에 긴장한다."],
+  ["polite", "a.", "예의 바른", "It is polite to say thank you.", "감사하다고 말하는 것은 예의 바르다."],
+  ["proud", "a.", "자랑스러운", "My parents are proud of me.", "부모님은 나를 자랑스러워하신다."],
+  ["absent", "a.", "결석한", "Three students were absent today.", "오늘 세 명의 학생이 결석했다."],
+  ["attend", "v.", "참석하다, 다니다", "She attends a middle school near here.", "그녀는 이 근처 중학교에 다닌다."],
+  ["concentrate", "v.", "집중하다", "It's hard to concentrate in a noisy room.", "시끄러운 방에서는 집중하기 어렵다."],
+  ["effort", "n.", "노력", "Success comes from constant effort.", "성공은 꾸준한 노력에서 온다."],
+  ["exam", "n.", "시험", "The final exam is next Monday.", "기말시험은 다음 주 월요일이다."],
+  ["knowledge", "n.", "지식", "Knowledge is power.", "아는 것이 힘이다."],
+  ["mistake", "n.", "실수", "Everyone makes mistakes.", "누구나 실수를 한다."],
+  ["prepare", "v.", "준비하다", "I prepared well for the speech contest.", "나는 말하기 대회를 잘 준비했다."],
+  ["review", "v./n.", "복습하다; 복습", "Review your notes before the test.", "시험 전에 필기를 복습해라."],
+  ["subject", "n.", "과목, 주제", "My favorite subject is science.", "내가 가장 좋아하는 과목은 과학이다."],
+  ["advice", "n.", "충고, 조언", "Thank you for your advice.", "조언해 주셔서 감사합니다."],
+  ["argue", "v.", "말다툼하다, 주장하다", "They argued about small things.", "그들은 사소한 일로 말다툼했다."],
+  ["communicate", "v.", "의사소통하다", "We communicate by text messages.", "우리는 문자로 의사소통한다."],
+  ["cooperate", "v.", "협력하다", "We must cooperate to finish on time.", "제시간에 끝내려면 우리는 협력해야 한다."],
+  ["friendship", "n.", "우정", "True friendship lasts forever.", "진정한 우정은 영원히 간다."],
+  ["neighbor", "n.", "이웃", "Our new neighbor is very kind.", "우리 새 이웃은 아주 친절하다."],
+  ["promise", "v./n.", "약속하다; 약속", "I promise to keep your secret.", "네 비밀을 지킬 것을 약속할게."],
+  ["relationship", "n.", "관계", "A good relationship needs trust.", "좋은 관계에는 신뢰가 필요하다."],
+  ["respect", "v./n.", "존중하다; 존중", "We should respect other cultures.", "우리는 다른 문화를 존중해야 한다."],
+  ["trust", "v./n.", "믿다; 신뢰", "I trust my best friend completely.", "나는 내 단짝을 완전히 믿는다."],
+  ["climate", "n.", "기후", "Climate change is a serious problem.", "기후 변화는 심각한 문제이다."],
+  ["desert", "n.", "사막", "Few plants grow in the desert.", "사막에서는 식물이 거의 자라지 않는다."],
+  ["environment", "n.", "환경", "We must protect the environment.", "우리는 환경을 보호해야 한다."],
+  ["flood", "n./v.", "홍수; 범람하다", "The flood destroyed many houses.", "홍수가 많은 집을 파괴했다."],
+  ["forest", "n.", "숲", "A deep forest covers the mountain.", "깊은 숲이 그 산을 덮고 있다."],
+  ["pollution", "n.", "오염", "Air pollution causes health problems.", "대기 오염은 건강 문제를 일으킨다."],
+  ["protect", "v.", "보호하다", "Trees protect the soil from rain.", "나무는 비로부터 토양을 보호한다."],
+  ["recycle", "v.", "재활용하다", "Let's recycle paper and plastic.", "종이와 플라스틱을 재활용하자."],
+  ["reduce", "v.", "줄이다", "We should reduce plastic waste.", "우리는 플라스틱 쓰레기를 줄여야 한다."],
+  ["waste", "n./v.", "쓰레기, 낭비; 낭비하다", "Don't waste water.", "물을 낭비하지 마라."],
+  ["computer", "n.", "컴퓨터", "I use a computer for my homework.", "나는 숙제할 때 컴퓨터를 쓴다."],
+  ["device", "n.", "장치, 기기", "This device measures your heart rate.", "이 기기는 심박수를 측정한다."],
+  ["energy", "n.", "에너지, 기운", "Solar energy is clean and cheap.", "태양 에너지는 깨끗하고 저렴하다."],
+  ["experiment", "n./v.", "실험; 실험하다", "We did an experiment in science class.", "우리는 과학 시간에 실험을 했다."],
+  ["invent", "v.", "발명하다", "Bell invented the telephone.", "벨이 전화를 발명했다."],
+  ["machine", "n.", "기계", "This machine makes paper cups.", "이 기계는 종이컵을 만든다."],
+  ["research", "n./v.", "연구; 연구하다", "Her research is about robots.", "그녀의 연구는 로봇에 관한 것이다."],
+  ["robot", "n.", "로봇", "A robot cleans our classroom.", "로봇이 우리 교실을 청소한다."],
+  ["technology", "n.", "기술", "Technology changes our daily life.", "기술은 우리 일상을 바꾼다."],
+  ["useful", "a.", "유용한", "This app is very useful for study.", "이 앱은 공부에 아주 유용하다."],
+  ["breathe", "v.", "숨 쉬다", "Breathe deeply and relax.", "깊게 숨 쉬고 긴장을 풀어라."],
+  ["disease", "n.", "질병", "Exercise prevents many diseases.", "운동은 많은 질병을 예방한다."],
+  ["exercise", "n./v.", "운동; 운동하다", "I exercise every morning.", "나는 매일 아침 운동한다."],
+  ["healthy", "a.", "건강한", "Eat vegetables to stay healthy.", "건강을 유지하려면 채소를 먹어라."],
+  ["injure", "v.", "부상을 입히다", "He injured his knee during the game.", "그는 경기 중에 무릎을 다쳤다."],
+  ["medicine", "n.", "약, 의학", "Take this medicine after meals.", "식사 후에 이 약을 드세요."],
+  ["muscle", "n.", "근육", "Swimming builds strong muscles.", "수영은 튼튼한 근육을 만든다."],
+  ["patient", "n./a.", "환자; 참을성 있는", "The doctor examined the patient.", "의사가 환자를 진찰했다."],
+  ["recover", "v.", "회복하다", "She recovered from the flu quickly.", "그녀는 독감에서 빨리 회복했다."],
+  ["stress", "n.", "스트레스", "Too much stress is bad for health.", "너무 많은 스트레스는 건강에 나쁘다."],
+  ["ancient", "a.", "고대의", "Ancient people drew on cave walls.", "고대 사람들은 동굴 벽에 그림을 그렸다."],
+  ["century", "n.", "세기, 100년", "We live in the twenty-first century.", "우리는 21세기에 살고 있다."],
+  ["current", "a.", "현재의, 지금의", "What is the current time in London?", "런던의 현재 시각은 몇 시인가요?"],
+  ["final", "a.", "마지막의, 최종의", "This is my final answer.", "이것이 나의 최종 답이다."],
+  ["future", "n.", "미래", "I want to be a vet in the future.", "나는 미래에 수의사가 되고 싶다."],
+  ["modern", "a.", "현대의", "Modern cities are full of tall buildings.", "현대 도시는 높은 건물로 가득하다."],
+  ["past", "n./a.", "과거; 지난", "Don't live in the past.", "과거에 머물러 살지 마라."],
+  ["recent", "a.", "최근의", "I read a recent news article.", "나는 최근 뉴스 기사를 읽었다."],
+  ["sudden", "a.", "갑작스러운", "A sudden noise woke me up.", "갑작스러운 소리가 나를 깨웠다."],
+  ["temporary", "a.", "일시적인, 임시의", "This is only a temporary solution.", "이것은 일시적인 해결책일 뿐이다."],
+  ["amount", "n.", "양, 액수", "A large amount of water was used.", "많은 양의 물이 사용되었다."],
+  ["enough", "a./ad.", "충분한; 충분히", "We have enough time.", "우리는 시간이 충분하다."],
+  ["hardly", "ad.", "거의 ~않다", "I can hardly hear you.", "네 목소리가 거의 들리지 않아."],
+  ["huge", "a.", "거대한", "A huge whale appeared near the boat.", "거대한 고래가 배 근처에 나타났다."],
+  ["major", "a.", "주요한, 큰", "Traffic is a major problem in cities.", "교통은 도시의 주요 문제이다."],
+  ["plenty", "n.", "풍부함, 많음", "There is plenty of food for everyone.", "모두를 위한 음식이 충분히 있다."],
+  ["quantity", "n.", "양, 수량", "Quality is more important than quantity.", "질이 양보다 더 중요하다."],
+  ["several", "a.", "여러, 몇몇의", "I waited for several minutes.", "나는 몇 분 동안 기다렸다."],
+  ["total", "n./a.", "합계; 전체의", "The total cost is fifty dollars.", "총 비용은 50달러이다."],
+  ["whole", "a.", "전체의", "I read the whole book in one day.", "나는 하루 만에 책 전체를 읽었다."],
+  ["active", "a.", "활동적인, 적극적인", "My grandfather is still very active.", "우리 할아버지는 여전히 아주 활동적이시다."],
+  ["careful", "a.", "조심스러운, 신중한", "Be careful with the hot pan.", "뜨거운 팬을 조심해라."],
+  ["confident", "a.", "자신감 있는", "She looks confident on the stage.", "그녀는 무대에서 자신감 있어 보인다."],
+  ["creative", "a.", "창의적인", "His idea was really creative.", "그의 아이디어는 정말 창의적이었다."],
+  ["diligent", "a.", "부지런한, 성실한", "A diligent student studies every day.", "성실한 학생은 매일 공부한다."],
+  ["humble", "a.", "겸손한", "Great people are often humble.", "위대한 사람들은 종종 겸손하다."],
+  ["lazy", "a.", "게으른", "Don't be lazy on weekends.", "주말이라고 게으름 피우지 마라."],
+  ["rude", "a.", "무례한", "It is rude to interrupt others.", "남의 말을 끊는 것은 무례하다."],
+  ["selfish", "a.", "이기적인", "It is selfish to think only of yourself.", "자기 생각만 하는 것은 이기적이다."],
+  ["strict", "a.", "엄격한", "Our math teacher is strict but fair.", "우리 수학 선생님은 엄격하지만 공정하다."],
+  ["appointment", "n.", "약속, 예약", "I have a dental appointment at four.", "나는 네 시에 치과 예약이 있다."],
+  ["baggage", "n.", "짐, 수하물", "Put your baggage on the scale.", "짐을 저울 위에 올려 주세요."],
+  ["ceiling", "n.", "천장", "A fly is sitting on the ceiling.", "파리 한 마리가 천장에 앉아 있다."],
+  ["drawer", "n.", "서랍", "My socks are in the top drawer.", "내 양말은 맨 위 서랍에 있다."],
+  ["furniture", "n.", "가구", "We bought new furniture for the living room.", "우리는 거실에 놓을 새 가구를 샀다."],
+  ["laundry", "n.", "빨래, 세탁물", "I do the laundry every Saturday.", "나는 토요일마다 빨래를 한다."],
+  ["mirror", "n.", "거울", "She looked at herself in the mirror.", "그녀는 거울로 자신을 보았다."],
+  ["package", "n.", "소포, 꾸러미", "A package arrived for you.", "너에게 소포가 하나 왔어."],
+  ["stair", "n.", "계단", "Take the stairs instead of the elevator.", "엘리베이터 대신 계단을 이용해라."],
+  ["towel", "n.", "수건", "Please bring me a clean towel.", "깨끗한 수건 하나 가져다주세요."],
+  ["arrive", "v.", "도착하다", "We arrived at the station on time.", "우리는 제시간에 역에 도착했다."],
+  ["climb", "v.", "오르다", "They climbed the mountain last summer.", "그들은 지난여름 그 산을 올랐다."],
+  ["depart", "v.", "출발하다, 떠나다", "The train departs at six sharp.", "기차는 정각 여섯 시에 출발한다."],
+  ["escape", "v.", "탈출하다, 벗어나다", "The bird escaped from the cage.", "새가 새장에서 탈출했다."],
+  ["follow", "v.", "따라가다, 따르다", "Follow the signs to the exit.", "출구 표지판을 따라가세요."],
+  ["hurry", "v.", "서두르다", "Hurry up, or we'll miss the bus.", "서둘러, 안 그러면 버스를 놓칠 거야."],
+  ["lead", "v.", "이끌다, 안내하다", "This road leads to the beach.", "이 길은 해변으로 이어진다."],
+  ["return", "v.", "돌아오다, 돌려주다", "Please return the book by Friday.", "금요일까지 책을 돌려주세요."],
+  ["reach", "v.", "도달하다, ~에 닿다", "We reached the top at noon.", "우리는 정오에 정상에 도달했다."],
+  ["wander", "v.", "거닐다, 돌아다니다", "We wandered around the old town.", "우리는 구시가지를 거닐었다."],
+  ["believe", "v.", "믿다", "I believe you can do it.", "나는 네가 할 수 있다고 믿는다."],
+  ["decide", "v.", "결정하다", "She decided to study abroad.", "그녀는 유학을 가기로 결정했다."],
+  ["doubt", "v./n.", "의심하다; 의심", "I doubt that he will come.", "나는 그가 올지 의심스럽다."],
+  ["guess", "v.", "추측하다", "Guess what I bought for you!", "내가 널 위해 뭘 샀는지 맞춰 봐!"],
+  ["imagine", "v.", "상상하다", "Imagine a world without smartphones.", "스마트폰이 없는 세상을 상상해 봐라."],
+  ["judge", "v./n.", "판단하다; 판사", "Don't judge a book by its cover.", "겉모습으로 판단하지 마라."],
+  ["realize", "v.", "깨닫다", "I realized my mistake too late.", "나는 내 실수를 너무 늦게 깨달았다."],
+  ["recognize", "v.", "알아보다, 인정하다", "I didn't recognize you with glasses.", "안경을 쓰니 널 못 알아봤어."],
+  ["suppose", "v.", "가정하다, ~라고 생각하다", "I suppose she is about fifteen.", "내 생각에 그녀는 열다섯 살쯤인 것 같다."],
+  ["wonder", "v.", "궁금해하다", "I wonder why he is so quiet today.", "그가 왜 오늘 이렇게 조용한지 궁금하다."],
+  ["announce", "v.", "발표하다, 알리다", "The teacher announced the test date.", "선생님이 시험 날짜를 발표하셨다."],
+  ["discuss", "v.", "논의하다", "We discussed the problem for an hour.", "우리는 그 문제를 한 시간 동안 논의했다."],
+  ["express", "v.", "표현하다", "Try to express your feelings in words.", "네 감정을 말로 표현해 보아라."],
+  ["mention", "v.", "언급하다", "He mentioned your name in the meeting.", "그가 회의에서 네 이름을 언급했다."],
+  ["reply", "v./n.", "대답하다; 답장", "She replied to my email at once.", "그녀는 내 이메일에 즉시 답장했다."],
+  ["report", "v./n.", "보고하다; 보고서", "I reported the accident to the police.", "나는 그 사고를 경찰에 신고했다."],
+  ["suggest", "v.", "제안하다", "He suggested going to the museum.", "그는 박물관에 가자고 제안했다."],
+  ["translate", "v.", "번역하다", "Can you translate this sentence?", "이 문장을 번역해 줄 수 있니?"],
+  ["whisper", "v.", "속삭이다", "She whispered the answer to me.", "그녀가 내게 답을 속삭였다."],
+  ["conversation", "n.", "대화", "We had a long conversation last night.", "우리는 어젯밤 긴 대화를 나눴다."],
+  ["ceremony", "n.", "의식, 식", "The graduation ceremony is on Friday.", "졸업식은 금요일에 있다."],
+  ["culture", "n.", "문화", "Food is an important part of culture.", "음식은 문화의 중요한 부분이다."],
+  ["custom", "n.", "관습, 풍습", "Bowing is a Korean custom.", "절하는 것은 한국의 관습이다."],
+  ["festival", "n.", "축제", "The school festival starts tomorrow.", "학교 축제가 내일 시작한다."],
+  ["government", "n.", "정부", "The government built a new library.", "정부가 새 도서관을 지었다."],
+  ["history", "n.", "역사", "History teaches us many lessons.", "역사는 우리에게 많은 교훈을 준다."],
+  ["population", "n.", "인구", "The population of this city is growing.", "이 도시의 인구가 늘고 있다."],
+  ["society", "n.", "사회", "We all live in the same society.", "우리 모두는 같은 사회에 산다."],
+  ["tradition", "n.", "전통", "This festival is an old tradition.", "이 축제는 오래된 전통이다."],
+  ["volunteer", "n./v.", "자원봉사자; 자원봉사하다", "I volunteer at the animal shelter.", "나는 동물 보호소에서 자원봉사를 한다."],
+  ["career", "n.", "직업, 경력", "She is thinking about her future career.", "그녀는 미래의 직업을 생각하고 있다."],
+  ["customer", "n.", "손님, 고객", "The customer asked for a refund.", "그 손님은 환불을 요청했다."],
+  ["employee", "n.", "직원", "This company has fifty employees.", "이 회사에는 직원이 50명 있다."],
+  ["engineer", "n.", "기술자, 엔지니어", "My uncle is a software engineer.", "우리 삼촌은 소프트웨어 엔지니어이다."],
+  ["interview", "n./v.", "면접; 면접하다", "He had a job interview yesterday.", "그는 어제 취업 면접을 봤다."],
+  ["manager", "n.", "관리자, 매니저", "The manager solved the problem quickly.", "매니저가 그 문제를 빠르게 해결했다."],
+  ["professional", "a./n.", "전문적인; 전문가", "She gave us professional advice.", "그녀는 우리에게 전문적인 조언을 해 주었다."],
+  ["salary", "n.", "급여, 월급", "He is happy with his new salary.", "그는 새 급여에 만족한다."],
+  ["skill", "n.", "기술, 능력", "Communication is an important skill.", "의사소통은 중요한 능력이다."],
+  ["succeed", "v.", "성공하다", "She succeeded in her own business.", "그녀는 자기 사업에서 성공했다."],
+  ["abroad", "ad.", "해외로, 해외에서", "I want to study abroad someday.", "나는 언젠가 해외에서 공부하고 싶다."],
+  ["airport", "n.", "공항", "We arrived at the airport early.", "우리는 공항에 일찍 도착했다."],
+  ["capital", "n.", "수도, 자본", "Seoul is the capital of Korea.", "서울은 한국의 수도이다."],
+  ["destination", "n.", "목적지", "Our final destination is Jeju Island.", "우리의 최종 목적지는 제주도이다."],
+  ["foreign", "a.", "외국의", "She speaks three foreign languages.", "그녀는 외국어를 세 개 한다."],
+  ["journey", "n.", "여행, 여정", "It was a long journey by train.", "기차로 하는 긴 여정이었다."],
+  ["luggage", "n.", "짐, 수하물", "My luggage was lost at the airport.", "내 짐이 공항에서 분실되었다."],
+  ["passport", "n.", "여권", "Don't forget your passport.", "여권을 잊지 마라."],
+  ["tourist", "n.", "관광객", "Many tourists visit this temple.", "많은 관광객이 이 절을 방문한다."],
+  ["village", "n.", "마을", "A small village lies by the river.", "작은 마을이 강가에 있다."],
+  ["bake", "v.", "굽다", "My mom bakes bread on Sundays.", "엄마는 일요일마다 빵을 구우신다."],
+  ["boil", "v.", "끓이다, 삶다", "Boil the eggs for ten minutes.", "달걀을 10분간 삶아라."],
+  ["delicious", "a.", "맛있는", "This soup is really delicious.", "이 수프는 정말 맛있다."],
+  ["dessert", "n.", "후식, 디저트", "We had ice cream for dessert.", "우리는 후식으로 아이스크림을 먹었다."],
+  ["flavor", "n.", "맛, 풍미", "This tea has a sweet flavor.", "이 차는 달콤한 맛이 난다."],
+  ["fresh", "a.", "신선한", "I bought fresh vegetables today.", "나는 오늘 신선한 채소를 샀다."],
+  ["ingredient", "n.", "재료", "Flour is the main ingredient of bread.", "밀가루는 빵의 주재료이다."],
+  ["meal", "n.", "식사", "Breakfast is the most important meal.", "아침은 가장 중요한 식사이다."],
+  ["recipe", "n.", "조리법, 요리법", "She shared her cookie recipe.", "그녀는 쿠키 조리법을 공유했다."],
+  ["taste", "v./n.", "맛이 나다; 맛", "This soup tastes salty.", "이 수프는 짠맛이 난다."],
+  ["audience", "n.", "관객, 청중", "The audience clapped loudly.", "관객들이 크게 박수를 쳤다."],
+  ["compete", "v.", "경쟁하다", "Ten teams competed in the contest.", "열 팀이 대회에서 경쟁했다."],
+  ["hobby", "n.", "취미", "My hobby is taking pictures.", "내 취미는 사진 찍기이다."],
+  ["match", "n./v.", "경기; 어울리다", "The soccer match ended in a draw.", "그 축구 경기는 무승부로 끝났다."],
+  ["prize", "n.", "상, 상품", "She won first prize in the contest.", "그녀는 대회에서 1등 상을 받았다."],
+  ["record", "n./v.", "기록; 기록하다", "He broke the world record.", "그는 세계 기록을 깼다."],
+  ["stadium", "n.", "경기장", "The stadium was full of fans.", "경기장은 팬들로 가득했다."],
+  ["teammate", "n.", "팀 동료", "My teammate passed me the ball.", "팀 동료가 내게 공을 패스했다."],
+  ["tournament", "n.", "토너먼트, 대회", "Our school won the tennis tournament.", "우리 학교가 테니스 대회에서 우승했다."],
+  ["victory", "n.", "승리", "The victory made everyone happy.", "그 승리가 모두를 행복하게 했다."],
+  ["ability", "n.", "능력", "She has the ability to lead others.", "그녀는 남을 이끄는 능력이 있다."],
+  ["chance", "n.", "기회, 가능성", "Give me one more chance.", "내게 한 번 더 기회를 줘."],
+  ["choice", "n.", "선택", "You made a wise choice.", "너는 현명한 선택을 했다."],
+  ["goal", "n.", "목표", "Set a clear goal for this year.", "올해의 분명한 목표를 세워라."],
+  ["habit", "n.", "습관", "Reading daily is a good habit.", "매일 읽는 것은 좋은 습관이다."],
+  ["opinion", "n.", "의견", "In my opinion, he is right.", "내 의견으로는 그가 옳다."],
+  ["purpose", "n.", "목적", "What is the purpose of this meeting?", "이 회의의 목적이 무엇인가요?"],
+  ["reason", "n.", "이유", "Tell me the reason you were late.", "네가 늦은 이유를 말해 봐."],
+  ["result", "n.", "결과", "The result was better than we expected.", "결과는 우리가 예상한 것보다 좋았다."],
+  ["solution", "n.", "해결책", "We found a simple solution.", "우리는 간단한 해결책을 찾았다."],
+  ["advantage", "n.", "장점, 이점", "Living near school has many advantages.", "학교 근처에 사는 것은 장점이 많다."],
+  ["benefit", "n./v.", "이익; 이익을 주다", "Exercise has many health benefits.", "운동은 건강에 많은 이익이 있다."],
+  ["challenge", "n./v.", "도전; 도전하다", "Learning Chinese is a big challenge.", "중국어를 배우는 것은 큰 도전이다."],
+  ["difference", "n.", "차이", "What is the difference between them?", "그 둘의 차이는 무엇인가요?"],
+  ["experience", "n./v.", "경험; 경험하다", "Travel gives us new experiences.", "여행은 우리에게 새로운 경험을 준다."],
+  ["influence", "n./v.", "영향; 영향을 주다", "Music has a strong influence on mood.", "음악은 기분에 큰 영향을 준다."],
+  ["method", "n.", "방법", "This method saves a lot of time.", "이 방법은 많은 시간을 절약해 준다."],
+  ["process", "n.", "과정", "Learning is a slow process.", "배움은 느린 과정이다."],
+  ["progress", "n.", "진전, 발전", "You're making good progress.", "너는 좋은 진전을 보이고 있다."],
+  ["situation", "n.", "상황", "The situation got worse yesterday.", "상황이 어제 더 나빠졌다."],
+  ["available", "a.", "이용 가능한, 시간이 되는", "Is this seat available?", "이 자리 이용할 수 있나요?"],
+  ["common", "a.", "흔한, 공통의", "Kim is a common Korean last name.", "김은 흔한 한국 성씨이다."],
+  ["difficult", "a.", "어려운", "This question is too difficult for me.", "이 문제는 내게 너무 어렵다."],
+  ["empty", "a.", "비어 있는", "The classroom was empty after school.", "방과 후 교실은 비어 있었다."],
+  ["expensive", "a.", "비싼", "That jacket is too expensive.", "저 재킷은 너무 비싸다."],
+  ["familiar", "a.", "익숙한, 친숙한", "Her face looks familiar to me.", "그녀의 얼굴이 내게 익숙해 보인다."],
+  ["necessary", "a.", "필요한", "Sleep is necessary for good health.", "수면은 건강에 필요하다."],
+  ["possible", "a.", "가능한", "Is it possible to finish today?", "오늘 끝내는 것이 가능한가요?"],
+  ["similar", "a.", "비슷한", "Our opinions are quite similar.", "우리 의견은 꽤 비슷하다."],
+  ["strange", "a.", "이상한, 낯선", "I heard a strange sound outside.", "밖에서 이상한 소리가 들렸다."],
+  ["certain", "a.", "확실한, 어떤", "I'm certain that she will come.", "나는 그녀가 올 것이라고 확신한다."],
+  ["comfortable", "a.", "편안한", "This chair is very comfortable.", "이 의자는 아주 편안하다."],
+  ["dangerous", "a.", "위험한", "Swimming here is dangerous.", "여기서 수영하는 것은 위험하다."],
+  ["equal", "a.", "동등한, 같은", "All students have equal rights.", "모든 학생은 동등한 권리를 가진다."],
+  ["obvious", "a.", "분명한, 명백한", "The answer was obvious to everyone.", "그 답은 모두에게 분명했다."],
+  ["perfect", "a.", "완벽한", "Nobody is perfect.", "완벽한 사람은 없다."],
+  ["popular", "a.", "인기 있는", "This song is popular among teens.", "이 노래는 십 대들에게 인기 있다."],
+  ["private", "a.", "개인적인, 사적인", "This is my private diary.", "이것은 내 개인 일기장이다."],
+  ["public", "a./n.", "공공의; 대중", "Keep public places clean.", "공공장소를 깨끗이 유지해라."],
+  ["serious", "a.", "심각한, 진지한", "He has a serious problem.", "그는 심각한 문제가 있다."],
+  ["accept", "v.", "받아들이다", "She accepted my apology.", "그녀는 내 사과를 받아들였다."],
+  ["ban", "v.", "금지하다", "The school banned smartphones in class.", "학교가 수업 중 스마트폰을 금지했다."],
+  ["add", "v.", "더하다, 추가하다", "Add some salt to the soup.", "수프에 소금을 조금 더해라."],
+  ["collect", "v.", "모으다, 수집하다", "He collects old coins.", "그는 옛날 동전을 수집한다."],
+  ["create", "v.", "창조하다, 만들다", "Artists create beautiful works.", "예술가들은 아름다운 작품을 창조한다."],
+  ["destroy", "v.", "파괴하다", "The fire destroyed the whole building.", "화재가 건물 전체를 파괴했다."],
+  ["develop", "v.", "발전시키다, 개발하다", "They developed a new app.", "그들은 새 앱을 개발했다."],
+  ["divide", "v.", "나누다", "Divide the class into four groups.", "학급을 네 모둠으로 나눠라."],
+  ["exchange", "v./n.", "교환하다; 교환", "Can I exchange this shirt?", "이 셔츠를 교환할 수 있나요?"],
+  ["provide", "v.", "제공하다", "The school provides free lunch.", "학교는 무료 급식을 제공한다."],
+  ["afford", "v.", "~할 여유가 있다", "I can't afford a new phone.", "나는 새 휴대폰을 살 여유가 없다."],
+  ["appreciate", "v.", "감사하다, 감상하다", "I appreciate your help.", "도와주셔서 감사합니다."],
+  ["apply", "v.", "지원하다, 적용하다", "She applied for the scholarship.", "그녀는 장학금에 지원했다."],
+  ["deliver", "v.", "배달하다, 전달하다", "They deliver pizza until midnight.", "그들은 자정까지 피자를 배달한다."],
+  ["depend", "v.", "의존하다, ~에 달려 있다", "It depends on the weather.", "그것은 날씨에 달려 있다."],
+  ["encourage", "v.", "격려하다", "My teacher encouraged me to try again.", "선생님이 내게 다시 해 보라고 격려하셨다."],
+  ["ignore", "v.", "무시하다", "Don't ignore small mistakes.", "작은 실수를 무시하지 마라."],
+  ["prevent", "v.", "막다, 예방하다", "Washing hands prevents colds.", "손을 씻으면 감기를 예방한다."],
+  ["remind", "v.", "상기시키다", "This song reminds me of summer.", "이 노래는 내게 여름을 떠올리게 한다."],
+  ["replace", "v.", "대체하다, 교체하다", "We replaced the old computer.", "우리는 낡은 컴퓨터를 교체했다."],
+  ["assignment", "n.", "과제", "The assignment is due on Monday.", "그 과제는 월요일까지이다."],
+  ["classmate", "n.", "반 친구", "My classmate helped me with math.", "반 친구가 수학을 도와주었다."],
+  ["graduate", "v.", "졸업하다", "He will graduate next February.", "그는 내년 2월에 졸업할 것이다."],
+  ["lecture", "n.", "강의", "The lecture lasted two hours.", "강의는 두 시간 동안 계속되었다."],
+  ["principal", "n.", "교장", "The principal gave a short speech.", "교장 선생님이 짧은 연설을 하셨다."],
+  ["schedule", "n.", "일정, 시간표", "Check the schedule before you go.", "가기 전에 일정을 확인해라."],
+  ["semester", "n.", "학기", "The new semester begins in March.", "새 학기는 3월에 시작한다."],
+  ["textbook", "n.", "교과서", "Open your textbook to page ten.", "교과서 10쪽을 펴라."],
+  ["uniform", "n.", "교복, 제복", "We wear a school uniform every day.", "우리는 매일 교복을 입는다."],
+  ["vocabulary", "n.", "어휘", "Reading improves your vocabulary.", "독서는 어휘력을 향상시킨다."],
+  ["afraid", "a.", "두려워하는", "I'm afraid of high places.", "나는 높은 곳을 두려워한다."],
+  ["angry", "a.", "화난", "He got angry at the noise.", "그는 소음에 화가 났다."],
+  ["bored", "a.", "지루해하는", "I was bored during the long speech.", "나는 긴 연설 동안 지루했다."],
+  ["delighted", "a.", "아주 기뻐하는", "She was delighted with the gift.", "그녀는 선물에 아주 기뻐했다."],
+  ["frightened", "a.", "겁먹은", "The child was frightened by the dog.", "그 아이는 개에게 겁을 먹었다."],
+  ["grateful", "a.", "감사하는", "I'm grateful for your kindness.", "당신의 친절에 감사합니다."],
+  ["jealous", "a.", "질투하는", "Don't be jealous of your friends.", "친구를 질투하지 마라."],
+  ["lonely", "a.", "외로운", "He felt lonely in the new school.", "그는 새 학교에서 외로웠다."],
+  ["satisfied", "a.", "만족한", "I'm satisfied with the result.", "나는 그 결과에 만족한다."],
+  ["upset", "a.", "속상한", "She was upset about the news.", "그녀는 그 소식에 속상해했다."],
+  ["creature", "n.", "생물, 생명체", "Whales are huge sea creatures.", "고래는 거대한 바다 생물이다."],
+  ["insect", "n.", "곤충", "Bees are useful insects.", "벌은 유익한 곤충이다."],
+  ["mammal", "n.", "포유류", "A dolphin is a mammal, not a fish.", "돌고래는 물고기가 아니라 포유류이다."],
+  ["nature", "n.", "자연, 본성", "We enjoyed the beauty of nature.", "우리는 자연의 아름다움을 즐겼다."],
+  ["plant", "n./v.", "식물; 심다", "Water the plant every two days.", "이틀마다 그 식물에 물을 줘라."],
+  ["root", "n.", "뿌리", "The tree has deep roots.", "그 나무는 깊은 뿌리를 가지고 있다."],
+  ["seed", "n.", "씨앗", "Plant the seeds in spring.", "봄에 씨앗을 심어라."],
+  ["species", "n.", "종(생물)", "Many species are in danger.", "많은 종이 위험에 처해 있다."],
+  ["survive", "v.", "살아남다, 생존하다", "Few plants survive in the cold.", "추위 속에서 살아남는 식물은 거의 없다."],
+  ["wild", "a.", "야생의", "Wild animals live in the forest.", "야생 동물들이 숲에 산다."],
+  ["average", "n./a.", "평균; 평균의", "The average score was eighty.", "평균 점수는 80점이었다."],
+  ["degree", "n.", "정도, 온도, 학위", "The temperature is thirty degrees.", "기온은 30도이다."],
+  ["distance", "n.", "거리", "The distance to school is two kilometers.", "학교까지의 거리는 2킬로미터이다."],
+  ["double", "a./v.", "두 배의; 두 배가 되다", "The price doubled in one year.", "가격이 1년 만에 두 배가 되었다."],
+  ["height", "n.", "높이, 키", "What is your height?", "너의 키는 얼마니?"],
+  ["length", "n.", "길이", "Measure the length of the desk.", "책상의 길이를 재어라."],
+  ["opposite", "a./n.", "반대의; 반대", "Hot is the opposite of cold.", "뜨거움은 차가움의 반대이다."],
+  ["single", "a.", "단 하나의, 혼자의", "Not a single student was late.", "단 한 명의 학생도 늦지 않았다."],
+  ["weight", "n.", "무게, 체중", "Check the weight of the box.", "상자의 무게를 확인해라."],
+  ["width", "n.", "너비, 폭", "The width of the road is six meters.", "그 도로의 너비는 6미터이다."],
+  ["adapt", "v.", "적응하다, 조정하다", "She adapted to the new school quickly.", "그녀는 새 학교에 빠르게 적응했다."],
+  ["admire", "v.", "존경하다, 감탄하다", "I admire her courage.", "나는 그녀의 용기에 감탄한다."],
+  ["arrange", "v.", "정리하다, 준비하다", "He arranged the books by size.", "그는 책을 크기별로 정리했다."],
+  ["attract", "v.", "끌어당기다, 매혹하다", "The festival attracts many visitors.", "그 축제는 많은 방문객을 끌어들인다."],
+  ["blame", "v.", "탓하다, 비난하다", "Don't blame others for your mistakes.", "네 실수를 남 탓하지 마라."],
+  ["confirm", "v.", "확인하다, 확정하다", "Please confirm your reservation.", "예약을 확인해 주세요."],
+  ["connect", "v.", "연결하다", "This bridge connects two islands.", "이 다리는 두 섬을 연결한다."],
+  ["contain", "v.", "포함하다, 담고 있다", "This drink contains too much sugar.", "이 음료는 설탕이 너무 많이 들어 있다."],
+  ["deserve", "v.", "~할 자격이 있다", "You deserve this award.", "너는 이 상을 받을 자격이 있다."],
+  ["manage", "v.", "관리하다, 해내다", "She managed to finish on time.", "그녀는 제시간에 끝내는 데 성공했다."],
+  ["hesitate", "v.", "망설이다", "Don't hesitate to ask questions.", "질문하기를 망설이지 마라."],
+  ["maintain", "v.", "유지하다", "It's hard to maintain good grades.", "좋은 성적을 유지하기는 어렵다."],
+  ["obtain", "v.", "얻다, 획득하다", "He obtained a driver's license.", "그는 운전면허를 취득했다."],
+  ["perform", "v.", "공연하다, 수행하다", "The band performed three songs.", "그 밴드는 세 곡을 공연했다."],
+  ["permit", "v.", "허가하다", "Smoking is not permitted here.", "이곳에서는 흡연이 허가되지 않는다."],
+  ["pretend", "v.", "~인 척하다", "He pretended to be asleep.", "그는 자는 척했다."],
+  ["refuse", "v.", "거절하다", "She refused my invitation politely.", "그녀는 내 초대를 정중히 거절했다."],
+  ["remove", "v.", "제거하다, 치우다", "Please remove your shoes here.", "여기서 신발을 벗어 주세요."],
+  ["repair", "v.", "수리하다", "My dad repaired the broken chair.", "아빠가 부서진 의자를 수리하셨다."],
+  ["satisfy", "v.", "만족시키다", "The meal satisfied everyone.", "그 식사는 모두를 만족시켰다."],
+  ["crime", "n.", "범죄", "Crime has decreased in this area.", "이 지역에서 범죄가 줄었다."],
+  ["equality", "n.", "평등", "We should work for gender equality.", "우리는 성평등을 위해 노력해야 한다."],
+  ["hunger", "n.", "굶주림, 배고픔", "Many children suffer from hunger.", "많은 아이들이 굶주림에 시달린다."],
+  ["justice", "n.", "정의, 공정", "Everyone wants justice.", "모두가 정의를 원한다."],
+  ["peace", "n.", "평화", "The whole world wants peace.", "온 세계가 평화를 원한다."],
+  ["poverty", "n.", "가난, 빈곤", "Education can reduce poverty.", "교육은 빈곤을 줄일 수 있다."],
+  ["prejudice", "n.", "편견", "We must fight against prejudice.", "우리는 편견과 싸워야 한다."],
+  ["refugee", "n.", "난민", "The country accepted many refugees.", "그 나라는 많은 난민을 받아들였다."],
+  ["right", "n.", "권리", "Children have the right to study.", "아이들은 공부할 권리가 있다."],
+  ["war", "n.", "전쟁", "War brings pain to everyone.", "전쟁은 모두에게 고통을 가져온다."],
+  ["article", "n.", "기사, 글", "I read an article about AI.", "나는 인공지능에 관한 기사를 읽었다."],
+  ["broadcast", "v./n.", "방송하다; 방송", "The game was broadcast live.", "그 경기는 생방송으로 방송되었다."],
+  ["information", "n.", "정보", "I need more information about it.", "나는 그것에 관한 정보가 더 필요하다."],
+  ["journalist", "n.", "기자", "The journalist asked many questions.", "그 기자는 많은 질문을 했다."],
+  ["magazine", "n.", "잡지", "She buys a fashion magazine monthly.", "그녀는 매달 패션 잡지를 산다."],
+  ["media", "n.", "매체, 언론", "Social media changed our lives.", "소셜 미디어가 우리 삶을 바꿨다."],
+  ["message", "n.", "메시지, 전갈", "I left a message on his desk.", "나는 그의 책상에 메시지를 남겼다."],
+  ["source", "n.", "출처, 근원", "Check the source of the news.", "그 뉴스의 출처를 확인해라."],
+  ["spread", "v.", "퍼지다, 퍼뜨리다", "The rumor spread very fast.", "소문이 아주 빠르게 퍼졌다."],
+  ["website", "n.", "웹사이트", "Our school website was updated.", "우리 학교 웹사이트가 갱신되었다."],
+  ["accurate", "a.", "정확한", "His answer was accurate.", "그의 답은 정확했다."],
+  ["basic", "a.", "기본적인", "Let's start with the basic rules.", "기본 규칙부터 시작하자."],
+  ["brief", "a.", "간단한, 짧은", "Give me a brief explanation.", "간단한 설명을 해 주세요."],
+  ["complex", "a.", "복잡한", "This is a complex problem.", "이것은 복잡한 문제이다."],
+  ["efficient", "a.", "효율적인", "This is an efficient way to study.", "이것은 효율적인 공부 방법이다."],
+  ["flexible", "a.", "유연한, 융통성 있는", "Our schedule is flexible.", "우리 일정은 유연하다."],
+  ["harmful", "a.", "해로운", "Too much screen time is harmful.", "화면을 너무 오래 보는 것은 해롭다."],
+  ["natural", "a.", "자연의, 자연스러운", "It is natural to feel nervous.", "긴장되는 것은 자연스러운 일이다."],
+  ["rare", "a.", "드문, 희귀한", "Snow is rare in this city.", "이 도시에서 눈은 드물다."],
+  ["valuable", "a.", "귀중한, 가치 있는", "Time is more valuable than money.", "시간은 돈보다 더 귀중하다."],
+  ["although", "conj.", "비록 ~이지만", "Although it rained, we went out.", "비가 왔지만 우리는 밖에 나갔다."],
+  ["besides", "ad.", "게다가", "Besides, it is too expensive.", "게다가 그것은 너무 비싸다."],
+  ["however", "ad.", "그러나", "I was tired; however, I kept working.", "나는 피곤했지만 계속 일했다."],
+  ["instead", "ad.", "대신에", "Let's walk instead of taking a bus.", "버스 대신 걷자."],
+  ["meanwhile", "ad.", "그동안에", "Meanwhile, I'll wash the dishes.", "그동안 내가 설거지를 할게."],
+  ["moreover", "ad.", "게다가, 더욱이", "Moreover, the service was excellent.", "게다가 서비스도 훌륭했다."],
+  ["otherwise", "ad.", "그렇지 않으면", "Hurry, otherwise you'll be late.", "서둘러, 그렇지 않으면 늦을 거야."],
+  ["therefore", "ad.", "그러므로", "He studied hard; therefore, he passed.", "그는 열심히 공부했고, 그러므로 합격했다."],
+  ["though", "conj.", "비록 ~이지만", "Though he is young, he is wise.", "그는 어리지만 현명하다."],
+  ["unless", "conj.", "~하지 않으면", "You'll fail unless you study.", "공부하지 않으면 너는 실패할 것이다."],
+  ["ankle", "n.", "발목", "I hurt my ankle while running.", "나는 달리다가 발목을 다쳤다."],
+  ["cheek", "n.", "뺨, 볼", "Her cheeks turned red.", "그녀의 뺨이 빨개졌다."],
+  ["chest", "n.", "가슴", "He felt a pain in his chest.", "그는 가슴에 통증을 느꼈다."],
+  ["elbow", "n.", "팔꿈치", "Don't put your elbows on the table.", "식탁에 팔꿈치를 올리지 마라."],
+  ["shoulder", "n.", "어깨", "He carried the bag on his shoulder.", "그는 가방을 어깨에 메고 있었다."],
+  ["skin", "n.", "피부", "Sunscreen protects your skin.", "선크림은 피부를 보호한다."],
+  ["stomach", "n.", "배, 위", "My stomach hurts after lunch.", "점심 후에 배가 아프다."],
+  ["throat", "n.", "목, 목구멍", "I have a sore throat today.", "오늘 목이 아프다."],
+  ["thumb", "n.", "엄지손가락", "He gave me a thumbs up.", "그는 내게 엄지를 들어 보였다."],
+  ["wrist", "n.", "손목", "She wears a watch on her wrist.", "그녀는 손목에 시계를 찬다."],
+  ["apartment", "n.", "아파트", "We live in a small apartment.", "우리는 작은 아파트에 산다."],
+  ["basement", "n.", "지하실", "The bikes are in the basement.", "자전거는 지하실에 있다."],
+  ["blanket", "n.", "담요", "Cover yourself with this blanket.", "이 담요를 덮어라."],
+  ["curtain", "n.", "커튼", "Open the curtain and let the sun in.", "커튼을 열고 햇빛이 들어오게 해라."],
+  ["garage", "n.", "차고", "Dad parked the car in the garage.", "아빠가 차를 차고에 주차하셨다."],
+  ["garbage", "n.", "쓰레기", "Take out the garbage, please.", "쓰레기 좀 내다 버려 줘."],
+  ["kitchen", "n.", "부엌", "Mom is cooking in the kitchen.", "엄마가 부엌에서 요리하고 계신다."],
+  ["roof", "n.", "지붕", "Snow covered the roof.", "눈이 지붕을 덮었다."],
+  ["shelf", "n.", "선반", "Put the box on the top shelf.", "상자를 맨 위 선반에 올려라."],
+  ["yard", "n.", "마당", "The dog is playing in the yard.", "개가 마당에서 놀고 있다."],
+  ["bargain", "n.", "싼 물건, 흥정", "This coat was a real bargain.", "이 코트는 정말 싼 물건이었다."],
+  ["cash", "n.", "현금", "Do you pay by cash or card?", "현금으로 내시나요, 카드로 내시나요?"],
+  ["charge", "v./n.", "청구하다; 요금", "They charged me ten dollars.", "그들은 내게 10달러를 청구했다."],
+  ["discount", "n.", "할인", "We got a ten percent discount.", "우리는 10퍼센트 할인을 받았다."],
+  ["expense", "n.", "비용, 지출", "Travel expenses are high this year.", "올해 여행 비용이 높다."],
+  ["income", "n.", "수입, 소득", "His monthly income increased.", "그의 월 수입이 증가했다."],
+  ["market", "n.", "시장", "The market opens at seven.", "시장은 일곱 시에 연다."],
+  ["product", "n.", "제품, 생산물", "This product sells very well.", "이 제품은 아주 잘 팔린다."],
+  ["purchase", "v./n.", "구매하다; 구매", "She purchased a new laptop.", "그녀는 새 노트북을 구매했다."],
+  ["receipt", "n.", "영수증", "Keep the receipt for a refund.", "환불을 위해 영수증을 보관해라."],
+  ["breeze", "n.", "산들바람", "A cool breeze blew from the sea.", "바다에서 시원한 산들바람이 불어왔다."],
+  ["cloudy", "a.", "흐린", "It will be cloudy all weekend.", "주말 내내 흐릴 것이다."],
+  ["forecast", "n.", "예보", "The weather forecast says rain.", "일기 예보는 비가 온다고 한다."],
+  ["freeze", "v.", "얼다, 얼리다", "The lake freezes in winter.", "그 호수는 겨울에 언다."],
+  ["humid", "a.", "습한", "Korean summers are hot and humid.", "한국의 여름은 덥고 습하다."],
+  ["lightning", "n.", "번개", "Lightning struck the old tree.", "번개가 그 오래된 나무를 쳤다."],
+  ["shower", "n.", "소나기, 샤워", "A sudden shower soaked my bag.", "갑작스러운 소나기가 내 가방을 적셨다."],
+  ["storm", "n.", "폭풍", "The storm broke many windows.", "폭풍이 많은 창문을 깨뜨렸다."],
+  ["thunder", "n.", "천둥", "The thunder woke the baby.", "천둥소리가 아기를 깨웠다."],
+  ["wet", "a.", "젖은", "My shoes are completely wet.", "내 신발이 완전히 젖었다."],
+  ["absorb", "v.", "흡수하다", "Plants absorb water through roots.", "식물은 뿌리로 물을 흡수한다."],
+  ["accompany", "v.", "동행하다, 함께 가다", "My brother accompanied me to the hospital.", "형이 나와 함께 병원에 갔다."],
+  ["assist", "v.", "돕다", "A nurse assisted the doctor.", "간호사가 의사를 도왔다."],
+  ["combine", "v.", "결합하다", "Combine the eggs and the flour.", "달걀과 밀가루를 섞어라."],
+  ["determine", "v.", "결정하다, 알아내다", "Hard work determines your future.", "노력이 네 미래를 결정한다."],
+  ["estimate", "v.", "추정하다", "Experts estimate the cost at $500.", "전문가들은 비용을 500달러로 추정한다."],
+  ["examine", "v.", "조사하다, 검사하다", "The doctor examined my eyes.", "의사가 내 눈을 검사했다."],
+  ["indicate", "v.", "나타내다, 가리키다", "The sign indicates the exit.", "그 표지판은 출구를 가리킨다."],
+  ["observe", "v.", "관찰하다", "We observed the moon with a telescope.", "우리는 망원경으로 달을 관찰했다."],
+  ["predict", "v.", "예측하다", "No one can predict the future exactly.", "아무도 미래를 정확히 예측할 수 없다."],
+  ["consume", "v.", "소비하다, 먹다", "We consume too much plastic.", "우리는 플라스틱을 너무 많이 소비한다."],
+  ["contribute", "v.", "기여하다, 기부하다", "Everyone contributed to the project.", "모두가 그 프로젝트에 기여했다."],
+  ["demonstrate", "v.", "보여 주다, 시위하다", "He demonstrated how to use it.", "그는 그것의 사용법을 보여 주었다."],
+  ["establish", "v.", "설립하다, 확립하다", "The school was established in 1950.", "그 학교는 1950년에 설립되었다."],
+  ["illustrate", "v.", "설명하다, 삽화를 넣다", "This graph illustrates the result.", "이 그래프가 결과를 설명해 준다."],
+  ["involve", "v.", "포함하다, 관련시키다", "The job involves a lot of writing.", "그 일은 많은 글쓰기를 포함한다."],
+  ["participate", "v.", "참가하다", "Ten teams participated in the contest.", "열 팀이 대회에 참가했다."],
+  ["represent", "v.", "대표하다, 나타내다", "She represents our school.", "그녀가 우리 학교를 대표한다."],
+  ["require", "v.", "요구하다, 필요로 하다", "This job requires patience.", "이 일은 인내심을 필요로 한다."],
+  ["supply", "v./n.", "공급하다; 공급", "The river supplies water to the city.", "그 강이 도시에 물을 공급한다."],
+  ["attitude", "n.", "태도", "A positive attitude helps a lot.", "긍정적인 태도는 많은 도움이 된다."],
+  ["belief", "n.", "믿음, 신념", "Her belief never changed.", "그녀의 신념은 결코 변하지 않았다."],
+  ["courage", "n.", "용기", "It takes courage to say sorry.", "미안하다고 말하려면 용기가 필요하다."],
+  ["emotion", "n.", "감정", "Music can express deep emotions.", "음악은 깊은 감정을 표현할 수 있다."],
+  ["freedom", "n.", "자유", "Freedom comes with responsibility.", "자유에는 책임이 따른다."],
+  ["memory", "n.", "기억, 추억", "I have good memories of that trip.", "나는 그 여행의 좋은 추억이 있다."],
+  ["patience", "n.", "인내심", "Learning a language needs patience.", "언어를 배우는 데는 인내심이 필요하다."],
+  ["pride", "n.", "자부심, 자존심", "He takes pride in his work.", "그는 자기 일에 자부심을 가진다."],
+  ["responsibility", "n.", "책임", "Taking care of a pet is a responsibility.", "반려동물을 돌보는 것은 책임이다."],
+  ["wisdom", "n.", "지혜", "Wisdom comes with experience.", "지혜는 경험과 함께 온다."],
+  ["accident", "n.", "사고", "A car accident blocked the road.", "자동차 사고로 도로가 막혔다."],
+  ["bridge", "n.", "다리", "The bridge crosses the river.", "그 다리가 강을 가로지른다."],
+  ["crosswalk", "n.", "횡단보도", "Cross at the crosswalk only.", "횡단보도에서만 건너라."],
+  ["highway", "n.", "고속도로", "The highway was busy this morning.", "오늘 아침 고속도로가 혼잡했다."],
+  ["passenger", "n.", "승객", "The bus was full of passengers.", "버스는 승객으로 가득했다."],
+  ["sidewalk", "n.", "인도, 보도", "Don't ride bikes on the sidewalk.", "인도에서 자전거를 타지 마라."],
+  ["signal", "n.", "신호", "Wait for the green signal.", "초록 신호를 기다려라."],
+  ["traffic", "n.", "교통(량)", "Traffic is heavy at eight.", "여덟 시에는 교통이 혼잡하다."],
+  ["vehicle", "n.", "차량, 탈것", "No vehicles are allowed here.", "여기에는 차량이 허용되지 않는다."],
+  ["fare", "n.", "(교통) 요금", "The bus fare went up again.", "버스 요금이 또 올랐다."],
+  ["author", "n.", "작가, 저자", "Who is the author of this novel?", "이 소설의 작가는 누구인가요?"],
+  ["character", "n.", "등장인물, 성격", "My favorite character is the youngest sister.", "내가 가장 좋아하는 등장인물은 막내 여동생이다."],
+  ["compose", "v.", "작곡하다, 구성하다", "He composed the song at sixteen.", "그는 열여섯 살에 그 곡을 작곡했다."],
+  ["exhibition", "n.", "전시회", "We went to a photo exhibition.", "우리는 사진 전시회에 갔다."],
+  ["instrument", "n.", "악기, 도구", "The violin is a string instrument.", "바이올린은 현악기이다."],
+  ["novel", "n.", "소설", "She wrote her first novel last year.", "그녀는 작년에 첫 소설을 썼다."],
+  ["painting", "n.", "그림, 회화", "This painting looks like a photo.", "이 그림은 사진처럼 보인다."],
+  ["poem", "n.", "시", "He read a short poem aloud.", "그는 짧은 시를 소리 내어 읽었다."],
+  ["sculpture", "n.", "조각(품)", "A huge sculpture stands in the park.", "거대한 조각상이 공원에 서 있다."],
+  ["theater", "n.", "극장", "We watched a play at the theater.", "우리는 극장에서 연극을 봤다."],
+  ["ashamed", "a.", "부끄러운", "He was ashamed of his lie.", "그는 자기 거짓말을 부끄러워했다."],
+  ["awkward", "a.", "어색한, 서투른", "There was an awkward silence.", "어색한 침묵이 흘렀다."],
+  ["cautious", "a.", "조심스러운", "Be cautious when crossing the street.", "길을 건널 때 조심해라."],
+  ["eager", "a.", "열망하는", "She is eager to learn Spanish.", "그녀는 스페인어를 배우기를 열망한다."],
+  ["gentle", "a.", "온화한, 부드러운", "He has a gentle voice.", "그는 부드러운 목소리를 가지고 있다."],
+  ["mental", "a.", "정신의, 마음의", "Mental health is as important as physical health.", "정신 건강은 신체 건강만큼 중요하다."],
+  ["negative", "a.", "부정적인", "Try to avoid negative thoughts.", "부정적인 생각을 피하려고 노력해라."],
+  ["positive", "a.", "긍정적인", "Keep a positive attitude.", "긍정적인 태도를 유지해라."],
+  ["sensitive", "a.", "민감한, 예민한", "My skin is sensitive to the sun.", "내 피부는 햇빛에 민감하다."],
+  ["silent", "a.", "조용한, 침묵하는", "The library was completely silent.", "도서관은 완전히 조용했다."],
+  ["give up", "phr.", "포기하다", "Never give up on your dream.", "네 꿈을 결코 포기하지 마라."],
+  ["look after", "phr.", "돌보다", "Can you look after my cat?", "내 고양이를 돌봐 줄 수 있니?"],
+  ["look forward to", "phr.", "~을 고대하다", "I look forward to seeing you.", "너를 만나기를 고대한다."],
+  ["put off", "phr.", "미루다", "Don't put off today's work.", "오늘 할 일을 미루지 마라."],
+  ["run out of", "phr.", "~이 바닥나다", "We ran out of milk.", "우리는 우유가 다 떨어졌다."],
+  ["take care of", "phr.", "돌보다, 처리하다", "I'll take care of the dishes.", "설거지는 내가 처리할게."],
+  ["turn down", "phr.", "거절하다, 줄이다", "He turned down the offer.", "그는 그 제안을 거절했다."],
+  ["turn in", "phr.", "제출하다", "Turn in your report by Friday.", "금요일까지 보고서를 제출해라."],
+  ["come up with", "phr.", "떠올리다, 생각해 내다", "She came up with a great idea.", "그녀가 훌륭한 아이디어를 떠올렸다."],
+  ["get along with", "phr.", "~와 잘 지내다", "I get along with my classmates.", "나는 반 친구들과 잘 지낸다."],
+  ["addition", "n.", "덧셈, 추가", "In addition, we need more chairs.", "게다가 우리는 의자가 더 필요하다."],
+  ["angle", "n.", "각, 각도", "Draw a right angle here.", "여기에 직각을 그려라."],
+  ["chemical", "n./a.", "화학 물질; 화학의", "Some chemicals are dangerous.", "어떤 화학 물질은 위험하다."],
+  ["formula", "n.", "공식", "Memorize this math formula.", "이 수학 공식을 외워라."],
+  ["gravity", "n.", "중력", "Gravity pulls things toward the earth.", "중력은 물체를 지구 쪽으로 끌어당긴다."],
+  ["measure", "v.", "측정하다", "Measure the water with a cup.", "컵으로 물을 측정해라."],
+  ["multiply", "v.", "곱하다, 증가시키다", "Multiply five by four.", "5에 4를 곱해라."],
+  ["solid", "a./n.", "고체의; 고체", "Ice is water in solid form.", "얼음은 고체 상태의 물이다."],
+  ["temperature", "n.", "온도, 체온", "The temperature dropped quickly.", "온도가 빠르게 떨어졌다."],
+  ["theory", "n.", "이론", "His theory explains the result well.", "그의 이론은 결과를 잘 설명한다."],
+  ["afterward", "ad.", "그 후에", "We had dinner and talked afterward.", "우리는 저녁을 먹고 그 후에 이야기했다."],
+  ["constantly", "ad.", "끊임없이", "He constantly checks his phone.", "그는 끊임없이 휴대폰을 확인한다."],
+  ["eventually", "ad.", "결국", "Eventually, she found the answer.", "결국 그녀는 답을 찾았다."],
+  ["frequently", "ad.", "자주", "He frequently visits his grandmother.", "그는 할머니를 자주 방문한다."],
+  ["immediately", "ad.", "즉시", "Call me immediately after school.", "방과 후 즉시 내게 전화해라."],
+  ["lately", "ad.", "최근에", "I haven't seen him lately.", "나는 최근에 그를 보지 못했다."],
+  ["rarely", "ad.", "거의 ~않다", "She rarely eats fast food.", "그녀는 패스트푸드를 거의 먹지 않는다."],
+  ["recently", "ad.", "최근에", "We recently moved to Busan.", "우리는 최근에 부산으로 이사했다."],
+  ["seldom", "ad.", "좀처럼 ~않다", "He seldom makes mistakes.", "그는 좀처럼 실수하지 않는다."],
+  ["usually", "ad.", "보통, 대개", "I usually get up at seven.", "나는 보통 일곱 시에 일어난다."],
+  ["adjust", "v.", "조절하다, 적응하다", "Adjust the volume, please.", "소리를 조절해 주세요."],
+  ["bother", "v.", "괴롭히다, 신경 쓰다", "Does the noise bother you?", "그 소음이 너를 신경 쓰이게 하니?"],
+  ["complete", "v./a.", "완성하다; 완전한", "I completed the puzzle alone.", "나는 혼자서 퍼즐을 완성했다."],
+  ["delay", "v./n.", "미루다; 지연", "The flight was delayed two hours.", "항공편이 두 시간 지연되었다."],
+  ["fail", "v.", "실패하다, 떨어지다", "Don't be afraid to fail.", "실패하는 것을 두려워하지 마라."],
+  ["hide", "v.", "숨다, 숨기다", "The cat hid under the sofa.", "고양이가 소파 밑에 숨었다."],
+  ["introduce", "v.", "소개하다", "Let me introduce my friend.", "내 친구를 소개할게."],
+  ["rescue", "v.", "구조하다", "Firefighters rescued the family.", "소방관들이 그 가족을 구조했다."],
+  ["shake", "v.", "흔들다, 떨다", "Shake the bottle before drinking.", "마시기 전에 병을 흔들어라."],
+  ["whistle", "v./n.", "휘파람을 불다; 호루라기", "The referee blew the whistle.", "심판이 호루라기를 불었다."],
+  ["affect", "v.", "영향을 미치다", "Lack of sleep affects your grades.", "수면 부족은 성적에 영향을 미친다."],
+  ["effect", "n.", "효과, 영향", "The medicine had a strong effect.", "그 약은 강한 효과가 있었다."],
+  ["affection", "n.", "애정", "She looked at the puppy with affection.", "그녀는 애정을 담아 강아지를 바라보았다."],
+  ["except", "prep.", "~을 제외하고", "Everyone came except Minho.", "민호를 제외하고 모두 왔다."],
+  ["rise", "v.", "오르다, 뜨다", "The sun rises in the east.", "해는 동쪽에서 뜬다."],
+  ["raise", "v.", "올리다, 기르다", "Raise your hand if you know.", "아는 사람은 손을 들어라."],
+  ["lie", "v.", "눕다, 거짓말하다", "He lay on the grass.", "그는 잔디에 누웠다."],
+  ["lay", "v.", "놓다, (알을) 낳다", "The hen lays an egg every day.", "그 암탉은 매일 알을 낳는다."],
+  ["loan", "n.", "대출, 빌려준 것", "He paid back the loan in a year.", "그는 1년 만에 대출을 갚았다."],
+  ["lend", "v.", "빌려주다", "Can you lend me your umbrella?", "네 우산을 빌려줄 수 있니?"],
+  ["advertisement", "n.", "광고", "I saw the advertisement on TV.", "나는 TV에서 그 광고를 봤다."],
+  ["advise", "v.", "조언하다", "He advised me to rest.", "그는 내게 쉬라고 조언했다."],
+  ["deserted", "a.", "버려진, 인적이 없는", "The street was deserted at night.", "그 거리는 밤에 인적이 없었다."],
+  ["digest", "v.", "소화하다", "It takes time to digest meat.", "고기를 소화하는 데는 시간이 걸린다."],
+  ["quiet", "a.", "조용한", "Please be quiet in the library.", "도서관에서는 조용히 해 주세요."],
+  ["quite", "ad.", "꽤, 상당히", "The movie was quite long.", "그 영화는 꽤 길었다."],
+  ["principle", "n.", "원칙, 원리", "He never breaks his principles.", "그는 자기 원칙을 결코 어기지 않는다."],
+  ["sensible", "a.", "분별 있는, 합리적인", "That was a sensible decision.", "그것은 분별 있는 결정이었다."],
+  ["successful", "a.", "성공적인", "The concert was very successful.", "그 공연은 매우 성공적이었다."],
+  ["successive", "a.", "연속적인", "It rained for three successive days.", "사흘 연속으로 비가 내렸다."],
+  ["area", "n.", "지역, 면적", "This area is famous for apples.", "이 지역은 사과로 유명하다."],
+  ["background", "n.", "배경", "Tell me about your background.", "네 배경에 대해 말해 줘."],
+  ["condition", "n.", "상태, 조건", "The car is in good condition.", "그 차는 상태가 좋다."],
+  ["detail", "n.", "세부 사항", "Explain the plan in detail.", "그 계획을 자세히 설명해라."],
+  ["event", "n.", "행사, 사건", "The sports event starts at nine.", "체육 행사는 아홉 시에 시작한다."],
+  ["factor", "n.", "요인, 요소", "Sleep is a key factor in health.", "수면은 건강의 핵심 요인이다."],
+  ["item", "n.", "항목, 물품", "Check each item on the list.", "목록의 각 항목을 확인해라."],
+  ["level", "n.", "수준, 높이", "His English level is very high.", "그의 영어 수준은 아주 높다."],
+  ["quality", "n.", "질, 품질", "This cloth is of high quality.", "이 천은 품질이 좋다."],
+  ["standard", "n.", "기준, 표준", "The food met our standards.", "그 음식은 우리 기준을 충족했다."],
+  ["aware", "a.", "알고 있는", "Are you aware of the rule?", "너는 그 규칙을 알고 있니?"],
+  ["broad", "a.", "넓은", "He has broad shoulders.", "그는 어깨가 넓다."],
+  ["entire", "a.", "전체의", "I spent the entire day reading.", "나는 하루 종일 독서하며 보냈다."],
+  ["exact", "a.", "정확한", "Tell me the exact time.", "정확한 시간을 말해 줘."],
+  ["extreme", "a.", "극단적인, 극심한", "Extreme heat is dangerous.", "극심한 더위는 위험하다."],
+  ["mild", "a.", "온화한, 순한", "The winter was unusually mild.", "그 겨울은 유난히 온화했다."],
+  ["narrow", "a.", "좁은", "We walked down a narrow street.", "우리는 좁은 길을 걸어 내려갔다."],
+  ["steady", "a.", "꾸준한, 안정된", "She made steady progress.", "그녀는 꾸준한 발전을 이루었다."],
+  ["tight", "a.", "꽉 끼는, 단단한", "These shoes are too tight.", "이 신발은 너무 꽉 낀다."],
+  ["worth", "a.", "~의 가치가 있는", "This book is worth reading.", "이 책은 읽을 가치가 있다."],
+  ["accuse", "v.", "비난하다, 고발하다", "He accused me of cheating.", "그는 내가 부정행위를 했다고 비난했다."],
+  ["cheer", "v.", "응원하다, 환호하다", "We cheered for our team.", "우리는 우리 팀을 응원했다."],
+  ["defend", "v.", "방어하다, 변호하다", "He defended his little brother.", "그는 남동생을 보호해 주었다."],
+  ["earn", "v.", "(돈을) 벌다, 얻다", "She earns money by tutoring.", "그녀는 과외로 돈을 번다."],
+  ["fold", "v.", "접다", "Fold the paper in half.", "종이를 반으로 접어라."],
+  ["greet", "v.", "인사하다, 맞이하다", "She greeted us with a smile.", "그녀는 미소로 우리를 맞이했다."],
+  ["lessen", "v.", "줄이다, 줄다", "Music can lessen your stress.", "음악은 스트레스를 줄여 줄 수 있다."],
+  ["notice", "v./n.", "알아차리다; 공지", "I didn't notice the sign.", "나는 그 표지판을 알아차리지 못했다."],
+  ["praise", "v./n.", "칭찬하다; 칭찬", "The teacher praised my effort.", "선생님이 내 노력을 칭찬하셨다."],
+  ["regret", "v.", "후회하다", "I regret not studying harder.", "나는 더 열심히 공부하지 않은 것을 후회한다."],
+  ["arise", "v.", "생기다, 발생하다", "A problem arose during the test.", "시험 중에 문제가 발생했다."],
+  ["attach", "v.", "붙이다, 첨부하다", "Attach the file to the email.", "이메일에 파일을 첨부해라."],
+  ["bend", "v.", "구부리다", "Bend your knees slowly.", "무릎을 천천히 구부려라."],
+  ["burn", "v.", "타다, 태우다", "Don't burn the toast.", "토스트를 태우지 마라."],
+  ["float", "v.", "뜨다, 떠다니다", "Wood floats on water.", "나무는 물에 뜬다."],
+  ["melt", "v.", "녹다, 녹이다", "The snow melted in the sun.", "눈이 햇볕에 녹았다."],
+  ["pour", "v.", "붓다, 쏟다", "Pour the milk into the glass.", "우유를 유리잔에 부어라."],
+  ["spill", "v.", "쏟다, 엎지르다", "I spilled juice on my shirt.", "나는 셔츠에 주스를 쏟았다."],
+  ["stretch", "v.", "늘이다, 뻗다", "Stretch your arms before running.", "달리기 전에 팔을 쭉 뻗어라."],
+  ["swallow", "v.", "삼키다", "Chew well before you swallow.", "삼키기 전에 잘 씹어라."],
+  ["blank", "n./a.", "빈칸; 빈", "Fill in the blank with a verb.", "빈칸을 동사로 채워라."],
+  ["chart", "n.", "도표, 차트", "Look at the chart on page five.", "5쪽의 도표를 보아라."],
+  ["correct", "a./v.", "맞은; 고치다", "Choose the correct answer.", "맞는 답을 고르세요."],
+  ["definition", "n.", "정의, 뜻풀이", "Write the definition of the word.", "그 단어의 뜻풀이를 써라."],
+  ["example", "n.", "예, 보기", "Give me an example, please.", "예를 하나 들어 주세요."],
+  ["meaning", "n.", "의미, 뜻", "What is the meaning of this word?", "이 단어의 뜻은 무엇인가요?"],
+  ["paragraph", "n.", "문단", "Read the second paragraph aloud.", "두 번째 문단을 소리 내어 읽어라."],
+  ["passage", "n.", "지문, 구절", "Read the passage and answer.", "지문을 읽고 답하시오."],
+  ["phrase", "n.", "구, 어구", "Underline the useful phrases.", "유용한 어구에 밑줄을 그어라."],
+  ["sentence", "n.", "문장", "Make a sentence with this word.", "이 단어로 문장을 만들어라."],
+  ["altogether", "ad.", "전부, 완전히", "Altogether, we spent ten dollars.", "전부 합쳐 우리는 10달러를 썼다."],
+  ["comparison", "n.", "비교", "A comparison of the two is useful.", "둘의 비교는 유용하다."],
+  ["contrast", "n./v.", "대조; 대조하다", "In contrast, his room is clean.", "반면에 그의 방은 깨끗하다."],
+  ["despite", "prep.", "~에도 불구하고", "Despite the rain, we played.", "비에도 불구하고 우리는 경기를 했다."],
+  ["exception", "n.", "예외", "Everyone must follow it, with no exception.", "예외 없이 모두가 그것을 따라야 한다."],
+  ["including", "prep.", "~을 포함하여", "Five people came, including me.", "나를 포함해 다섯 명이 왔다."],
+  ["rather", "ad.", "오히려, 꽤", "I'd rather stay home.", "나는 차라리 집에 있고 싶다."],
+  ["similarly", "ad.", "마찬가지로", "Similarly, dogs need daily walks.", "마찬가지로 개도 매일 산책이 필요하다."],
+  ["unlike", "prep.", "~와 달리", "Unlike me, he loves math.", "나와 달리 그는 수학을 좋아한다."],
+  ["while", "conj.", "~하는 동안, 반면에", "While I cooked, he cleaned.", "내가 요리하는 동안 그는 청소했다."],
+  ["ambition", "n.", "야망, 포부", "Her ambition is to be a pilot.", "그녀의 포부는 조종사가 되는 것이다."],
+  ["applicant", "n.", "지원자", "There were fifty applicants.", "지원자가 50명이었다."],
+  ["dream", "n./v.", "꿈; 꿈꾸다", "Follow your dream.", "네 꿈을 좇아라."],
+  ["expert", "n.", "전문가", "He is an expert on insects.", "그는 곤충 전문가이다."],
+  ["opportunity", "n.", "기회", "Don't miss this opportunity.", "이 기회를 놓치지 마라."],
+  ["plan", "n./v.", "계획; 계획하다", "What's your plan for the holiday?", "휴일 계획이 뭐니?"],
+  ["preparation", "n.", "준비", "Preparation is half the battle.", "준비가 절반이다."],
+  ["qualify", "v.", "자격을 얻다", "She qualified for the final round.", "그녀는 결승전 진출 자격을 얻었다."],
+  ["talent", "n.", "재능", "He has a talent for drawing.", "그는 그림에 재능이 있다."],
+  ["university", "n.", "대학교", "My sister goes to university.", "우리 누나는 대학에 다닌다."],
+  ["according to", "phr.", "~에 따르면", "According to the news, it will snow.", "뉴스에 따르면 눈이 올 것이다."],
+  ["as well as", "phr.", "~뿐만 아니라", "He plays guitar as well as piano.", "그는 피아노뿐만 아니라 기타도 친다."],
+  ["be able to", "phr.", "~할 수 있다", "I was able to solve it alone.", "나는 혼자서 그것을 풀 수 있었다."],
+  ["be used to", "phr.", "~에 익숙하다", "I'm used to getting up early.", "나는 일찍 일어나는 데 익숙하다."],
+  ["in order to", "phr.", "~하기 위해서", "He ran in order to catch the bus.", "그는 버스를 타려고 달렸다."],
+  ["instead of", "phr.", "~대신에", "Drink water instead of soda.", "탄산음료 대신 물을 마셔라."],
+  ["no longer", "phr.", "더 이상 ~않다", "He no longer lives here.", "그는 더 이상 여기 살지 않는다."],
+  ["thanks to", "phr.", "~덕분에", "Thanks to you, I passed.", "네 덕분에 나는 합격했다."],
+  ["used to", "phr.", "~하곤 했다", "I used to play the violin.", "나는 바이올린을 켜곤 했다."],
+  ["would like to", "phr.", "~하고 싶다", "I would like to visit Canada.", "나는 캐나다를 방문하고 싶다."]
+];
+
+/* === [2] 3단계 문제은행 ================================================
+   {q:질문, opts:[4개 보기], a:정답 인덱스(0~3), exp:해설,
+    tags:[관련 단어들], kind:"혼동어"|"동의어"|"반의어"}
+   tags 에 적힌 단어가 그날의 10개 안에 있으면 그 문제를 우선 출제한다.
+   맞는 문제가 3개보다 적으면 나머지는 은행 전체에서 골라 채운다.
+   ====================================================================== */
+const CQ = [
+  { q: "빈칸에 알맞은 말은?  Lack of sleep can ______ your grades.",
+    opts: ["affect", "effect", "afford", "effort"], a: 0, kind: "혼동어",
+    exp: "affect는 '영향을 미치다'라는 동사, effect는 '효과·영향'이라는 명사야. 동사 자리이므로 affect!",
+    tags: ["affect", "effect"] },
+  { q: "빈칸에 알맞은 말은?  The new rule had a positive ______ on the class.",
+    opts: ["affect", "effect", "effort", "afford"], a: 1, kind: "혼동어",
+    exp: "a/an, the 뒤는 명사 자리야. '효과'를 뜻하는 명사는 effect!",
+    tags: ["affect", "effect"] },
+  { q: "빈칸에 알맞은 말은?  Please ______ your hand if you have a question.",
+    opts: ["rise", "raise", "rose", "arise"], a: 1, kind: "혼동어",
+    exp: "raise는 '무엇을 올리다'(목적어 필요), rise는 '스스로 오르다'(목적어 없음)야. your hand라는 목적어가 있으니 raise!",
+    tags: ["rise", "raise"] },
+  { q: "빈칸에 알맞은 말은?  The sun ______ in the east every morning.",
+    opts: ["raises", "rises", "raised", "is raised"], a: 1, kind: "혼동어",
+    exp: "해가 '스스로' 뜨는 것이므로 목적어가 필요 없는 rise를 써. 3인칭 단수라 rises!",
+    tags: ["rise", "raise"] },
+  { q: "빈칸에 알맞은 말은?  The hen ______ an egg every day.",
+    opts: ["lies", "lays", "lay", "lied"], a: 1, kind: "혼동어",
+    exp: "lay는 '~을 놓다/낳다'(목적어 필요), lie는 '눕다'야. an egg가 목적어이므로 lays!",
+    tags: ["lie", "lay"] },
+  { q: "빈칸에 알맞은 말은?  Can I ______ your eraser for a minute?",
+    opts: ["borrow", "lend", "loan", "rent"], a: 0, kind: "혼동어",
+    exp: "borrow는 '내가 빌리다', lend는 '남에게 빌려주다'야. 내가 빌리는 쪽이니 borrow!",
+    tags: ["borrow", "lend"] },
+  { q: "빈칸에 알맞은 말은?  Could you ______ me ten dollars?",
+    opts: ["borrow", "lend", "take", "bring"], a: 1, kind: "혼동어",
+    exp: "lend A B = A에게 B를 빌려주다. 상대가 내게 빌려주는 상황이니 lend!",
+    tags: ["borrow", "lend"] },
+  { q: "빈칸에 알맞은 말은?  My teacher gave me useful ______ about studying.",
+    opts: ["advise", "advice", "advices", "advised"], a: 1, kind: "혼동어",
+    exp: "advice는 셀 수 없는 명사(조언), advise는 동사(조언하다)야. 관사 없이 명사 자리이므로 advice!",
+    tags: ["advice", "advise"] },
+  { q: "빈칸에 알맞은 말은?  The doctor ______ me to drink more water.",
+    opts: ["advice", "advise", "advised", "advices"], a: 2, kind: "혼동어",
+    exp: "'조언했다'라는 동사가 필요하고 과거시제이므로 advised!",
+    tags: ["advice", "advise"] },
+  { q: "빈칸에 알맞은 말은?  Please be ______ in the library.",
+    opts: ["quite", "quiet", "quit", "quietly"], a: 1, kind: "혼동어",
+    exp: "quiet는 '조용한'(형용사), quite는 '꽤'(부사)야. be동사 뒤 형용사 자리이므로 quiet!",
+    tags: ["quiet", "quite"] },
+  { q: "빈칸에 알맞은 말은?  The movie was ______ interesting.",
+    opts: ["quiet", "quite", "quit", "quietly"], a: 1, kind: "혼동어",
+    exp: "형용사 interesting을 꾸미는 '꽤'라는 부사가 필요하니 quite!",
+    tags: ["quiet", "quite"] },
+  { q: "빈칸에 알맞은 말은?  Everyone came to the party ______ Minho.",
+    opts: ["accept", "except", "expect", "respect"], a: 1, kind: "혼동어",
+    exp: "except는 '~을 제외하고'(전치사), accept는 '받아들이다'(동사)야. 의미상 except!",
+    tags: ["except", "accept"] },
+  { q: "빈칸에 알맞은 말은?  She ______ my apology with a smile.",
+    opts: ["except", "accepted", "expected", "excepted"], a: 1, kind: "혼동어",
+    exp: "'사과를 받아들였다'라는 뜻이므로 accept의 과거형 accepted!",
+    tags: ["accept", "except"] },
+  { q: "낙타가 사는 '사막'을 뜻하는 단어는?",
+    opts: ["dessert", "desert", "deserted", "dissert"], a: 1, kind: "혼동어",
+    exp: "desert(사막)는 s가 하나, dessert(후식)는 s가 두 개야. '달콤한 후식은 s도 두 배'로 외워 봐!",
+    tags: ["desert", "dessert"] },
+  { q: "빈칸에 알맞은 말은?  We had ice cream for ______.",
+    opts: ["desert", "dessert", "deserted", "desire"], a: 1, kind: "혼동어",
+    exp: "식사 후 먹는 '후식'은 dessert(s 두 개)야!",
+    tags: ["dessert", "desert"] },
+  { q: "빈칸에 알맞은 말은?  The concert was very ______. Everyone loved it.",
+    opts: ["successive", "successful", "success", "succeed"], a: 1, kind: "혼동어",
+    exp: "successful은 '성공적인', successive는 '연속적인'이야. 의미상 successful!",
+    tags: ["successful", "successive"] },
+  { q: "빈칸에 알맞은 말은?  It rained for five ______ days.",
+    opts: ["successful", "successive", "success", "succeed"], a: 1, kind: "혼동어",
+    exp: "'연속된 5일'이므로 successive! 발음이 비슷해도 뜻은 전혀 달라.",
+    tags: ["successive", "successful"] },
+  { q: "빈칸에 알맞은 말은?  He never breaks his own ______.",
+    opts: ["principal", "principle", "principles", "principally"], a: 2, kind: "혼동어",
+    exp: "principle은 '원칙', principal은 '교장·주요한'이야. 원칙은 여러 개이므로 principles!",
+    tags: ["principle", "principal"] },
+  { q: "빈칸에 알맞은 말은?  Our school ______ gave a short speech.",
+    opts: ["principle", "principal", "principles", "principally"], a: 1, kind: "혼동어",
+    exp: "'교장 선생님'은 principal이야. 'princiPAL은 your PAL(친구)'로 외워 봐!",
+    tags: ["principal", "principle"] },
+  { q: "빈칸에 알맞은 말은?  That was a ______ decision, not an emotional one.",
+    opts: ["sensitive", "sensible", "sense", "sensibly"], a: 1, kind: "혼동어",
+    exp: "sensible은 '분별 있는, 합리적인', sensitive는 '민감한'이야. 의미상 sensible!",
+    tags: ["sensible", "sensitive"] },
+  { q: "빈칸에 알맞은 말은?  My skin is very ______ to sunlight.",
+    opts: ["sensible", "sensitive", "sense", "senseless"], a: 1, kind: "혼동어",
+    exp: "햇빛에 '민감한' 것이므로 sensitive!",
+    tags: ["sensitive", "sensible"] },
+  { q: "빈칸에 알맞은 말은?  I can't ______ a new smartphone this year.",
+    opts: ["affect", "afford", "effort", "offer"], a: 1, kind: "혼동어",
+    exp: "afford는 '~할 (금전적) 여유가 있다'야. can't afford = 살 형편이 안 된다!",
+    tags: ["afford"] },
+  { q: "빈칸에 알맞은 말은?  A problem ______ during the experiment.",
+    opts: ["arose", "raised", "rose up", "aroused"], a: 0, kind: "혼동어",
+    exp: "arise는 '(문제가) 생기다'로 목적어가 필요 없어. 과거형은 arose!",
+    tags: ["arise", "rise", "raise"] },
+  { q: "빈칸에 알맞은 말은?  I ______ at the hospital at three o'clock.",
+    opts: ["arrived", "reached", "got", "arrived to"], a: 0, kind: "혼동어",
+    exp: "arrive는 전치사 at/in과 함께 써. reach는 전치사 없이 바로 목적어를 쓰므로 reached the hospital이 맞아!",
+    tags: ["arrive", "reach"] },
+  { q: "빈칸에 알맞은 말은?  Many ______ visit this temple every year.",
+    opts: ["travel", "tourist", "tourists", "journey"], a: 2, kind: "혼동어",
+    exp: "'관광객들'이라는 복수 명사가 필요하므로 tourists!",
+    tags: ["tourist", "journey"] },
+  { q: "빈칸에 알맞은 말은?  Put your ______ on the scale at the airport.",
+    opts: ["luggage", "luggages", "baggages", "languages"], a: 0, kind: "혼동어",
+    exp: "luggage와 baggage는 모두 셀 수 없는 명사라 -s를 붙이지 않아!",
+    tags: ["luggage", "baggage"] },
+  { q: "빈칸에 알맞은 말은?  Keep the ______ if you want a refund.",
+    opts: ["recipe", "receipt", "recite", "receive"], a: 1, kind: "혼동어",
+    exp: "receipt는 '영수증', recipe는 '조리법'이야. 철자가 비슷하니 주의!",
+    tags: ["receipt", "recipe"] },
+  { q: "빈칸에 알맞은 말은?  She shared her cookie ______ with me.",
+    opts: ["receipt", "recipe", "recent", "receive"], a: 1, kind: "혼동어",
+    exp: "요리 만드는 법은 recipe(조리법)야!",
+    tags: ["recipe", "receipt"] },
+  { q: "빈칸에 알맞은 말은?  I didn't ______ you with your new glasses.",
+    opts: ["realize", "recognize", "remind", "remember"], a: 1, kind: "혼동어",
+    exp: "recognize는 '(보고) 알아보다', realize는 '(사실을) 깨닫다'야. 사람을 알아보는 것이니 recognize!",
+    tags: ["recognize", "realize"] },
+  { q: "빈칸에 알맞은 말은?  This song ______ me of my childhood.",
+    opts: ["remembers", "reminds", "recalls", "recognizes"], a: 1, kind: "혼동어",
+    exp: "remind A of B = A에게 B를 떠올리게 하다. 사물이 주어일 땐 remind를 써!",
+    tags: ["remind"] },
+  { q: "빈칸에 알맞은 말은?  The number of students ______ by ten percent.",
+    opts: ["decreased", "reduced", "lessened", "lowered"], a: 0, kind: "혼동어",
+    exp: "decrease는 '스스로 줄다'(자동사), reduce는 '~을 줄이다'(타동사)야. 목적어가 없으니 decreased!",
+    tags: ["decrease", "reduce"] },
+  { q: "빈칸에 알맞은 말은?  We should ______ the amount of plastic we use.",
+    opts: ["decrease of", "reduce", "decrease to", "lessen of"], a: 1, kind: "혼동어",
+    exp: "the amount라는 목적어가 있으므로 타동사 reduce!",
+    tags: ["reduce", "decrease"] },
+  { q: "빈칸에 알맞은 말은?  He ______ to be asleep when I came in.",
+    opts: ["pretended", "prevented", "presented", "prepared"], a: 0, kind: "혼동어",
+    exp: "pretend는 '~인 척하다', prevent는 '막다'야. 철자가 비슷하니 꼭 구분해 두자!",
+    tags: ["pretend", "prevent"] },
+  { q: "빈칸에 알맞은 말은?  Washing your hands can ______ colds.",
+    opts: ["pretend", "prevent", "present", "prefer"], a: 1, kind: "혼동어",
+    exp: "'감기를 예방하다'이므로 prevent!",
+    tags: ["prevent", "pretend"] },
+  { q: "빈칸에 알맞은 말은?  I ______ not studying harder for the test.",
+    opts: ["regret", "forget", "reject", "respect"], a: 0, kind: "혼동어",
+    exp: "regret -ing = ~한 것을 후회하다. 이미 한 일에 대한 후회야!",
+    tags: ["regret"] },
+  { q: "빈칸에 알맞은 말은?  There are two hundred ______ of birds in this forest.",
+    opts: ["specie", "species", "specials", "spices"], a: 1, kind: "혼동어",
+    exp: "species는 단수와 복수의 형태가 같은 명사야. a species / two species 모두 가능!",
+    tags: ["species"] },
+  { q: "빈칸에 알맞은 말은?  I'm ______ to getting up early now.",
+    opts: ["used", "use", "using", "used to get"], a: 0, kind: "혼동어",
+    exp: "be used to + -ing = ~에 익숙하다. used to + 동사원형(~하곤 했다)과 구분하자!",
+    tags: ["be used to", "used to"] },
+  { q: "빈칸에 알맞은 말은?  I ______ play the violin when I was ten.",
+    opts: ["used to", "am used to", "was used to", "use to"], a: 0, kind: "혼동어",
+    exp: "used to + 동사원형 = (과거에) ~하곤 했다. 지금은 하지 않는다는 뜻이야!",
+    tags: ["used to", "be used to"] },
+  { q: "빈칸에 알맞은 말은?  ______ the heavy rain, we finished the game.",
+    opts: ["Although", "Despite", "However", "Because"], a: 1, kind: "혼동어",
+    exp: "despite는 전치사라 뒤에 명사(구)가 와. although는 접속사라 뒤에 문장이 와야 해!",
+    tags: ["despite", "although"] },
+  { q: "빈칸에 알맞은 말은?  ______ he is young, he is very wise.",
+    opts: ["Despite", "Although", "However", "In spite of"], a: 1, kind: "혼동어",
+    exp: "뒤에 '주어+동사' 문장이 왔으므로 접속사 although!",
+    tags: ["although", "despite", "though"] },
+  { q: "빈칸에 알맞은 말은?  Drink water ______ soda.",
+    opts: ["instead", "instead of", "rather", "than"], a: 1, kind: "혼동어",
+    exp: "instead of + 명사 = ~대신에. instead는 혼자 쓰이는 부사야!",
+    tags: ["instead", "instead of"] },
+  { q: "다음 중 'begin'과 뜻이 가장 가까운 것은?",
+    opts: ["start", "stop", "finish", "return"], a: 0, kind: "동의어",
+    exp: "begin과 start는 둘 다 '시작하다'야. stop·finish는 반대 뜻!",
+    tags: ["continue"] },
+  { q: "다음 중 'difficult'와 뜻이 가장 가까운 것은?",
+    opts: ["easy", "hard", "simple", "clear"], a: 1, kind: "동의어",
+    exp: "difficult = hard = 어려운. easy·simple은 반대야!",
+    tags: ["difficult"] },
+  { q: "다음 중 'reply'와 뜻이 가장 가까운 것은?",
+    opts: ["ask", "answer", "question", "order"], a: 1, kind: "동의어",
+    exp: "reply = answer = 대답하다!",
+    tags: ["reply"] },
+  { q: "다음 중 'purchase'와 뜻이 가장 가까운 것은?",
+    opts: ["sell", "buy", "borrow", "lend"], a: 1, kind: "동의어",
+    exp: "purchase는 buy의 격식 있는 표현으로 '구매하다'야!",
+    tags: ["purchase", "expense"] },
+  { q: "다음 중 'huge'와 뜻이 가장 가까운 것은?",
+    opts: ["tiny", "enormous", "narrow", "shallow"], a: 1, kind: "동의어",
+    exp: "huge = enormous = 거대한. tiny는 '아주 작은'으로 반대야!",
+    tags: ["huge"] },
+  { q: "다음 중 'select'와 뜻이 가장 가까운 것은?",
+    opts: ["choose", "refuse", "lose", "leave"], a: 0, kind: "동의어",
+    exp: "select = choose = 고르다, 선택하다!",
+    tags: ["choice"] },
+  { q: "다음 중 'well-known'과 뜻이 가장 가까운 것은?",
+    opts: ["famous", "strange", "secret", "private"], a: 0, kind: "동의어",
+    exp: "well-known = famous = 유명한!",
+    tags: ["popular"] },
+  { q: "다음 중 'necessary'와 뜻이 가장 가까운 것은?",
+    opts: ["useless", "essential", "optional", "extra"], a: 1, kind: "동의어",
+    exp: "necessary = essential = 꼭 필요한!",
+    tags: ["necessary", "require"] },
+  { q: "다음 중 'fix'와 뜻이 가장 가까운 것은?",
+    opts: ["break", "repair", "destroy", "damage"], a: 1, kind: "동의어",
+    exp: "fix = repair = 수리하다!",
+    tags: ["repair"] },
+  { q: "다음 중 'help'와 뜻이 가장 가까운 것은?",
+    opts: ["assist", "ignore", "block", "refuse"], a: 0, kind: "동의어",
+    exp: "help = assist = 돕다!",
+    tags: ["assist"] },
+  { q: "다음 중 'show'와 뜻이 가장 가까운 것은?",
+    opts: ["hide", "demonstrate", "cover", "forget"], a: 1, kind: "동의어",
+    exp: "demonstrate는 '(실제로) 보여 주다'로 show와 뜻이 가까워!",
+    tags: ["demonstrate", "hide"] },
+  { q: "다음 중 'take part in'과 뜻이 가장 가까운 것은?",
+    opts: ["participate in", "give up", "look after", "put off"], a: 0, kind: "동의어",
+    exp: "take part in = participate in = ~에 참가하다!",
+    tags: ["participate"] },
+  { q: "다음 중 'well-mannered'와 뜻이 가장 가까운 것은?",
+    opts: ["rude", "polite", "selfish", "lazy"], a: 1, kind: "동의어",
+    exp: "well-mannered = polite = 예의 바른!",
+    tags: ["polite", "rude"] },
+  { q: "다음 중 'smart'와 뜻이 가장 가까운 것은?",
+    opts: ["foolish", "clever", "slow", "weak"], a: 1, kind: "동의어",
+    exp: "smart = clever = 영리한!",
+    tags: ["wisdom"] },
+  { q: "다음 중 'happen'과 뜻이 가장 가까운 것은?",
+    opts: ["occur", "disappear", "prevent", "delay"], a: 0, kind: "동의어",
+    exp: "happen = occur = 일어나다, 발생하다!",
+    tags: ["accident", "arise"] },
+  { q: "다음 중 'keep'과 뜻이 가장 가까운 것은?",
+    opts: ["maintain", "throw", "waste", "lose"], a: 0, kind: "동의어",
+    exp: "maintain은 '유지하다'로 keep과 뜻이 가까워!",
+    tags: ["maintain"] },
+  { q: "다음 중 'get'과 뜻이 가장 가까운 것은?",
+    opts: ["obtain", "give", "send", "lend"], a: 0, kind: "동의어",
+    exp: "obtain = get = 얻다, 획득하다!",
+    tags: ["obtain"] },
+  { q: "다음 중 'say sorry'와 뜻이 가장 가까운 것은?",
+    opts: ["apologize", "praise", "blame", "admire"], a: 0, kind: "동의어",
+    exp: "apologize = 사과하다. blame은 '탓하다'로 반대 느낌이야!",
+    tags: ["blame", "regret"] },
+  { q: "다음 중 'courage'와 뜻이 가장 가까운 것은?",
+    opts: ["bravery", "fear", "shame", "doubt"], a: 0, kind: "동의어",
+    exp: "courage = bravery = 용기! brave(용감한)에서 온 말이야.",
+    tags: ["courage", "brave"] },
+  { q: "다음 중 'opportunity'와 뜻이 가장 가까운 것은?",
+    opts: ["chance", "danger", "problem", "mistake"], a: 0, kind: "동의어",
+    exp: "opportunity = chance = 기회!",
+    tags: ["opportunity", "chance"] },
+  { q: "다음 중 'whole'과 뜻이 가장 가까운 것은?",
+    opts: ["entire", "half", "part", "piece"], a: 0, kind: "동의어",
+    exp: "whole = entire = 전체의!",
+    tags: ["whole", "entire"] },
+  { q: "다음 중 'well-liked by many people'을 뜻하는 단어는?",
+    opts: ["popular", "private", "rare", "silent"], a: 0, kind: "동의어",
+    exp: "많은 사람에게 사랑받는 것은 popular(인기 있는)야!",
+    tags: ["popular", "rare"] },
+  { q: "다음 중 'increase'의 반대말은?",
+    opts: ["grow", "decrease", "rise", "add"], a: 1, kind: "반의어",
+    exp: "increase(증가하다) ↔ decrease(감소하다)!",
+    tags: ["increase", "decrease"] },
+  { q: "다음 중 'accept'의 반대말은?",
+    opts: ["receive", "refuse", "agree", "allow"], a: 1, kind: "반의어",
+    exp: "accept(받아들이다) ↔ refuse(거절하다)!",
+    tags: ["accept", "refuse"] },
+  { q: "다음 중 'remember'의 반대말은?",
+    opts: ["forget", "recall", "memorize", "realize"], a: 0, kind: "반의어",
+    exp: "remember(기억하다) ↔ forget(잊다)!",
+    tags: ["memory"] },
+  { q: "다음 중 'positive'의 반대말은?",
+    opts: ["active", "negative", "creative", "sensitive"], a: 1, kind: "반의어",
+    exp: "positive(긍정적인) ↔ negative(부정적인)!",
+    tags: ["positive", "negative"] },
+  { q: "다음 중 'generous'의 반대말은?",
+    opts: ["kind", "selfish", "honest", "gentle"], a: 1, kind: "반의어",
+    exp: "generous(너그러운) ↔ selfish(이기적인)!",
+    tags: ["generous", "selfish"] },
+  { q: "다음 중 'ancient'의 반대말은?",
+    opts: ["old", "modern", "past", "former"], a: 1, kind: "반의어",
+    exp: "ancient(고대의) ↔ modern(현대의)!",
+    tags: ["ancient", "modern"] },
+  { q: "다음 중 'narrow'의 반대말은?",
+    opts: ["thin", "broad", "tight", "short"], a: 1, kind: "반의어",
+    exp: "narrow(좁은) ↔ broad/wide(넓은)!",
+    tags: ["narrow", "broad", "width"] },
+  { q: "다음 중 'succeed'의 반대말은?",
+    opts: ["win", "fail", "pass", "achieve"], a: 1, kind: "반의어",
+    exp: "succeed(성공하다) ↔ fail(실패하다)!",
+    tags: ["succeed", "fail"] },
+  { q: "다음 중 'allow'의 반대말은?",
+    opts: ["permit", "forbid", "let", "agree"], a: 1, kind: "반의어",
+    exp: "allow·permit(허락하다) ↔ forbid(금지하다)!",
+    tags: ["allow", "permit", "ban"] },
+  { q: "다음 중 'absent'의 반대말은?",
+    opts: ["late", "present", "early", "missing"], a: 1, kind: "반의어",
+    exp: "absent(결석한) ↔ present(출석한)!",
+    tags: ["absent", "attend"] },
+  { q: "다음 중 'expensive'의 반대말은?",
+    opts: ["cheap", "costly", "valuable", "precious"], a: 0, kind: "반의어",
+    exp: "expensive(비싼) ↔ cheap(싼)!",
+    tags: ["expensive", "bargain", "discount"] },
+  { q: "다음 중 'create'의 반대말은?",
+    opts: ["make", "destroy", "build", "produce"], a: 1, kind: "반의어",
+    exp: "create(창조하다) ↔ destroy(파괴하다)!",
+    tags: ["create", "destroy"] },
+  { q: "다음 중 'appear'의 반대말은?",
+    opts: ["show up", "disappear", "arrive", "come"], a: 1, kind: "반의어",
+    exp: "appear(나타나다) ↔ disappear(사라지다)! dis-는 반대를 뜻하는 접두사야.",
+    tags: ["appear"] },
+  { q: "다음 중 'freeze'의 반대말은?",
+    opts: ["cool", "melt", "chill", "harden"], a: 1, kind: "반의어",
+    exp: "freeze(얼다) ↔ melt(녹다)!",
+    tags: ["freeze", "melt"] },
+  { q: "다음 중 'borrow'의 반대말은?",
+    opts: ["take", "lend", "get", "receive"], a: 1, kind: "반의어",
+    exp: "borrow(빌리다) ↔ lend(빌려주다)!",
+    tags: ["borrow", "lend"] },
+  { q: "다음 중 'harmful'의 반대말은?",
+    opts: ["dangerous", "helpful", "painful", "awful"], a: 1, kind: "반의어",
+    exp: "harmful(해로운) ↔ helpful/useful(이로운)!",
+    tags: ["harmful", "useful"] },
+  { q: "다음 중 'public'의 반대말은?",
+    opts: ["common", "private", "open", "social"], a: 1, kind: "반의어",
+    exp: "public(공공의) ↔ private(사적인)!",
+    tags: ["public", "private"] },
+  { q: "다음 중 'rare'의 반대말은?",
+    opts: ["unusual", "common", "strange", "special"], a: 1, kind: "반의어",
+    exp: "rare(드문) ↔ common(흔한)!",
+    tags: ["rare", "common"] },
+  { q: "다음 중 'reduce'의 반대말은?",
+    opts: ["cut", "increase", "lower", "lessen"], a: 1, kind: "반의어",
+    exp: "reduce(줄이다) ↔ increase(늘리다)!",
+    tags: ["reduce", "increase"] },
+  { q: "다음 중 'brave'의 반대말은?",
+    opts: ["bold", "afraid", "strong", "calm"], a: 1, kind: "반의어",
+    exp: "brave(용감한) ↔ afraid/fearful(두려워하는)!",
+    tags: ["brave", "afraid", "frightened"] },
+  { q: "다음 중 'remember to do'와 'remember doing'의 차이로 알맞은 것은?",
+    opts: ["둘 다 '~한 것을 기억하다'", "앞은 '할 일을', 뒤는 '한 일을' 기억", "앞은 '한 일을', 뒤는 '할 일을' 기억", "차이가 없다"], a: 1, kind: "혼동어",
+    exp: "remember to do = (앞으로) 할 일을 기억하다 / remember doing = (이미) 한 일을 기억하다!",
+    tags: ["memory"] },
+  { q: "다음 중 'few'와 'a few'의 차이로 알맞은 것은?",
+    opts: ["few는 '거의 없는', a few는 '약간 있는'", "둘 다 '많은'", "few는 '약간 있는', a few는 '거의 없는'", "차이가 없다"], a: 0, kind: "혼동어",
+    exp: "few = 거의 없다(부정), a few = 조금 있다(긍정)! little/a little도 같은 원리야.",
+    tags: ["several", "plenty"] }
+];
+
+/* === [3] 저장소 ====================================================== */
+const KEY = 'sy-m3-vocab2000-v1';
+const store = {
+  d: { session: 0, done: [], rate: 0.85, wrongWords: [], wrongQs: [], extra: [] },
+  load() { try { const r = localStorage.getItem(KEY); if (r) Object.assign(this.d, JSON.parse(r)); }
+           catch (e) { console.warn('기록 불러오기 실패', e); } },
+  save() { try { localStorage.setItem(KEY, JSON.stringify(this.d)); }
+           catch (e) { console.warn('저장 실패', e); } }
+};
+store.load();
+
+/* 기본 단어 + 사용자가 추가한 단어 */
+function allWords() { return WORDS.concat(store.d.extra || []); }
+function sessionCount() { return Math.ceil(allWords().length / 10); }
+function sessionWords(i) { return allWords().slice(i * 10, i * 10 + 10); }
+
+/* === [4] 유틸 ======================================================== */
+function el(t, c, x) { const n = document.createElement(t); if (c) n.className = c;
+                       if (x !== undefined && x !== null) n.textContent = x; return n; }
+const $ = s => document.querySelector(s);
+let tt = null;
+function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.remove('hidden');
+                    clearTimeout(tt); tt = setTimeout(() => t.classList.add('hidden'), 2600); }
+function shuffle(a) { const b = a.slice();
+  for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; }
+  return b; }
+
+/* === [5] TTS ========================================================= */
+const TTS = {
+  voices: [],
+  init() { const load = () => { this.voices = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang)); };
+           load(); if (typeof speechSynthesis.onvoiceschanged !== 'undefined') speechSynthesis.onvoiceschanged = load; },
+  speak(text) {
+    if (!('speechSynthesis' in window)) { toast('이 브라우저는 음성 읽기를 지원하지 않아.'); return; }
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US'; u.rate = store.d.rate;
+    const v = this.voices.find(x => /en-US/i.test(x.lang)) || this.voices[0];
+    if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  }
+};
+
+/* === [6] 한국어 주관식 채점기 ==========================================
+   뜻이 여러 개면 하나만 맞아도 정답. 조사·어미 차이도 정답으로 인정한다.
+   예) "버리다" / "버림" / "포기하다" → 모두 정답
+   ====================================================================== */
+function normKo(s) {
+  let t = String(s)
+    .replace(/\(.*?\)|\[.*?\]/g, ' ')          // 괄호 설명 제거
+    .replace(/[~·ㆍ・…'"'".,!?]/g, ' ')
+    .replace(/\s+/g, '');
+  // 조사·어미는 떼어 내되, 떼고 나서 두 글자 이상 남을 때만 (예: "증가"는 그대로 둔다)
+  const cut = t.replace(/(하다|되다|시키다|이다|한|히|의|을|를|는|은|이|가)$/, '');
+  if (cut.length >= 2) t = cut;
+  return t;
+}
+function meaningTokens(meaning) {
+  return String(meaning).split(/[,/;]/).map(normKo).filter(t => t.length > 0);
+}
+/* 한글을 자모로 풀어 쓴다. "버리" → ㅂㅓㄹㅣ
+   이렇게 하면 "버리다"와 "버림"처럼 어미만 다른 답도 같은 줄기로 인식된다. */
+const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ'.split('');
+const JUNG = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'.split('');
+const JONG = ['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ',
+              'ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+function toJamo(s) {
+  let out = '';
+  for (const ch of String(s)) {
+    const code = ch.charCodeAt(0) - 0xAC00;
+    if (code >= 0 && code <= 11171) {
+      out += CHO[Math.floor(code / 588)] + JUNG[Math.floor((code % 588) / 28)] + JONG[code % 28];
+    } else out += ch;
+  }
+  return out;
+}
+const stem = s => toJamo(String(s).replace(/다$/, ''));
+
+const isVowel = c => JUNG.indexOf(c) >= 0;
+
+function matchOne(a, t) {
+  if (!a || !t) return false;
+  if (t === a) return true;                            // "기후" → "기후"
+  if (a.length >= 2 && t.includes(a)) return true;     // "버리" → "버리다"
+  if (t.length >= 2 && a.includes(t)) return true;     // "영향" → "영향을 미치다"
+  // 어미만 다른 답을 인정한다: 자모로 풀어 줄기가 같으면 정답
+  const aj = stem(a), tj = stem(t);
+  const short = Math.min(aj.length, tj.length);
+  if (short < 4) return false;                         // 너무 짧으면 우연의 일치를 막는다
+  if (aj.startsWith(tj) || tj.startsWith(aj)) return true;          // "버림" → "버리다"
+  if (aj.length === tj.length) {                                     // "버려" → "버리다"
+    let cp = 0; while (cp < short && aj[cp] === tj[cp]) cp++;
+    if (cp === short - 1 && isVowel(aj[cp]) && isVowel(tj[cp])) return true;
+  }
+  return false;
+}
+function gradeKo(answer, meaning) {
+  const a = normKo(answer);
+  if (!a) return false;
+  const toks = meaningTokens(meaning);
+  // 답을 통째로 쓴 경우와, 쉼표로 여러 뜻을 적은 경우를 모두 인정
+  const parts = String(answer).split(/[,/;]/).map(normKo).filter(Boolean);
+  return toks.some(t => matchOne(a, t) || parts.some(pp => matchOne(pp, t)));
+}
+
+/* === [7] 세션 상태 ==================================================== */
+const S = { step: 1, quiz: [], quizDone: false, cq: [], cqIdx: 0, cqScore: 0, quizScore: 0 };
+
+function curWords() { return sessionWords(store.d.session); }
+
+function setStep(n) {
+  S.step = n;
+  ['#step1','#step2','#step3'].forEach((id, i) => $(id).classList.toggle('hidden', i + 1 !== n));
+  $('#note').classList.add('hidden'); $('#menu').classList.add('hidden');
+  $('#actionbar').classList.remove('hidden');
+  [1,2,3].forEach(i => {
+    const p = $('#pill-' + i);
+    p.className = 'rounded-lg py-1.5 text-center text-[11px] font-bold ' +
+      (i < n ? 'step-done' : i === n ? 'step-now' : 'step-wait');
+  });
+  $('#bar').style.width = ((n - 1) / 3 * 100) + '%';
+  updateMain();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateMain() {
+  const b = $('#btn-main');
+  b.disabled = false;
+  b.className = 'tap flex-1 rounded-xl bg-teal-600 text-white text-sm font-extrabold';
+  if (S.step === 1) b.textContent = '암기 완료 ▶ 2단계로';
+  else if (S.step === 2) b.textContent = S.quizDone ? '3단계로 ▶' : '채점하기';
+  else b.textContent = S.cqIdx >= S.cq.length ? '다음 세션 ▶' : ('문제를 풀어 보자 (' + (S.cqIdx) + '/' + S.cq.length + ')');
+  if (S.step === 3 && S.cqIdx < S.cq.length) {
+    b.disabled = true;
+    b.className = 'tap flex-1 rounded-xl bg-black/10 text-ink/40 text-sm font-extrabold';
+  }
+}
+
+/* === [8] 1단계 ======================================================== */
+function render1() {
+  const box = $('#word-list'); box.replaceChildren();
+  curWords().forEach((w, i) => {
+    const n = store.d.session * 10 + i + 1;
+    const c = el('article', 'pop bg-white rounded-2xl shadow-soft p-3.5');
+    const top = el('div', 'flex items-start gap-2.5');
+    top.appendChild(el('span', 'shrink-0 w-7 h-7 rounded-lg bg-teal-50 text-teal-700 grid place-items-center text-xs font-extrabold', String(n)));
+    const mid = el('div', 'min-w-0 flex-1');
+    const line = el('div', 'flex flex-wrap items-baseline gap-x-2');
+    line.appendChild(el('span', 'font-en font-extrabold text-[19px] break-all', w[0]));
+    line.appendChild(el('span', 'text-[11px] text-ink/45 font-en', w[1]));
+    mid.appendChild(line);
+    mid.appendChild(el('p', 'text-sm font-bold text-teal-700 mt-0.5', w[2]));
+    top.appendChild(mid);
+    const sp = el('button', 'tap shrink-0 w-11 rounded-xl bg-teal-600 text-white text-base', '🔊');
+    sp.setAttribute('aria-label', w[0] + ' 발음 듣기');
+    sp.addEventListener('click', () => TTS.speak(w[0]));
+    top.appendChild(sp);
+    c.appendChild(top);
+
+    const ex = el('div', 'mt-2.5 pt-2.5 border-t border-black/5');
+    const exline = el('div', 'flex items-start gap-2');
+    exline.appendChild(el('p', 'font-en text-[13px] leading-snug flex-1', w[3]));
+    const sp2 = el('button', 'tap shrink-0 w-9 rounded-lg bg-black/5 text-sm', '🔊');
+    sp2.setAttribute('aria-label', '예문 듣기');
+    sp2.addEventListener('click', () => TTS.speak(w[3]));
+    exline.appendChild(sp2);
+    ex.appendChild(exline);
+    ex.appendChild(el('p', 'text-[12px] text-ink/50 mt-1', w[4]));
+    c.appendChild(ex);
+    box.appendChild(c);
+  });
+}
+
+/* === [9] 2단계 ======================================================== */
+function build2() {
+  S.quiz = shuffle(curWords()).slice(0, 5).map(w => ({ w, ans: '', ok: null }));
+  S.quizDone = false;
+  render2();
+}
+function render2() {
+  const box = $('#quiz-list'); box.replaceChildren();
+  S.quiz.forEach((q, i) => {
+    const c = el('article', 'pop bg-white rounded-2xl shadow-soft p-3.5');
+    const top = el('div', 'flex items-center gap-2.5');
+    top.appendChild(el('span', 'shrink-0 w-7 h-7 rounded-lg bg-sun-100 text-sun-500 grid place-items-center text-xs font-extrabold', String(i + 1)));
+    const t = el('div', 'min-w-0 flex-1');
+    const l = el('div', 'flex flex-wrap items-baseline gap-x-2');
+    l.appendChild(el('span', 'font-en font-extrabold text-[19px] break-all', q.w[0]));
+    l.appendChild(el('span', 'text-[11px] text-ink/45 font-en', q.w[1]));
+    t.appendChild(l);
+    top.appendChild(t);
+    const sp = el('button', 'tap shrink-0 w-11 rounded-xl bg-black/5 text-base', '🔊');
+    sp.addEventListener('click', () => TTS.speak(q.w[0]));
+    top.appendChild(sp);
+    c.appendChild(top);
+
+    const inp = el('input', 'w-full mt-2.5 px-3 py-2.5 rounded-xl border-2 text-sm outline-none ' +
+      (q.ok === null ? 'border-black/10 focus:border-teal-400' : q.ok ? 'border-teal-400 bg-teal-50' : 'border-rose-400 bg-rose-50'));
+    inp.type = 'text'; inp.value = q.ans; inp.placeholder = '뜻을 한국어로 입력';
+    inp.setAttribute('enterkeyhint', 'next');
+    inp.setAttribute('autocomplete', 'off'); inp.setAttribute('autocapitalize', 'off');
+    if (S.quizDone) inp.readOnly = true;
+    inp.addEventListener('input', e => { q.ans = e.target.value; });
+    inp.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const next = box.querySelectorAll('input')[i + 1];
+      if (next) next.focus(); else grade2();
+    });
+    c.appendChild(inp);
+
+    if (q.ok !== null) {
+      const r = el('p', 'text-xs mt-2 leading-relaxed ' + (q.ok ? 'text-teal-700' : 'text-rose-500'),
+        (q.ok ? '⭕ 정답! ' : '❌ 정답은 ') + q.w[2]);
+      c.appendChild(r);
+      if (!q.ok) {
+        c.appendChild(el('p', 'text-[11px] text-ink/50 mt-1 font-en', q.w[3]));
+        c.appendChild(el('p', 'text-[11px] text-ink/45', q.w[4]));
+      }
+    }
+    box.appendChild(c);
+  });
+}
+function grade2() {
+  if (S.quizDone) return;
+  if (S.quiz.some(q => !q.ans.trim())) { toast('아직 비어 있는 칸이 있어. 모르면 "모름"이라고 적어도 돼!'); return; }
+  S.quizDone = true;
+  S.quizScore = 0;
+  S.quiz.forEach(q => {
+    q.ok = gradeKo(q.ans, q.w[2]);
+    if (q.ok) S.quizScore++;
+    else addWrongWord(q.w);
+  });
+  render2();
+
+  const wrong = S.quiz.filter(q => !q.ok);
+  const box = $('#quiz-result'); box.replaceChildren(); box.classList.remove('hidden');
+  const card = el('div', 'pop bg-white rounded-2xl shadow-soft p-4 border-2 ' +
+    (S.quizScore === 5 ? 'border-teal-400' : 'border-sun-400'));
+  card.appendChild(el('p', 'text-center text-3xl', S.quizScore === 5 ? '🎉' : S.quizScore >= 3 ? '👍' : '💪'));
+  card.appendChild(el('p', 'text-center font-en font-extrabold text-2xl mt-1', S.quizScore + ' / 5'));
+  card.appendChild(el('p', 'text-center text-xs text-ink/60 mt-1',
+    S.quizScore === 5 ? '완벽해! 바로 3단계로 가 보자.'
+    : S.quizScore >= 3 ? '잘했어! 틀린 단어만 한 번 더 보고 가자.'
+    : '괜찮아, 처음엔 다 그래. 틀린 단어를 소리 내어 3번 읽어 보자!'));
+  if (wrong.length) {
+    const t = el('div', 'mt-3 pt-3 border-t border-black/5');
+    t.appendChild(el('p', 'text-xs font-bold mb-1.5', '🔁 다시 짚고 갈 단어'));
+    wrong.forEach(q => {
+      const r = el('div', 'flex items-baseline gap-2 py-1');
+      r.appendChild(el('span', 'font-en font-bold text-sm', q.w[0]));
+      r.appendChild(el('span', 'text-xs text-ink/60', q.w[2]));
+      t.appendChild(r);
+    });
+    t.appendChild(el('p', 'text-[11px] text-ink/45 mt-1.5', '오답노트에 자동으로 담아 뒀어.'));
+    card.appendChild(t);
+  }
+  box.appendChild(card);
+  updateMain();
+  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function addWrongWord(w) {
+  const list = store.d.wrongWords;
+  if (!list.some(x => x[0] === w[0])) { list.push(w); store.save(); }
+}
+
+/* === [10] 3단계 ======================================================= */
+function build3() {
+  const ten = new Set(curWords().map(w => String(w[0]).toLowerCase()));
+  const matched = shuffle(CQ.filter(q => q.tags.some(t => ten.has(String(t).toLowerCase()))));
+  const rest = shuffle(CQ.filter(q => !matched.includes(q)));
+  S.cq = matched.concat(rest).slice(0, 3);
+  S.cqIdx = 0; S.cqScore = 0;
+  render3();
+}
+function render3() {
+  const box = $('#cq-list'); box.replaceChildren();
+  $('#final').classList.add('hidden');
+  S.cq.forEach((q, i) => {
+    if (i > S.cqIdx) return;                       // 한 문제씩 공개
+    const c = el('article', 'pop bg-white rounded-2xl shadow-soft p-4');
+    const h = el('div', 'flex items-center gap-2 mb-2');
+    h.appendChild(el('span', 'text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-50 text-teal-700', q.kind));
+    h.appendChild(el('span', 'text-[11px] text-ink/40', 'Q' + (i + 1) + ' / ' + S.cq.length));
+    c.appendChild(h);
+    c.appendChild(el('p', 'text-sm font-bold leading-relaxed', q.q));
+
+    const opts = el('div', 'flex flex-col gap-2 mt-3');
+    q.opts.forEach((o, k) => {
+      const picked = q.picked !== undefined;
+      let cls = 'tap w-full text-left px-3 py-2.5 rounded-xl border-2 text-sm transition flex items-center gap-2 ';
+      if (!picked) cls += 'border-black/10 bg-white hover:border-teal-400 active:bg-teal-50';
+      else if (k === q.a) cls += 'border-teal-500 bg-teal-50 font-bold';
+      else if (k === q.picked) cls += 'border-rose-400 bg-rose-50';
+      else cls += 'border-black/5 bg-white text-ink/40';
+      const b = el('button', cls);
+      b.appendChild(el('span', 'shrink-0 w-6 h-6 rounded-md bg-black/5 grid place-items-center text-[11px] font-bold', String(k + 1)));
+      b.appendChild(el('span', 'font-en flex-1', o));
+      if (picked && k === q.a) b.appendChild(el('span', 'text-teal-600', '⭕'));
+      if (picked && k === q.picked && k !== q.a) b.appendChild(el('span', 'text-rose-500', '❌'));
+      if (!picked) b.addEventListener('click', () => pick(i, k));
+      opts.appendChild(b);
+    });
+    c.appendChild(opts);
+
+    if (q.picked !== undefined) {
+      const ok = q.picked === q.a;
+      const fb = el('div', 'mt-3 rounded-xl px-3 py-2.5 border-l-4 ' +
+        (ok ? 'bg-teal-50 border-teal-500' : 'bg-sun-50 border-sun-400'));
+      fb.appendChild(el('p', 'text-xs font-bold', ok ? '⭕ 정답이야! 잘했어.' : '❌ 아쉬워! 정답은 ' + (q.a + 1) + '번 ' + q.opts[q.a]));
+      fb.appendChild(el('p', 'text-[12px] text-ink/65 mt-1 leading-relaxed', q.exp));
+      c.appendChild(fb);
+    }
+    box.appendChild(c);
+  });
+  if (S.cqIdx >= S.cq.length) renderFinal();
+  updateMain();
+}
+function pick(i, k) {
+  const q = S.cq[i];
+  if (q.picked !== undefined) return;
+  q.picked = k;
+  if (k === q.a) S.cqScore++;
+  else {
+    const list = store.d.wrongQs;
+    if (!list.some(x => x.q === q.q)) { list.push({ q: q.q, opts: q.opts, a: q.a, exp: q.exp, kind: q.kind }); store.save(); }
+  }
+  S.cqIdx = i + 1;
+  render3();
+  setTimeout(() => {
+    const cards = $('#cq-list').children;
+    const target = cards[Math.min(i + 1, cards.length - 1)];
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 120);
+}
+function renderFinal() {
+  const total = S.quizScore + S.cqScore, max = 8;
+  const f = $('#final'); f.replaceChildren(); f.classList.remove('hidden');
+  const c = el('div', 'pop bg-white rounded-2xl shadow-soft p-4 border-2 border-teal-400 text-center');
+  c.appendChild(el('p', 'text-3xl', total >= 7 ? '🏆' : total >= 5 ? '🥈' : '🌱'));
+  c.appendChild(el('p', 'text-sm font-bold mt-1', '세션 ' + (store.d.session + 1) + ' 완료!'));
+  c.appendChild(el('p', 'font-en font-extrabold text-2xl mt-0.5', total + ' / ' + max));
+  c.appendChild(el('p', 'text-xs text-ink/55 mt-1',
+    '2단계 ' + S.quizScore + '/5 · 3단계 ' + S.cqScore + '/3'));
+  c.appendChild(el('p', 'text-xs text-ink/60 mt-2 leading-relaxed',
+    total >= 7 ? '아주 훌륭해! 이 속도면 2000개도 금방이야. 다음 세션으로 가자.'
+    : total >= 5 ? '잘하고 있어! 오답노트만 한 번 보고 다음으로 넘어가자.'
+    : '오늘 틀린 건 오답노트에 담아 뒀어. 내일 다시 보면 꼭 네 것이 될 거야.'));
+  f.appendChild(c);
+
+  if (!store.d.done.includes(store.d.session)) { store.d.done.push(store.d.session); store.save(); }
+}
+
+/* === [11] 세션 이동 ==================================================== */
+function goSession(i) {
+  const n = sessionCount();
+  if (i < 0 || i >= n) { toast('마지막 세션이야! 메뉴에서 단어를 더 추가할 수 있어.'); return; }
+  store.d.session = i; store.save();
+  S.quizDone = false; S.quizScore = 0; S.cqScore = 0; S.cqIdx = 0;
+  $('#quiz-result').classList.add('hidden');
+  const w = curWords();
+  $('#sess-label').textContent = '세션 ' + (i + 1) + ' / ' + n + ' · 단어 ' + (i * 10 + 1) + '~' + (i * 10 + w.length);
+  render1(); build2(); build3();
+  setStep(1);
+  renderGrid();
+}
+function renderGrid() {
+  const g = $('#sess-grid'); g.replaceChildren();
+  for (let i = 0; i < sessionCount(); i++) {
+    const on = i === store.d.session, ok = store.d.done.includes(i);
+    const b = el('button', 'tap rounded-lg text-[11px] font-bold border transition ' +
+      (on ? 'bg-teal-600 text-white border-teal-600' : ok ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-white text-ink/50 border-black/10'),
+      (ok && !on ? '✓' : '') + (i + 1));
+    b.addEventListener('click', () => { goSession(i); });
+    g.appendChild(b);
+  }
+  const done = store.d.done.length, n = sessionCount();
+  $('#stat').textContent = '총 단어 ' + allWords().length + '개 · 세션 ' + n + '개 · 완료 ' + done + '개 · ' +
+    '오답 단어 ' + store.d.wrongWords.length + '개 · 오답 문제 ' + store.d.wrongQs.length + '개' +
+    (store.d.extra.length ? ' · 직접 추가한 단어 ' + store.d.extra.length + '개' : '');
+}
+
+/* === [12] 오답노트 ===================================================== */
+function renderNote() {
+  const box = $('#note-list'); box.replaceChildren();
+  const ws = store.d.wrongWords, qs = store.d.wrongQs;
+  $('#note-count').textContent = '틀린 단어 ' + ws.length + '개 · 틀린 문제 ' + qs.length + '개';
+  if (!ws.length && !qs.length) {
+    box.appendChild(el('p', 'text-center text-sm text-ink/40 py-14', '아직 오답이 없어. 좋은 출발이야! 🎉'));
+    return;
+  }
+  ws.forEach(w => {
+    const c = el('div', 'bg-white rounded-2xl shadow-soft p-3.5');
+    const t = el('div', 'flex items-center gap-2');
+    t.appendChild(el('span', 'font-en font-extrabold text-[17px] flex-1 break-all', w[0]));
+    const sp = el('button', 'tap shrink-0 w-10 rounded-lg bg-black/5', '🔊');
+    sp.addEventListener('click', () => TTS.speak(w[0]));
+    t.appendChild(sp);
+    const del = el('button', 'tap shrink-0 w-10 rounded-lg bg-black/5 text-xs', '✓');
+    del.title = '외웠어요';
+    del.addEventListener('click', () => {
+      store.d.wrongWords = store.d.wrongWords.filter(x => x[0] !== w[0]);
+      store.save(); renderNote(); renderGrid(); toast('오답노트에서 지웠어. 잘했어!');
+    });
+    t.appendChild(del);
+    c.appendChild(t);
+    c.appendChild(el('p', 'text-sm font-bold text-teal-700 mt-0.5', w[2]));
+    c.appendChild(el('p', 'text-[12px] text-ink/50 mt-1 font-en', w[3]));
+    c.appendChild(el('p', 'text-[12px] text-ink/45', w[4]));
+    box.appendChild(c);
+  });
+  qs.forEach(q => {
+    const c = el('div', 'bg-white rounded-2xl shadow-soft p-3.5');
+    c.appendChild(el('span', 'text-[10px] font-bold px-2 py-0.5 rounded-md bg-sun-100 text-sun-500', q.kind));
+    c.appendChild(el('p', 'text-sm font-bold leading-relaxed mt-1.5', q.q));
+    c.appendChild(el('p', 'text-xs text-teal-700 font-bold mt-1.5', '정답: ' + (q.a + 1) + '번 ' + q.opts[q.a]));
+    c.appendChild(el('p', 'text-[12px] text-ink/60 mt-1 leading-relaxed', q.exp));
+    box.appendChild(c);
+  });
+}
+
+/* === [13] 단어 가져오기 =============================================== */
+function importWords(text) {
+  const rows = text.split(/\r?\n/).map(r => r.trim()).filter(Boolean);
+  const added = [], bad = [];
+  rows.forEach((r, i) => {
+    const p = r.split(/\t|,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(x => x.trim().replace(/^"|"$/g, ''));
+    if (p.length >= 3 && p[0]) added.push([p[0], p[1] || '', p[2] || '', p[3] || '', p[4] || '']);
+    else bad.push(i + 1);
+  });
+  if (!added.length) return { added: 0, bad };
+  const seen = new Set(allWords().map(w => String(w[0]).toLowerCase()));
+  const fresh = added.filter(w => !seen.has(String(w[0]).toLowerCase()));
+  store.d.extra = (store.d.extra || []).concat(fresh);
+  store.save();
+  return { added: fresh.length, dup: added.length - fresh.length, bad };
+}
+
+/* === [14] 이벤트 ====================================================== */
+$('#rate').addEventListener('input', e => {
+  store.d.rate = parseFloat(e.target.value);
+  $('#rate-val').textContent = store.d.rate.toFixed(2); store.save();
+});
+$('#btn-main').addEventListener('click', () => {
+  if (S.step === 1) { setStep(2); }
+  else if (S.step === 2) { if (!S.quizDone) grade2(); else setStep(3); }
+  else { goSession(store.d.session + 1); }
+});
+$('#btn-prev').addEventListener('click', () => {
+  if (!$('#note').classList.contains('hidden') || !$('#menu').classList.contains('hidden')) { setStep(S.step); return; }
+  if (S.step > 1) setStep(S.step - 1);
+  else goSession(store.d.session - 1);
+});
+$('#btn-note').addEventListener('click', () => {
+  ['#step1','#step2','#step3','#menu'].forEach(i => $(i).classList.add('hidden'));
+  $('#note').classList.remove('hidden'); renderNote();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+$('#note-close').addEventListener('click', () => setStep(S.step));
+$('#btn-menu').addEventListener('click', () => {
+  ['#step1','#step2','#step3','#note'].forEach(i => $(i).classList.add('hidden'));
+  $('#menu').classList.remove('hidden'); renderGrid();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+$('#menu-close').addEventListener('click', () => setStep(S.step));
+$('#import-go').addEventListener('click', () => {
+  const t = $('#import-box').value;
+  if (!t.trim()) { toast('붙여 넣은 내용이 없어!'); return; }
+  const r = importWords(t);
+  const m = $('#import-msg');
+  if (!r.added) { m.className = 'text-[11px] mt-2 text-rose-500';
+                  m.textContent = '추가된 단어가 없어. 형식을 다시 확인해 줘 (단어/품사/뜻 최소 3칸).'; return; }
+  m.className = 'text-[11px] mt-2 text-teal-700';
+  m.textContent = r.added + '개 추가 완료!' + (r.dup ? ' (중복 ' + r.dup + '개 제외)' : '') +
+                  (r.bad.length ? ' / ' + r.bad.length + '줄은 형식이 맞지 않아 건너뛰었어.' : '');
+  $('#import-box').value = '';
+  renderGrid();
+});
+$('#import-clear').addEventListener('click', () => {
+  if (!confirm('직접 추가한 단어를 모두 지울까? (기본 단어는 그대로야)')) return;
+  store.d.extra = []; if (store.d.session >= sessionCount()) store.d.session = sessionCount() - 1;
+  store.save(); renderGrid(); goSession(store.d.session); toast('추가한 단어를 지웠어.');
+});
+$('#btn-reset').addEventListener('click', () => {
+  if (!confirm('진도·오답노트·추가 단어를 모두 지울까? 되돌릴 수 없어!')) return;
+  store.d = { session: 0, done: [], rate: 0.85, wrongWords: [], wrongQs: [], extra: [] };
+  store.save(); goSession(0); toast('모든 기록을 초기화했어.');
+});
+
+/* === [15] 시작 ======================================================== */
+(function init() {
+  $('#rate').value = store.d.rate;
+  $('#rate-val').textContent = Number(store.d.rate).toFixed(2);
+  TTS.init();
+  if (store.d.session >= sessionCount()) store.d.session = 0;
+  goSession(store.d.session);
+})();
+</script>
+</body>
+</html>
