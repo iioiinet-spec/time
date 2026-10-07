@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0B1F2A" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<title>영재고·과학고 대비 영단어 · 3단계 세션 학습</title>
+
+<!-- 외부 의존성은 CDN 2개뿐 (Tailwind + 웹폰트). 그 외 100% 바닐라 JS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+
+<script>
+  /* CDN이 막히거나 오프라인이어도 스크립트 오류가 나지 않도록 방어 */
+  if (window.tailwind) tailwind.config = {
+    theme: { extend: {
+      fontFamily: { sans: ['Noto Sans KR','system-ui','sans-serif'], en: ['Nunito','Noto Sans KR','sans-serif'] },
+      colors: {
+        /* 다크 네이비 + 틸: KOI/영재고 계열 디자인 */
+        ivory:'#0B1F2A',            /* 배경 */
+        ink:'#E8F1F2',              /* 본문 글자 */
+        card:'#13303D',             /* 카드 배경 */
+        line:'#23485A',             /* 경계선 */
+        teal:{50:'#17404E',100:'#1C4C5C',400:'#5FD3C0',500:'#3FC3AD',600:'#2BB29B',700:'#1E8F7C'},
+        sun:{50:'#2B2A1A',100:'#3A3620',400:'#F2C14E',500:'#E0A92F'},
+        rose:{50:'#38222A',400:'#F08A80',500:'#E06A5E'}
+      },
+      boxShadow:{ soft:'0 6px 24px -8px rgba(42,38,34,.18)' }
+    } }
+  };
+</script>
+
+<style>
+  /* Tailwind CDN이 로드되지 않아도 최소한 화면 전환은 동작하도록 */
+  .hidden { display: none !important; }
+
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: contain; }
+
+  /* 모바일: iOS가 입력 시 화면을 확대하지 않도록 글자 크기를 16px 이상으로 */
+  input, select, textarea, button { font-size: 16px; font-family: inherit; }
+  input, textarea { background:#0E2834; color:#E8F1F2; }
+  input::placeholder, textarea::placeholder { color:#6E8C99; }
+
+  /* 모바일: 손가락으로 누르기 좋은 최소 크기 */
+  .tap { min-height: 44px; }
+  ::selection { background:#2BB29B; color:#0B1F2A; }
+
+  /* 아이폰 노치/홈바 영역 확보 */
+  .safe-b { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
+  .safe-t { padding-top: env(safe-area-inset-top, 0px); }
+
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-thumb { background: #23485A; border-radius: 9px; }
+
+  @keyframes pop { 0% { transform: translateY(8px); opacity: 0 } 100% { transform: none; opacity: 1 } }
+  .pop { animation: pop .22s ease-out both; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+  .shake { animation: shake .3s; }
+
+  .step-done { background:#2BB29B; color:#0B1F2A; }
+  .step-now  { background:#F2C14E; color:#0B1F2A; }
+  .step-wait { background:#17333F; color:#7C97A4; }
+  input[type=range] { accent-color:#3FC3AD; }
+</style>
+</head>
+
+<body class="bg-ivory text-ink font-sans min-h-screen">
+
+<!-- ═══════════ HEADER ═══════════ -->
+<header class="sticky top-0 z-30 bg-ivory/95 backdrop-blur border-b border-line/60 safe-t">
+  <div class="max-w-3xl mx-auto px-4 py-2.5 flex items-center gap-2.5">
+    <div class="w-9 h-9 rounded-xl bg-teal-500 text-ink grid place-items-center text-lg shrink-0">🔬</div>
+    <div class="min-w-0 flex-1">
+      <h1 class="font-en font-extrabold text-base leading-tight">Advanced Vocab</h1>
+      <p id="sess-label" class="text-[11px] text-ink/50 truncate">세션 1 · 단어 1~10</p>
+    </div>
+    <button id="btn-note" class="tap text-[11px] px-2.5 rounded-lg border border-line text-ink/60 hover:bg-card transition">오답노트</button>
+    <button id="btn-menu" class="tap text-[11px] px-2.5 rounded-lg border border-line text-ink/60 hover:bg-card transition">메뉴</button>
+  </div>
+
+  <!-- 단계 표시 -->
+  <div class="max-w-3xl mx-auto px-4 pb-2.5 grid grid-cols-3 gap-1.5">
+    <div id="pill-1" class="step-now  rounded-lg py-1.5 text-center text-[11px] font-bold">1단계 · 단어</div>
+    <div id="pill-2" class="step-wait rounded-lg py-1.5 text-center text-[11px] font-bold">2단계 · 암기확인</div>
+    <div id="pill-3" class="step-wait rounded-lg py-1.5 text-center text-[11px] font-bold">3단계 · 어근/혼동</div>
+  </div>
+  <div class="h-1 bg-line/60"><div id="bar" class="h-full w-0 bg-teal-600 transition-all duration-500"></div></div>
+</header>
+
+<main class="max-w-3xl mx-auto px-4 py-4 pb-40">
+
+  <!-- ═══════════ 1단계 ═══════════ -->
+  <section id="step1">
+    <div class="bg-card rounded-2xl shadow-soft p-4 mb-3">
+      <p class="text-sm font-bold mb-1">1단계 · 오늘의 단어 10개</p>
+      <p class="text-xs text-ink/55 leading-relaxed">뜻과 함께 <b>어근·접사</b>를 같이 보면 처음 보는 단어도 추론할 수 있어. 🔊로 발음을 확인하고, 다 외웠으면 맨 아래 <b>암기 완료</b>를 눌러!</p>
+      <div class="flex items-center gap-3 mt-3 pt-3 border-t border-line/60">
+        <span class="text-[11px] font-bold text-ink/50 shrink-0">🐢 읽기 속도</span>
+        <input id="rate" type="range" min="0.5" max="1.2" step="0.05" value="0.85" class="flex-1" />
+        <span id="rate-val" class="text-[11px] font-en font-bold text-teal-600 w-8 text-right">0.85</span>
+      </div>
+    </div>
+    <div id="word-list" class="flex flex-col gap-2.5"></div>
+  </section>
+
+  <!-- ═══════════ 2단계 ═══════════ -->
+  <section id="step2" class="hidden">
+    <div class="bg-card rounded-2xl shadow-soft p-4 mb-3">
+      <p class="text-sm font-bold mb-1">2단계 · 암기 확인 (주관식 5문제)</p>
+      <p class="text-xs text-ink/55 leading-relaxed">방금 공부한 10개 중 5개를 골랐어. 각 단어의 <b>한국어 뜻</b>을 적어 보자. 뜻이 여러 개면 하나만 써도 정답이야!</p>
+    </div>
+    <div id="quiz-list" class="flex flex-col gap-2.5"></div>
+    <div id="quiz-result" class="hidden mt-3"></div>
+  </section>
+
+  <!-- ═══════════ 3단계 ═══════════ -->
+  <section id="step3" class="hidden">
+    <div class="bg-card rounded-2xl shadow-soft p-4 mb-3">
+      <p class="text-sm font-bold mb-1">3단계 · 어근 &amp; 혼동어 (4지 선다 3문제)</p>
+      <p class="text-xs text-ink/55 leading-relaxed">영재고·과학고 기출에 자주 나오는 <b>어근 분석</b>과 동의어·반의어·혼동어 문제야. 보기를 고르면 바로 해설을 보여 줄게.</p>
+    </div>
+    <div id="cq-list" class="flex flex-col gap-3"></div>
+    <div id="final" class="hidden mt-3"></div>
+  </section>
+
+  <!-- ═══════════ 오답노트 ═══════════ -->
+  <section id="note" class="hidden">
+    <div class="bg-card rounded-2xl shadow-soft p-4 mb-3 flex items-center justify-between gap-2">
+      <div>
+        <p class="text-sm font-bold">📕 오답노트</p>
+        <p id="note-count" class="text-xs text-ink/55 mt-0.5"></p>
+      </div>
+      <button id="note-close" class="tap text-[11px] px-3 rounded-lg bg-teal-600 text-ink font-bold">학습으로</button>
+    </div>
+    <div id="note-list" class="flex flex-col gap-2.5"></div>
+  </section>
+
+  <!-- ═══════════ 메뉴 ═══════════ -->
+  <section id="menu" class="hidden">
+    <div class="bg-card rounded-2xl shadow-soft p-4 mb-3 flex items-center justify-between gap-2">
+      <p class="text-sm font-bold">⚙️ 메뉴</p>
+      <button id="menu-close" class="tap text-[11px] px-3 rounded-lg bg-teal-600 text-ink font-bold">학습으로</button>
+    </div>
+
+    <div class="bg-card rounded-2xl shadow-soft p-4 mb-3">
+      <p class="text-sm font-bold mb-2">세션 이동</p>
+      <p class="text-xs text-ink/55 mb-2.5">공부한 세션은 ✓ 로 표시돼. 번호를 누르면 그 세션으로 이동해.</p>
+      <div id="sess-grid" class="grid grid-cols-6 sm:grid-cols-10 gap-1.5"></div>
+    </div>
+
+    <div class="bg-card rounded-2xl shadow-soft p-4 mb-3">
+      <p class="text-sm font-bold mb-2">단어 추가하기 (2,000개까지 확장)</p>
+      <p class="text-xs text-ink/55 leading-relaxed mb-2">
+        한 줄에 한 단어씩, <code class="bg-line/50 px-1 rounded">단어 / 품사 / 뜻 / 예문 / 해석 / 어근</code> 순서로
+        <b>탭이나 쉼표</b>로 구분해 붙여 넣어. 엑셀에서 복사해 붙여 넣어도 돼.
+        추가한 단어는 이 기기에 저장되고 맨 뒤 세션으로 이어 붙어.
+      </p>
+      <textarea id="import-box" rows="4" placeholder="converge&#9;v.&#9;수렴하다&#9;The series converges.&#9;그 급수는 수렴한다.&#9;con-(함께)+verg(기울다)"
+        class="w-full px-3 py-2 rounded-xl border border-line text-xs outline-none focus:ring-2 focus:ring-teal-400/40"></textarea>
+      <div class="flex gap-2 mt-2">
+        <button id="import-go" class="tap flex-1 rounded-xl bg-teal-600 text-ink text-xs font-bold">추가하기</button>
+        <button id="import-clear" class="tap px-3 rounded-xl bg-line/50 text-xs font-bold">추가분 삭제</button>
+      </div>
+      <p id="import-msg" class="text-[11px] mt-2"></p>
+    </div>
+
+    <div class="bg-card rounded-2xl shadow-soft p-4">
+      <p class="text-sm font-bold mb-2">기록</p>
+      <p id="stat" class="text-xs text-ink/60 leading-relaxed mb-2.5"></p>
+      <button id="btn-reset" class="tap w-full rounded-xl border border-rose-400 text-rose-500 text-xs font-bold">모든 학습 기록 초기화</button>
+    </div>
+  </section>
+</main>
+
+<!-- ═══════════ 하단 고정 버튼 ═══════════ -->
+<div id="actionbar" class="fixed bottom-0 left-0 right-0 z-30 bg-ivory/95 backdrop-blur border-t border-line safe-b pt-3 px-4">
+  <div class="max-w-3xl mx-auto flex gap-2">
+    <button id="btn-prev" class="tap px-4 rounded-xl bg-line/50 text-xs font-bold">◀ 이전</button>
+    <button id="btn-main" class="tap flex-1 rounded-xl bg-teal-600 text-ink text-sm font-extrabold">암기 완료 ▶</button>
+  </div>
+</div>
+
+<footer class="pb-28 text-center text-[11px] text-ink/50">
+  세영코딩연구소 &nbsp;&nbsp; 저자 : 컴퓨터공학박사 KIM
+</footer>
+
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-24 z-50 hidden px-4 py-2.5 rounded-xl bg-ink text-white text-xs shadow-lg max-w-[90%] text-center"></div>
+
+<script>
+/* ==========================================================================
+   영재고·과학고 대비 영단어 · 3단계 세션 학습   (Single HTML File)
+   1단계 단어 제시 → 2단계 주관식 암기 확인 → 3단계 유사단어 4지선다
+   TTS: window.speechSynthesis / 저장: localStorage / 외부 서버 불필요
+   ========================================================================== */
+
+/* === [1] 단어 데이터 ===================================================
+   형식: [단어, 품사, 뜻, 예문, 해석, 어근·포인트]
+   ★ 확장 방법 ★
+   ① 앱 안의 [메뉴 → 단어 추가하기] 에 엑셀/텍스트를 붙여 넣으면 즉시 추가됨
+   ② 또는 아래 WORDS 배열에 같은 형식으로 계속 이어 붙이면 됨
+      (10개마다 자동으로 한 세션이 만들어지므로 화면 코드는 고칠 필요 없음)
+   ====================================================================== */
+const WORDS = [
+  ["advocate", "v./n.", "옹호하다, 주장하다; 옹호자", "Many scientists advocate open data.", "많은 과학자가 공개 데이터를 옹호한다.", "ad-(~쪽으로)+voc(부르다) → 편을 들어 목소리를 내다"],
+  ["articulate", "v./a.", "또렷이 말하다; 명확한", "She articulated her hypothesis clearly.", "그녀는 자신의 가설을 명확히 표현했다.", "artic(마디)=관절처럼 또박또박 끊어 말하다"],
+  ["ascertain", "v.", "확인하다, 알아내다", "We must ascertain the exact cause.", "우리는 정확한 원인을 확인해야 한다.", "as-+certain(확실한) → 확실하게 만들다"],
+  ["attribute", "v./n.", "~의 탓으로 돌리다; 속성, 특성", "He attributed the error to a faulty sensor.", "그는 그 오류를 고장 난 센서 탓으로 돌렸다.", "at-+tribute(주다) → 원인을 ~에게 주다"],
+  ["augment", "v.", "증대시키다", "The data augmented our confidence.", "그 자료는 우리 확신을 키웠다.", "aug(늘리다) → augmented reality(증강 현실)"],
+  ["constitute", "v.", "구성하다, ~이 되다", "Hydrogen and oxygen constitute water.", "수소와 산소가 물을 구성한다.", "con-(함께)+stitu(세우다)"],
+  ["derive", "v.", "끌어내다, 유래하다", "We derived the formula from Newton's law.", "우리는 뉴턴 법칙에서 그 공식을 유도했다.", "de-(아래로)+rive(강) → 흘러나오다"],
+  ["deduce", "v.", "추론하다, 연역하다", "From the data we deduced a pattern.", "자료로부터 우리는 한 패턴을 추론했다.", "de-(아래로)+duc(이끌다) → 일반에서 개별로"],
+  ["elaborate", "v./a.", "자세히 설명하다; 정교한", "Could you elaborate on that point?", "그 점을 더 자세히 설명해 주시겠어요?", "e-(밖으로)+labor(일) → 공들여 펼치다"],
+  ["emulate", "v.", "모방하다, 본받다", "The model emulates human reasoning.", "그 모델은 인간의 추론을 모방한다.", "aemul(경쟁하다) → 따라 하며 겨루다"],
+  ["exemplify", "v.", "예시하다, 전형이 되다", "This case exemplifies the principle.", "이 사례가 그 원리를 잘 보여 준다.", "example+-ify(만들다)"],
+  ["facilitate", "v.", "촉진하다, 수월하게 하다", "Catalysts facilitate chemical reactions.", "촉매는 화학 반응을 촉진한다.", "facil(쉬운) → 쉽게 만들다"],
+  ["formulate", "v.", "공식화하다, 세우다", "He formulated a new hypothesis.", "그는 새 가설을 세웠다.", "formula(공식)에서"],
+  ["implement", "v.", "실행하다, 구현하다", "We implemented the algorithm in Python.", "우리는 그 알고리즘을 파이썬으로 구현했다.", "im-(안에)+ple(채우다) → 실행에 옮기다"],
+  ["conceive", "v.", "생각해 내다, 착상하다", "He conceived the idea in a dream.", "그는 꿈에서 그 착상을 떠올렸다.", "con-+cep(잡다) → 마음에 붙잡다"],
+  ["integrate", "v.", "통합하다, 적분하다", "Integrate the two data sets first.", "먼저 두 자료 집합을 통합해라.", "integer(온전한) → 하나로 만들다"],
+  ["postulate", "v./n.", "가정하다; 공준", "Einstein postulated constant light speed.", "아인슈타인은 광속 불변을 가정했다.", "post-+ul(요구하다) → 요구해 세워 둔 전제"],
+  ["justify", "v.", "정당화하다, 입증하다", "Justify your answer with evidence.", "증거로 네 답을 정당화해라.", "just(옳은)+-ify → 옳음을 보이다"],
+  ["manipulate", "v.", "조작하다, 다루다", "Scientists manipulate variables carefully.", "과학자들은 변인을 신중히 조작한다.", "manu(손)+pul(채우다) → 손으로 다루다"],
+  ["modify", "v.", "수정하다, 변경하다", "We modified the design twice.", "우리는 설계를 두 번 수정했다.", "mod(척도)+-ify → 알맞게 바꾸다"],
+  ["argument", "n.", "논거, 주장", "His argument lacks evidence.", "그의 주장은 증거가 부족하다.", "argu(명백히 하다)"],
+  ["assumption", "n.", "가정, 전제", "The proof rests on one assumption.", "그 증명은 하나의 가정에 의존한다.", "as-+sum(취하다) → 미리 취해 둔 것"],
+  ["conclusion", "n.", "결론", "Draw a conclusion from the results.", "결과로부터 결론을 이끌어 내라.", "con-+clud(닫다) → 논의를 닫다"],
+  ["contradiction", "n.", "모순", "His statement contains a contradiction.", "그의 진술에는 모순이 있다.", "contra-(반대)+dict(말하다)"],
+  ["criterion", "n.", "기준 (복수 criteria)", "Accuracy is the main criterion.", "정확성이 주된 기준이다.", "그리스어 krinein(판단하다)"],
+  ["counterexample", "n.", "반례", "A single counterexample disproves it.", "반례 하나면 그것을 반증한다.", "counter-(반대)+example"],
+  ["fallacy", "n.", "오류, 그릇된 추론", "That is a logical fallacy.", "그것은 논리적 오류이다.", "fall(속이다) → 속이는 논리"],
+  ["hypothesis", "n.", "가설 (복수 hypotheses)", "Test the hypothesis by experiment.", "실험으로 그 가설을 검증해라.", "hypo-(아래)+thesis(놓기) → 밑에 깔아 둔 생각"],
+  ["inference", "n.", "추론", "Her inference proved correct.", "그녀의 추론은 옳은 것으로 드러났다.", "infer의 명사형"],
+  ["premise", "n.", "전제", "If the premise is false, so is the conclusion.", "전제가 거짓이면 결론도 거짓이다.", "pre-(앞)+mis(보내다) → 앞에 보내 둔 것"],
+  ["refute", "v.", "반박하다", "One counterexample refutes the claim.", "반례 하나가 그 주장을 반박한다.", "re-(되돌려)+fut(치다)"],
+  ["rebut", "v.", "반론하다", "He rebutted the criticism calmly.", "그는 그 비판에 침착하게 반론했다.", "re-+but(치다)"],
+  ["substantiate", "v.", "입증하다", "Can you substantiate that claim?", "그 주장을 입증할 수 있니?", "substance(실체) → 실체를 부여하다"],
+  ["validate", "v.", "입증하다, 검증하다", "We validated the model with new data.", "우리는 새 자료로 모델을 검증했다.", "valid(유효한)"],
+  ["verify", "v.", "확인하다, 검증하다", "Verify the result independently.", "그 결과를 독립적으로 검증해라.", "ver(참된)+-ify → 참임을 보이다"],
+  ["coherent", "a.", "일관된, 논리 정연한", "Write a coherent paragraph.", "논리 정연한 문단을 써라.", "co-+her(붙다) → 서로 들러붙어 있다"],
+  ["consistent", "a.", "일관된, 모순 없는", "The results are consistent with theory.", "그 결과는 이론과 일치한다.", "con-+sist(서다) → 함께 서 있다"],
+  ["plausible", "a.", "그럴듯한", "That is a plausible explanation.", "그것은 그럴듯한 설명이다.", "plaud(박수치다) → 박수받을 만한"],
+  ["valid", "a.", "유효한, 타당한", "Your reasoning is valid.", "네 추론은 타당하다.", "val(힘 있는) → value와 같은 뿌리"],
+  ["arbitrary", "a.", "임의의, 자의적인", "Choose an arbitrary point on the line.", "직선 위의 임의의 점을 하나 고르라.", "arbiter(심판) → 심판 마음대로"],
+  ["theorem", "n.", "정리", "Prove the theorem by induction.", "귀납법으로 그 정리를 증명해라.", "theor(보다) → 통찰로 세운 명제"],
+  ["corollary", "n.", "따름정리, 필연적 결과", "This is a corollary of the main theorem.", "이것은 주정리의 따름정리이다.", "corolla(작은 화관) → 덤으로 따라오는 것"],
+  ["axiom", "n.", "공리", "Euclid began with five axioms.", "유클리드는 다섯 공리에서 시작했다.", "axi(가치 있는) → 증명 없이 받아들이는 명제"],
+  ["proof", "n.", "증명", "Write the proof step by step.", "증명을 단계별로 써라.", "prov(시험하다)"],
+  ["induction", "n.", "귀납(법)", "Mathematical induction has two steps.", "수학적 귀납법은 두 단계로 이루어진다.", "in-+duc(이끌다) → 개별에서 일반으로"],
+  ["deduction", "n.", "연역, 공제", "Deduction moves from general to specific.", "연역은 일반에서 개별로 나아간다.", "de-+duc(이끌다)"],
+  ["coefficient", "n.", "계수", "The coefficient of x is three.", "x의 계수는 3이다.", "co-(함께)+effici(작용하다)"],
+  ["polynomial", "n.", "다항식", "Factor this polynomial completely.", "이 다항식을 완전히 인수분해해라.", "poly-(많은)+nom(항)"],
+  ["quotient", "n.", "몫", "Find the quotient and the remainder.", "몫과 나머지를 구하라.", "quot(몇 번) → 몇 번 들어가는가"],
+  ["remainder", "n.", "나머지", "The remainder is two.", "나머지는 2이다.", "re-+main(남다)"],
+  ["converge", "v.", "수렴하다", "The series converges to zero.", "그 급수는 0으로 수렴한다.", "con-(함께)+verg(기울다)"],
+  ["diverge", "v.", "발산하다, 갈라지다", "This sequence diverges to infinity.", "이 수열은 무한대로 발산한다.", "di-(떨어져)+verg(기울다)"],
+  ["infinite", "a.", "무한한", "There are infinite prime numbers.", "소수는 무한히 많다.", "in-(부정)+finite(유한한)"],
+  ["finite", "a.", "유한한", "A finite set has countable elements.", "유한집합은 셀 수 있는 원소를 가진다.", "fin(끝)"],
+  ["symmetry", "n.", "대칭", "The graph has line symmetry.", "그 그래프는 선대칭이다.", "sym-(같은)+metr(측정)"],
+  ["permutation", "n.", "순열", "Count the permutations of five letters.", "다섯 글자의 순열을 세어라.", "per-+mut(바꾸다) → 순서를 바꿈"],
+  ["combination", "n.", "조합", "Order does not matter in a combination.", "조합에서는 순서가 중요하지 않다.", "com-+bin(둘씩)"],
+  ["probability", "n.", "확률", "The probability is one sixth.", "그 확률은 6분의 1이다.", "prob(증명하다) → 그럴 법한 정도"],
+  ["derivative", "n.", "도함수, 미분; 파생물", "Find the derivative of this function.", "이 함수의 도함수를 구하라.", "derive(끌어내다)의 명사형"],
+  ["integral", "n./a.", "적분; 필수적인", "Compute the definite integral.", "정적분을 계산하라.", "integer(온전한) → 전체를 모은 값"],
+  ["velocity", "n.", "속도(방향 포함)", "Velocity is a vector quantity.", "속도는 벡터량이다.", "veloc(빠른) → speed와 달리 방향이 있다"],
+  ["acceleration", "n.", "가속도", "Acceleration equals force over mass.", "가속도는 힘을 질량으로 나눈 값이다.", "ac-+celer(빠른) → accelerator(가속 페달)"],
+  ["momentum", "n.", "운동량", "Momentum is conserved in collisions.", "충돌에서 운동량은 보존된다.", "mov(움직이다)"],
+  ["inertia", "n.", "관성", "A body at rest stays at rest due to inertia.", "정지한 물체는 관성 때문에 정지해 있다.", "in-+ars(기술) → 스스로 움직이지 못함"],
+  ["friction", "n.", "마찰(력)", "Friction slows the sliding block.", "마찰이 미끄러지는 물체를 느리게 한다.", "fric(문지르다)"],
+  ["equilibrium", "n.", "평형, 균형", "The forces are in equilibrium.", "힘들이 평형을 이루고 있다.", "equi-(같은)+libr(저울)"],
+  ["gravitation", "n.", "중력, 만유인력", "Newton explained universal gravitation.", "뉴턴은 만유인력을 설명했다.", "grav(무거운)"],
+  ["magnitude", "n.", "크기, 규모", "Compare the magnitude of the two vectors.", "두 벡터의 크기를 비교하라.", "magn(큰) → magnify(확대하다)"],
+  ["vector", "n.", "벡터", "A vector has both size and direction.", "벡터는 크기와 방향을 모두 가진다.", "vect(나르다)"],
+  ["scalar", "n.", "스칼라", "Temperature is a scalar quantity.", "온도는 스칼라량이다.", "scal(사다리, 눈금)"],
+  ["amplitude", "n.", "진폭", "Louder sound means larger amplitude.", "소리가 클수록 진폭이 크다.", "ampl(넓은)"],
+  ["frequency", "n.", "진동수, 빈도", "Higher frequency means higher pitch.", "진동수가 높을수록 음이 높다.", "frequent(잦은)"],
+  ["wavelength", "n.", "파장", "Red light has a long wavelength.", "붉은빛은 파장이 길다.", "wave+length"],
+  ["refraction", "n.", "굴절", "Refraction bends light in water.", "굴절은 물속에서 빛을 휘게 한다.", "re-+fract(부수다) → fraction과 같은 뿌리"],
+  ["reflection", "n.", "반사, 반영", "The angle of reflection equals that of incidence.", "반사각은 입사각과 같다.", "re-+flect(구부리다)"],
+  ["conductor", "n.", "도체, 전도체", "Copper is an excellent conductor.", "구리는 훌륭한 도체이다.", "con-+duct(이끌다)"],
+  ["insulator", "n.", "절연체, 부도체", "Rubber works as an insulator.", "고무는 절연체로 작용한다.", "insul(섬) → 섬처럼 고립시키다"],
+  ["voltage", "n.", "전압", "Measure the voltage across the resistor.", "저항 양단의 전압을 측정하라.", "볼타(Volta)의 이름에서"],
+  ["resistance", "n.", "저항", "Resistance is measured in ohms.", "저항은 옴 단위로 측정된다.", "re-+sist(서다) → 맞서 서다"],
+  ["radiation", "n.", "복사, 방사선", "Solar radiation reaches the earth.", "태양 복사가 지구에 도달한다.", "radi(광선) → radius와 같은 뿌리"],
+  ["molecule", "n.", "분자", "A water molecule has three atoms.", "물 분자는 원자 세 개를 가진다.", "mol(덩어리)+-cule(작은)"],
+  ["atom", "n.", "원자", "Atoms combine to form molecules.", "원자들이 결합해 분자를 이룬다.", "a-(부정)+tom(자르다) → 더 못 자르는 것"],
+  ["compound", "n./a.", "화합물; 복합의", "Water is a compound, not an element.", "물은 원소가 아니라 화합물이다.", "com-+pound(놓다)"],
+  ["element", "n.", "원소, 요소", "Oxygen is a chemical element.", "산소는 화학 원소이다.", "elem(기본)"],
+  ["catalyst", "n.", "촉매", "A catalyst speeds up a reaction.", "촉매는 반응을 빠르게 한다.", "cata-(아래로)+lyt(풀다)"],
+  ["solvent", "n.", "용매", "Water is a universal solvent.", "물은 만능 용매이다.", "solv(풀다) → solution과 같은 뿌리"],
+  ["solute", "n.", "용질", "The solute dissolves in the solvent.", "용질은 용매에 녹는다.", "solv(풀다)"],
+  ["soluble", "a.", "녹는, 가용성의", "Salt is soluble in water.", "소금은 물에 녹는다.", "solv(풀다)+-ible(가능한)"],
+  ["precipitate", "n./v.", "침전물; 침전하다, 촉발하다", "A white precipitate formed at once.", "흰 침전물이 즉시 생겼다.", "pre-+cipit(머리) → 머리부터 떨어지다"],
+  ["oxidize", "v.", "산화시키다", "Iron oxidizes in moist air.", "쇠는 습한 공기 중에서 산화된다.", "oxygen(산소)에서"],
+  ["reduction", "n.", "환원, 감소", "Oxidation and reduction occur together.", "산화와 환원은 함께 일어난다.", "re-+duc(이끌다) → 되돌리다"],
+  ["bond", "n./v.", "결합; 결합하다", "A covalent bond shares electrons.", "공유 결합은 전자를 공유한다.", "band(묶다)와 같은 뿌리"],
+  ["ion", "n.", "이온", "An ion carries an electric charge.", "이온은 전하를 띤다.", "그리스어 ienai(가다) → 이동하는 입자"],
+  ["isotope", "n.", "동위원소", "Carbon-14 is an isotope of carbon.", "탄소-14는 탄소의 동위원소이다.", "iso-(같은)+top(자리) → 주기율표 같은 자리"],
+  ["acidity", "n.", "산성(도)", "Measure the acidity with pH paper.", "pH 종이로 산성도를 측정하라.", "acid(신, 산)"],
+  ["alkaline", "a.", "염기성의, 알칼리성의", "Soap is slightly alkaline.", "비누는 약간 염기성이다.", "아랍어 al-qali(재)"],
+  ["concentration", "n.", "농도, 집중", "Increase the concentration of the acid.", "산의 농도를 높여라.", "con-+centr(중심) → 중심으로 모음"],
+  ["dilute", "v./a.", "희석하다; 묽은", "Dilute the solution with water.", "그 용액을 물로 희석해라.", "di-+lu(씻다)"],
+  ["synthesis", "n.", "합성, 종합", "The synthesis of the drug took years.", "그 약의 합성에는 수년이 걸렸다.", "syn-(함께)+thesis(놓기)"],
+  ["equation", "n.", "방정식, 화학 반응식", "Balance the chemical equation.", "화학 반응식의 계수를 맞춰라.", "equa(같은) → 양변이 같음"],
+  ["organism", "n.", "유기체, 생물", "Every organism needs energy.", "모든 생물은 에너지를 필요로 한다.", "organ(기관)+-ism"],
+  ["enzyme", "n.", "효소", "Enzymes speed up biological reactions.", "효소는 생체 반응을 빠르게 한다.", "en-(안에)+zym(발효)"],
+  ["metabolism", "n.", "신진대사", "Metabolism converts food into energy.", "신진대사는 음식을 에너지로 바꾼다.", "meta-(변화)+bol(던지다)"],
+  ["photosynthesis", "n.", "광합성", "Photosynthesis produces oxygen.", "광합성은 산소를 만들어 낸다.", "photo-(빛)+synthesis(합성)"],
+  ["respiration", "n.", "호흡", "Cellular respiration releases energy.", "세포 호흡은 에너지를 방출한다.", "re-+spir(숨쉬다) → spirit과 같은 뿌리"],
+  ["chromosome", "n.", "염색체", "Humans have 46 chromosomes.", "인간은 염색체가 46개이다.", "chrom(색)+som(몸) → 염색되는 몸체"],
+  ["mutation", "n.", "돌연변이", "A mutation changed the gene.", "돌연변이가 그 유전자를 바꾸었다.", "mut(바꾸다)"],
+  ["heredity", "n.", "유전", "Heredity explains family traits.", "유전은 가족의 특징을 설명한다.", "hered(상속자)"],
+  ["membrane", "n.", "막, 세포막", "The cell membrane controls what enters.", "세포막은 들어오는 것을 조절한다.", "membr(피부, 막)"],
+  ["tissue", "n.", "조직", "Muscle tissue repairs itself.", "근육 조직은 스스로 회복한다.", "tiss(짜다) → 짜인 조직"],
+  ["ecosystem", "n.", "생태계", "A forest is a complex ecosystem.", "숲은 복잡한 생태계이다.", "eco-(집)+system"],
+  ["biodiversity", "n.", "생물 다양성", "Biodiversity keeps ecosystems stable.", "생물 다양성은 생태계를 안정시킨다.", "bio-(생명)+diversity(다양성)"],
+  ["habitat", "n.", "서식지", "Pollution destroys natural habitats.", "오염은 자연 서식지를 파괴한다.", "habit(살다)"],
+  ["predator", "n.", "포식자", "The wolf is a top predator here.", "늑대는 이곳의 최상위 포식자이다.", "praed(먹이)"],
+  ["prey", "n.", "먹이", "Rabbits are prey for foxes.", "토끼는 여우의 먹이이다.", "praed(먹이)"],
+  ["adaptation", "n.", "적응", "Thick fur is an adaptation to cold.", "두꺼운 털은 추위에 대한 적응이다.", "ad-+apt(알맞은)"],
+  ["evolve", "v.", "진화하다", "Species evolve over long periods.", "종은 오랜 기간에 걸쳐 진화한다.", "e-(밖으로)+volv(구르다)"],
+  ["extinct", "a.", "멸종한", "Dinosaurs became extinct long ago.", "공룡은 오래전에 멸종했다.", "ex-+stingu(끄다) → 불이 꺼지다"],
+  ["organ", "n.", "(신체) 기관", "The heart is a vital organ.", "심장은 생명에 필수적인 기관이다.", "organ(도구) → organism과 같은 뿌리"],
+  ["nutrient", "n.", "영양소", "Plants absorb nutrients from soil.", "식물은 흙에서 영양소를 흡수한다.", "nutri(기르다)"],
+  ["geology", "n.", "지질학", "Geology studies the earth's crust.", "지질학은 지각을 연구한다.", "geo-(땅)+logy(학문)"],
+  ["seismic", "a.", "지진의", "Seismic waves travel through rock.", "지진파는 암석을 통과해 이동한다.", "seism(흔들림)"],
+  ["erosion", "n.", "침식", "Erosion reshaped the valley.", "침식이 그 계곡을 다시 빚었다.", "e-+ros(갉다) → rodent와 같은 뿌리"],
+  ["sediment", "n.", "퇴적물", "Sediment settles at the river mouth.", "퇴적물은 강어귀에 쌓인다.", "sed(앉다) → 가라앉은 것"],
+  ["tectonic", "a.", "지각 변동의", "Tectonic plates move very slowly.", "지각판은 아주 천천히 움직인다.", "tekton(건축가) → 구조의"],
+  ["eclipse", "n.", "(일·월)식", "A solar eclipse occurred at noon.", "정오에 일식이 일어났다.", "ek-(밖)+leip(떠나다) → 빛이 떠남"],
+  ["galaxy", "n.", "은하", "Our galaxy contains billions of stars.", "우리 은하는 수십억 개의 별을 품고 있다.", "gala(우유) → Milky Way"],
+  ["asteroid", "n.", "소행성", "An asteroid passed near the earth.", "소행성 하나가 지구 가까이 지나갔다.", "aster(별)+-oid(비슷한)"],
+  ["comet", "n.", "혜성", "The comet returns every 76 years.", "그 혜성은 76년마다 돌아온다.", "komet(머리털) → 꼬리가 머리털 같다"],
+  ["nebula", "n.", "성운", "A nebula is a cloud of gas and dust.", "성운은 가스와 먼지의 구름이다.", "라틴어 nebula(안개)"],
+  ["algorithm", "n.", "알고리즘", "Design an efficient sorting algorithm.", "효율적인 정렬 알고리즘을 설계하라.", "수학자 알콰리즈미(al-Khwarizmi)의 이름"],
+  ["binary", "a./n.", "2진법의; 2진수", "Computers store data in binary.", "컴퓨터는 자료를 2진수로 저장한다.", "bi-(둘)"],
+  ["iteration", "n.", "반복, 되풀이", "Each iteration halves the range.", "반복할 때마다 범위가 절반이 된다.", "iter(다시)"],
+  ["recursion", "n.", "재귀", "Recursion calls the function itself.", "재귀는 함수가 자기 자신을 호출한다.", "re-+curs(달리다) → 되돌아 달림"],
+  ["complexity", "n.", "복잡도, 복잡성", "This algorithm has linear complexity.", "이 알고리즘은 선형 복잡도를 가진다.", "com-+plex(엮다)"],
+  ["encryption", "n.", "암호화", "Encryption protects your messages.", "암호화는 네 메시지를 보호한다.", "en-+crypt(숨기다)"],
+  ["compile", "v.", "컴파일하다, 편집하다", "Compile the code before running it.", "실행하기 전에 코드를 컴파일해라.", "com-+pil(쌓다)"],
+  ["interface", "n.", "인터페이스, 접점", "The interface connects two systems.", "그 인터페이스가 두 시스템을 연결한다.", "inter-(사이)+face(면)"],
+  ["protocol", "n.", "규약, 프로토콜", "HTTP is a web protocol.", "HTTP는 웹 규약이다.", "proto-(첫)+coll(붙이다)"],
+  ["simulation", "n.", "모의실험, 시뮬레이션", "We ran a computer simulation.", "우리는 컴퓨터 모의실험을 돌렸다.", "simul(비슷한)"],
+  ["ambiguity", "n.", "모호함", "Remove the ambiguity in this sentence.", "이 문장의 모호함을 없애라.", "ambi-(양쪽)+ag(몰다) → 양쪽으로 읽힘"],
+  ["consensus", "n.", "합의", "The team reached a consensus.", "그 팀은 합의에 도달했다.", "con-+sens(느끼다) → 함께 느낌"],
+  ["constraint", "n.", "제약", "Time is our biggest constraint.", "시간이 우리의 가장 큰 제약이다.", "con-+strict(조이다)"],
+  ["discrepancy", "n.", "불일치, 차이", "There is a discrepancy in the data.", "자료에 불일치가 있다.", "dis-+crep(삐걱대다)"],
+  ["dilemma", "n.", "딜레마, 진퇴양난", "We faced an ethical dilemma.", "우리는 윤리적 딜레마에 직면했다.", "di-(둘)+lemma(명제)"],
+  ["implication", "n.", "함의, 영향", "Consider the implications of this result.", "이 결과의 함의를 고려하라.", "im-+plic(접다) → 접혀 있는 뜻"],
+  ["paradigm", "n.", "패러다임, 전형", "Quantum theory caused a paradigm shift.", "양자론은 패러다임 전환을 일으켰다.", "para-+deig(보이다)"],
+  ["paradox", "n.", "역설", "Zeno's paradox puzzled mathematicians.", "제논의 역설은 수학자들을 괴롭혔다.", "para-(반대)+dox(의견)"],
+  ["phenomenon", "n.", "현상 (복수 phenomena)", "Explain this natural phenomenon.", "이 자연 현상을 설명하라.", "phain(나타나다)"],
+  ["rationale", "n.", "근거, 이유", "Explain the rationale behind your design.", "네 설계의 근거를 설명하라.", "ratio(이성)"],
+  ["threshold", "n.", "문턱, 임계점", "The signal crossed the threshold.", "신호가 임계값을 넘었다.", "문지방 → 넘어서는 지점"],
+  ["scope", "n.", "범위, 영역", "That is beyond the scope of this study.", "그것은 이 연구의 범위를 넘어선다.", "skop(보다) → telescope와 같은 뿌리"],
+  ["spectrum", "n.", "스펙트럼, 범위", "A prism splits light into a spectrum.", "프리즘은 빛을 스펙트럼으로 나눈다.", "spect(보다) → inspect와 같은 뿌리"],
+  ["mechanism", "n.", "기제, 작동 원리", "Explain the mechanism of the reaction.", "그 반응의 작동 원리를 설명하라.", "mechan(기계)"],
+  ["framework", "n.", "틀, 체계", "We built a theoretical framework.", "우리는 이론적 틀을 세웠다.", "frame+work"],
+  ["hierarchy", "n.", "위계, 계층", "Classify them in a hierarchy.", "그것들을 계층으로 분류하라.", "hier(신성한)+arch(지배)"],
+  ["norm", "n.", "규범, 표준", "This value is above the norm.", "이 값은 표준을 웃돈다.", "norma(목수의 직각자)"],
+  ["bias", "n.", "편향, 편견", "Avoid bias when collecting data.", "자료를 모을 때 편향을 피하라.", "비스듬함 → 한쪽으로 기움"],
+  ["correlation", "n.", "상관관계", "Correlation does not imply causation.", "상관관계가 인과관계를 뜻하지는 않는다.", "co-+relat(관계)"],
+  ["causation", "n.", "인과관계", "Proving causation requires experiments.", "인과관계 증명에는 실험이 필요하다.", "caus(원인)"],
+  ["abstract", "a./n.", "추상적인; 요약", "Mathematics deals with abstract ideas.", "수학은 추상적인 개념을 다룬다.", "abs-(떨어져)+tract(끌다)"],
+  ["ambiguous", "a.", "모호한", "The question is ambiguous.", "그 질문은 모호하다.", "ambiguity의 형용사형"],
+  ["comprehensive", "a.", "포괄적인, 종합적인", "She gave a comprehensive review.", "그녀는 종합적인 검토를 했다.", "com-+prehend(붙잡다) → 다 붙잡는"],
+  ["compelling", "a.", "설득력 있는, 강력한", "He made a compelling argument.", "그는 설득력 있는 논거를 폈다.", "com-+pel(밀다) → 마음을 밀어붙이는"],
+  ["crucial", "a.", "결정적인, 중대한", "This step is crucial to the proof.", "이 단계는 증명에 결정적이다.", "crux(십자, 갈림길)"],
+  ["empirical", "a.", "경험적인, 실증적인", "We need empirical evidence.", "우리는 실증적 증거가 필요하다.", "empeiria(경험)"],
+  ["explicit", "a.", "명시적인", "Give explicit instructions.", "명시적인 지시를 주어라.", "ex-+plic(접다) → 펼쳐 보인"],
+  ["implicit", "a.", "암시적인, 내재된", "The rule is implicit, not written.", "그 규칙은 적혀 있지 않고 암묵적이다.", "im-+plic(접다) → 접혀 있는"],
+  ["feasible", "a.", "실현 가능한", "Is this plan feasible in a week?", "이 계획이 일주일 안에 실현 가능한가?", "fac(하다) → 할 수 있는"],
+  ["inherent", "a.", "내재된, 본질적인", "Risk is inherent in any experiment.", "위험은 어떤 실험에도 내재해 있다.", "in-+her(붙다) → 안에 붙어 있는"],
+  ["intricate", "a.", "복잡한, 정교한", "The circuit has an intricate design.", "그 회로는 정교한 설계를 지녔다.", "in-+tric(얽힘)"],
+  ["profound", "a.", "심오한, 깊은", "His theory had a profound impact.", "그의 이론은 심오한 영향을 주었다.", "pro-+fund(바닥) → 바닥이 깊은"],
+  ["redundant", "a.", "불필요하게 중복된", "Delete the redundant condition.", "중복된 조건을 지워라.", "red-+und(물결) → 넘쳐흐르는"],
+  ["robust", "a.", "견고한, 튼튼한", "The model is robust to noise.", "그 모델은 잡음에 견고하다.", "robur(참나무)"],
+  ["rigorous", "a.", "엄밀한, 철저한", "Give a rigorous proof.", "엄밀한 증명을 제시하라.", "rigor(단단함)"],
+  ["subtle", "a.", "미묘한", "There is a subtle difference here.", "여기에는 미묘한 차이가 있다.", "sub-+tela(천) → 천 아래 숨은"],
+  ["viable", "a.", "실행 가능한, 생존 가능한", "Only one option is viable.", "오직 한 선택지만 실행 가능하다.", "vi(생명) → vital과 같은 뿌리"],
+  ["negligible", "a.", "무시해도 될 정도의", "Air resistance is negligible here.", "여기서 공기 저항은 무시할 만하다.", "neglect(무시하다)"],
+  ["substantial", "a.", "상당한, 실질적인", "We saw a substantial improvement.", "우리는 상당한 개선을 보았다.", "substance(실체)"],
+  ["preliminary", "a.", "예비의, 사전의", "These are preliminary results.", "이것은 예비 결과이다.", "pre-+limin(문턱) → 문턱 앞의"],
+  ["accordingly", "ad.", "그에 따라서", "The data changed; we adjusted accordingly.", "자료가 바뀌어 우리는 그에 맞춰 조정했다.", "according to에서"],
+  ["albeit", "conj.", "비록 ~일지라도", "The method works, albeit slowly.", "그 방법은 느리긴 하지만 작동한다.", "although it be의 줄임"],
+  ["consequently", "ad.", "그 결과", "Consequently, the reaction stopped.", "그 결과 반응이 멈췄다.", "con-+sequ(따르다)"],
+  ["conversely", "ad.", "반대로", "Conversely, cold slows the reaction.", "반대로 추위는 반응을 늦춘다.", "con-+vers(돌다)"],
+  ["hence", "ad.", "따라서, 그러므로", "Hence, the two sets are equal.", "따라서 두 집합은 같다.", "here에서 → 여기서부터"],
+  ["nevertheless", "ad.", "그럼에도 불구하고", "Nevertheless, the theory holds.", "그럼에도 그 이론은 성립한다.", "never+the+less"],
+  ["notwithstanding", "prep./ad.", "~에도 불구하고", "Notwithstanding the cost, we proceeded.", "비용에도 불구하고 우리는 진행했다.", "not+withstand(견디다)"],
+  ["thereby", "ad.", "그렇게 함으로써", "We reduced noise, thereby improving accuracy.", "잡음을 줄여 그로써 정확도를 높였다.", "there+by"],
+  ["whereas", "conj.", "반면에", "Gold is dense, whereas wood is light.", "금은 밀도가 높은 반면 나무는 가볍다.", "where+as"],
+  ["thus", "ad.", "따라서, 이렇게", "Thus, the proof is complete.", "따라서 증명이 완성되었다.", "this와 같은 뿌리"],
+  ["apparatus", "n.", "(실험) 장치", "Set up the apparatus carefully.", "실험 장치를 조심히 설치하라.", "ad-+par(준비하다)"],
+  ["procedure", "n.", "절차", "Follow the safety procedure.", "안전 절차를 따르라.", "pro-+ced(가다)"],
+  ["variable", "n./a.", "변인, 변수; 변하는", "Control every other variable.", "다른 모든 변인을 통제하라.", "vari(변하다)"],
+  ["constant", "n./a.", "상수; 일정한", "Keep the temperature constant.", "온도를 일정하게 유지하라.", "con-+st(서다)"],
+  ["control group", "phr.", "대조군", "Compare it with the control group.", "그것을 대조군과 비교하라.", "실험군(experimental group)의 짝"],
+  ["sample", "n.", "표본, 시료", "Take a random sample of fifty.", "무작위로 50개의 표본을 취하라.", "example과 같은 뿌리"],
+  ["accuracy", "n.", "정확도", "Accuracy improved after calibration.", "보정 후 정확도가 향상되었다.", "ac-+cur(돌보다)"],
+  ["precision", "n.", "정밀도", "Precision differs from accuracy.", "정밀도는 정확도와 다르다.", "pre-+cis(자르다) → 날카롭게 잘림"],
+  ["calibrate", "v.", "보정하다, 눈금을 맞추다", "Calibrate the scale before use.", "사용 전에 저울을 보정하라.", "calib(구경)"],
+  ["replicate", "v.", "반복 재현하다, 복제하다", "Other labs replicated the experiment.", "다른 실험실들이 그 실험을 재현했다.", "re-+plic(접다) → 다시 접어 만듦"],
+  ["perspective", "n.", "관점, 원근법", "Consider the problem from another perspective.", "그 문제를 다른 관점에서 생각하라.", "per-(통과)+spect(보다) → 꿰뚫어 봄"],
+  ["prospect", "n.", "전망, 가망", "The prospect of success is high.", "성공의 전망이 높다.", "pro-(앞)+spect(보다)"],
+  ["retrospect", "n.", "회고", "In retrospect, the plan was flawed.", "돌이켜 보면 그 계획에는 결함이 있었다.", "retro-(뒤)+spect(보다)"],
+  ["conspicuous", "a.", "눈에 띄는", "The error was conspicuous.", "그 오류는 눈에 띄었다.", "con-+spic(보다) → 잘 보이는"],
+  ["evident", "a.", "분명한", "It is evident from the graph.", "그래프에서 분명히 드러난다.", "e-(밖)+vid(보다)"],
+  ["envision", "v.", "마음속에 그리다", "Envision the final structure.", "최종 구조를 머릿속에 그려 보라.", "en-+vis(보다)"],
+  ["supervise", "v.", "감독하다", "A teacher supervises the experiment.", "선생님이 실험을 감독한다.", "super-(위)+vis(보다)"],
+  ["revise", "v.", "수정하다, 개정하다", "Revise your draft once more.", "초고를 한 번 더 수정하라.", "re-(다시)+vis(보다)"],
+  ["survey", "n./v.", "조사; 조사하다", "We conducted a survey of 200 students.", "우리는 학생 200명을 조사했다.", "sur-(위)+vey(보다)"],
+  ["visualize", "v.", "시각화하다", "Visualize the data as a graph.", "자료를 그래프로 시각화하라.", "vis(보다)+-ize"],
+  ["conduct", "v./n.", "수행하다, 전도하다; 행동", "Conduct the experiment three times.", "그 실험을 세 번 수행하라.", "con-+duct(이끌다)"],
+  ["conductive", "a.", "전도성의", "Metals are highly conductive.", "금속은 전도성이 높다.", "conduct의 형용사형"],
+  ["induce", "v.", "유도하다, 유발하다", "A magnet induces a current.", "자석이 전류를 유도한다.", "in-+duc(이끌다)"],
+  ["deduct", "v.", "공제하다, 빼다", "Deduct five points for each error.", "오류마다 5점을 감점하라.", "de-(아래)+duct(이끌다)"],
+  ["produce", "v./n.", "생산하다; 농산물", "Plants produce glucose by photosynthesis.", "식물은 광합성으로 포도당을 생산한다.", "pro-(앞)+duc(이끌다)"],
+  ["reproduce", "v.", "번식하다, 재현하다", "Bacteria reproduce very quickly.", "세균은 아주 빠르게 번식한다.", "re-+produce"],
+  ["seduce", "v.", "유혹하다, 꾀다", "Do not be seduced by easy answers.", "쉬운 답에 현혹되지 마라.", "se-(떨어져)+duc(이끌다)"],
+  ["productive", "a.", "생산적인", "It was a productive discussion.", "생산적인 토론이었다.", "produce의 형용사형"],
+  ["ductile", "a.", "(금속이) 잘 늘어나는, 연성의", "Gold is extremely ductile.", "금은 연성이 매우 뛰어나다.", "duct(이끌다) → 당겨 늘일 수 있는"],
+  ["abduct", "v.", "납치하다, 외전시키다", "The muscle abducts the arm.", "그 근육이 팔을 바깥으로 벌린다.", "ab-(멀리)+duct(이끌다)"],
+  ["compose", "v.", "구성하다, 작곡하다", "Water is composed of two elements.", "물은 두 원소로 구성되어 있다.", "com-(함께)+pos(놓다)"],
+  ["component", "n.", "구성 요소", "Break the system into components.", "그 시스템을 구성 요소로 나누라.", "com-+pon(놓다)"],
+  ["decompose", "v.", "분해되다, 썩다", "Bacteria decompose dead leaves.", "세균이 낙엽을 분해한다.", "de-(분리)+compose"],
+  ["expose", "v.", "노출시키다", "Do not expose the sample to light.", "시료를 빛에 노출하지 마라.", "ex-(밖)+pos(놓다)"],
+  ["impose", "v.", "부과하다, 강요하다", "They imposed a strict limit.", "그들은 엄격한 제한을 부과했다.", "im-(위에)+pos(놓다)"],
+  ["superimpose", "v.", "겹쳐 놓다", "Superimpose the two graphs.", "두 그래프를 겹쳐 놓아라.", "super-(위)+impose"],
+  ["extract", "v./n.", "추출하다; 추출물", "Extract DNA from the cells.", "세포에서 DNA를 추출하라.", "ex-(밖)+tract(끌다)"],
+  ["contract", "v./n.", "수축하다; 계약", "Metals contract when cooled.", "금속은 냉각되면 수축한다.", "con-(함께)+tract(끌다)"],
+  ["distract", "v.", "주의를 흩뜨리다", "Noise distracts the subjects.", "소음이 피험자의 주의를 흩뜨린다.", "dis-(떨어져)+tract(끌다)"],
+  ["traction", "n.", "견인(력), 마찰력", "The tires lost traction on ice.", "타이어가 얼음 위에서 접지력을 잃었다.", "tract(끌다)"],
+  ["projectile", "n.", "발사체, 투사체", "Study the motion of a projectile.", "발사체의 운동을 연구하라.", "pro-(앞)+ject(던지다)"],
+  ["inject", "v.", "주입하다", "Inject the dye into the sample.", "시료에 염료를 주입하라.", "in-(안)+ject(던지다)"],
+  ["eject", "v.", "배출하다, 튀어나오게 하다", "The volcano ejected hot ash.", "화산이 뜨거운 재를 분출했다.", "e-(밖)+ject(던지다)"],
+  ["trajectory", "n.", "궤적, 탄도", "Calculate the trajectory of the ball.", "공의 궤적을 계산하라.", "tra-(가로질러)+ject(던지다)"],
+  ["fertility", "n.", "비옥함, 생식력", "Soil fertility declined sharply.", "토양 비옥도가 급격히 떨어졌다.", "fer(나르다) → 열매를 냄"],
+  ["refer", "v.", "언급하다, 참조하다", "Refer to figure three.", "그림 3을 참조하라.", "re-+fer(나르다)"],
+  ["differentiate", "v.", "구별하다, 미분하다", "Differentiate the function twice.", "그 함수를 두 번 미분하라.", "dis-(떨어져)+fer(나르다)"],
+  ["confer", "v.", "수여하다, 상의하다", "The school conferred an award on her.", "학교가 그녀에게 상을 수여했다.", "con-+fer(나르다)"],
+  ["fertile", "a.", "비옥한, 다산의", "Fertile soil supports rich crops.", "비옥한 흙은 풍성한 작물을 길러 낸다.", "fer(나르다) → 열매를 많이 내는"],
+  ["circumference", "n.", "원주, 둘레", "Measure the circumference of the circle.", "원의 둘레를 재어라.", "circum-(둘레)+fer(나르다)"],
+  ["asymmetric", "a.", "비대칭의", "The molecule is asymmetric.", "그 분자는 비대칭이다.", "a-(부정)+symmetric"],
+  ["anomaly", "n.", "이상, 변칙", "The data showed a clear anomaly.", "자료는 뚜렷한 이상치를 보였다.", "a-(부정)+nomos(규칙)"],
+  ["antibody", "n.", "항체", "Antibodies fight invading viruses.", "항체는 침입한 바이러스와 싸운다.", "anti-(반대)+body"],
+  ["counteract", "v.", "상쇄하다, 대응하다", "The drug counteracts the poison.", "그 약이 독을 상쇄한다.", "counter-(반대)+act"],
+  ["disperse", "v.", "흩어지다, 분산시키다", "The particles dispersed in water.", "입자들이 물속에 흩어졌다.", "dis-(떨어져)+spers(뿌리다)"],
+  ["misconception", "n.", "오해, 잘못된 개념", "That is a common misconception.", "그것은 흔한 오해이다.", "mis-(잘못)+conception"],
+  ["semiconductor", "n.", "반도체", "Silicon is a common semiconductor.", "규소는 흔한 반도체이다.", "semi-(절반)+conductor"],
+  ["subatomic", "a.", "원자 이하의", "Electrons are subatomic particles.", "전자는 원자 이하의 입자이다.", "sub-(아래)+atomic"],
+  ["transparent", "a.", "투명한", "Glass is transparent to light.", "유리는 빛에 대해 투명하다.", "trans-(통과)+par(보이다)"],
+  ["ultraviolet", "a./n.", "자외선의; 자외선", "Ultraviolet rays damage the skin.", "자외선은 피부를 손상시킨다.", "ultra-(넘어)+violet(보라)"],
+  ["accumulate", "v.", "축적하다, 쌓이다", "Heat accumulates in the atmosphere.", "열이 대기 중에 축적된다.", "ac-+cumul(더미)"],
+  ["allocate", "v.", "할당하다, 배분하다", "Allocate memory for the array.", "배열을 위해 메모리를 할당하라.", "al-+loc(장소) → 자리를 정해 주다"],
+  ["approximate", "v./a.", "근사하다; 대략의", "Approximate pi as 3.14.", "원주율을 3.14로 근사하라.", "ap-+proxim(가까운)"],
+  ["compensate", "v.", "보상하다, 상쇄하다", "The spring compensates for the weight.", "그 용수철이 무게를 상쇄한다.", "com-+pens(무게를 달다)"],
+  ["comprise", "v.", "구성하다, 포함하다", "The team comprises five members.", "그 팀은 다섯 명으로 구성된다.", "com-+pris(붙잡다)"],
+  ["correspond", "v.", "일치하다, 대응하다", "Each point corresponds to one value.", "각 점은 하나의 값에 대응한다.", "cor-+respond(응답하다)"],
+  ["denote", "v.", "나타내다, 표시하다", "Let n denote the number of trials.", "n이 시행 횟수를 나타낸다고 하자.", "de-+not(표시)"],
+  ["extrapolate", "v.", "외삽하다, 추정하다", "Do not extrapolate beyond the data.", "자료 범위를 넘어 추정하지 마라.", "extra-(밖)+pol(다듬다)"],
+  ["optimize", "v.", "최적화하다", "Optimize the code for speed.", "속도를 위해 코드를 최적화하라.", "optimus(최선의)"],
+  ["quantify", "v.", "수량화하다", "Quantify the error in your result.", "결과의 오차를 수량화하라.", "quant(얼마)+-ify"],
+  ["resemble", "v.", "닮다", "The model resembles the real system.", "그 모형은 실제 계와 닮았다.", "re-+simil(비슷한)"],
+  ["simulate", "v.", "모의실험하다, 흉내 내다", "We simulated the orbit on a computer.", "우리는 컴퓨터로 궤도를 모의실험했다.", "simul(비슷한)"],
+  ["specify", "v.", "명시하다", "Specify the units in your answer.", "답에 단위를 명시하라.", "speci(종류)+-ify"],
+  ["undergo", "v.", "겪다, 거치다", "The sample underwent rapid cooling.", "시료는 급속 냉각을 거쳤다.", "under+go"],
+  ["utilize", "v.", "활용하다", "Utilize all available data.", "가능한 모든 자료를 활용하라.", "util(유용한)"],
+  ["yield", "v./n.", "산출하다; 수율, 산출량", "The reaction yields two products.", "그 반응은 두 생성물을 산출한다.", "고대영어 gieldan(지불하다)"],
+  ["alleviate", "v.", "완화하다", "The drug alleviates the symptoms.", "그 약은 증상을 완화한다.", "al-+levi(가벼운) → elevate와 같은 뿌리"],
+  ["mitigate", "v.", "완화하다, 경감하다", "Trees mitigate urban heat.", "나무는 도시 열기를 완화한다.", "miti(부드러운)+ag(만들다)"],
+  ["eliminate", "v.", "제거하다", "Eliminate every other possibility.", "다른 모든 가능성을 제거하라.", "e-(밖)+limin(문턱) → 문밖으로 내보내다"],
+  ["isolate", "v.", "분리하다, 고립시키다", "Isolate the variable you test.", "검증할 변인을 분리하라.", "insul(섬) → 섬처럼 떼어 놓다"],
+  ["arithmetic", "n./a.", "산수; 산술의", "An arithmetic sequence adds a constant.", "등차수열은 일정한 수를 더한다.", "arithm(수)"],
+  ["geometric", "a.", "기하의, 등비의", "A geometric sequence multiplies a ratio.", "등비수열은 비를 곱해 나간다.", "geo-(땅)+metr(측정)"],
+  ["ratio", "n.", "비, 비율", "The ratio of boys to girls is 3:2.", "남녀 비는 3대 2이다.", "ratio(계산)"],
+  ["proportion", "n.", "비례, 비율", "Pressure varies in proportion to depth.", "압력은 깊이에 비례해 변한다.", "pro-+portion(몫)"],
+  ["median", "n.", "중앙값", "The median differs from the mean.", "중앙값은 평균과 다르다.", "medi(가운데)"],
+  ["deviation", "n.", "편차", "Calculate the standard deviation.", "표준편차를 계산하라.", "de-+via(길) → 길에서 벗어남"],
+  ["distribution", "n.", "분포", "The data follow a normal distribution.", "자료는 정규분포를 따른다.", "dis-+tribut(나누다)"],
+  ["variance", "n.", "분산, 차이", "Variance measures how spread out data are.", "분산은 자료가 얼마나 흩어져 있는지를 잰다.", "vari(변하다)"],
+  ["interval", "n.", "구간, 간격", "Divide the interval into ten parts.", "그 구간을 열 등분하라.", "inter-(사이)+val(벽)"],
+  ["exponential", "a.", "지수의, 기하급수적인", "The growth was exponential.", "그 성장은 기하급수적이었다.", "ex-+pon(놓다) → 위에 올려 둔 수"],
+  ["thermal", "a.", "열의", "Thermal energy flows from hot to cold.", "열에너지는 뜨거운 쪽에서 찬 쪽으로 흐른다.", "therm(열) → thermometer"],
+  ["kinetic", "a.", "운동의", "Kinetic energy depends on speed.", "운동에너지는 속력에 의존한다.", "kine(움직이다) → cinema와 같은 뿌리"],
+  ["potential", "n./a.", "위치에너지, 잠재력; 잠재적인", "Potential energy depends on height.", "위치에너지는 높이에 의존한다.", "potent(힘 있는)"],
+  ["conservation", "n.", "보존", "The law of conservation of energy holds.", "에너지 보존 법칙이 성립한다.", "con-+serv(지키다)"],
+  ["density", "n.", "밀도", "Density equals mass over volume.", "밀도는 질량을 부피로 나눈 값이다.", "dens(빽빽한)"],
+  ["buoyancy", "n.", "부력", "Buoyancy keeps the ship afloat.", "부력이 배를 뜨게 한다.", "bouy(뜨다)"],
+  ["viscosity", "n.", "점성", "Honey has high viscosity.", "꿀은 점성이 높다.", "viscum(끈끈이)"],
+  ["turbulence", "n.", "난류, 격동", "Turbulence shook the aircraft.", "난류가 항공기를 흔들었다.", "turb(휘젓다) → disturb와 같은 뿌리"],
+  ["oscillate", "v.", "진동하다", "The pendulum oscillates regularly.", "진자는 규칙적으로 진동한다.", "oscill(흔들다)"],
+  ["propagate", "v.", "전파하다, 번식시키다", "Sound propagates through air.", "소리는 공기를 통해 전파된다.", "pro-+pag(고정하다)"],
+  ["as a consequence", "phr.", "그 결과로", "As a consequence, the pressure rose.", "그 결과 압력이 상승했다.", "consequence(결과)"],
+  ["be attributed to", "phr.", "~에 기인하다", "The shift is attributed to heat.", "그 변화는 열에 기인한다.", "attribute의 수동형"],
+  ["be proportional to", "phr.", "~에 비례하다", "Force is proportional to acceleration.", "힘은 가속도에 비례한다.", "proportion(비례)"],
+  ["in terms of", "phr.", "~의 관점에서, ~로 말하면", "Express it in terms of x.", "그것을 x로 나타내어라.", "term(용어)"],
+  ["give rise to", "phr.", "야기하다", "Friction gives rise to heat.", "마찰은 열을 발생시킨다.", "rise(일어나다)"],
+  ["account for", "phr.", "설명하다, (비율을) 차지하다", "Water accounts for 70% of the body.", "물이 몸의 70퍼센트를 차지한다.", "account(설명, 계산)"],
+  ["take into account", "phr.", "고려하다", "Take air resistance into account.", "공기 저항을 고려하라.", "account(고려)"],
+  ["with respect to", "phr.", "~에 관하여, ~에 대하여", "Differentiate with respect to time.", "시간에 대하여 미분하라.", "respect(관계)"],
+  ["regardless of", "phr.", "~와 상관없이", "Regardless of mass, they fall together.", "질량과 상관없이 그것들은 함께 떨어진다.", "regard(고려)+-less"],
+  ["on the grounds that", "phr.", "~라는 근거로", "He objected on the grounds that data were few.", "그는 자료가 적다는 근거로 반대했다.", "ground(근거)"],
+  ["adjacent", "a.", "인접한", "Measure the adjacent angle.", "인접한 각을 재어라.", "ad-+jac(눕다) → 옆에 누워 있는"],
+  ["analogous", "a.", "유사한, 유추적인", "Heat flow is analogous to current.", "열의 흐름은 전류와 유사하다.", "ana-+log(비율) → 비례 관계인"],
+  ["cumulative", "a.", "누적되는", "The cumulative total reached 500.", "누적 합계가 500에 이르렀다.", "cumul(더미)"],
+  ["ubiquitous", "a.", "어디에나 있는", "Sensors are now ubiquitous.", "센서는 이제 어디에나 있다.", "ubi(어디)+-ous"],
+  ["dominant", "a.", "우세한, 지배적인", "Brown eyes are a dominant trait.", "갈색 눈은 우성 형질이다.", "domin(주인)"],
+  ["recessive", "a.", "열성의", "Blue eyes are a recessive trait.", "파란 눈은 열성 형질이다.", "re-+cess(물러나다)"],
+  ["homogeneous", "a.", "동질의, 균질한", "Stir until the mixture is homogeneous.", "혼합물이 균질해질 때까지 저어라.", "homo-(같은)+gen(종류)"],
+  ["heterogeneous", "a.", "이질적인", "Soil is a heterogeneous material.", "흙은 이질적인 물질이다.", "hetero-(다른)+gen(종류)"],
+  ["simultaneous", "a.", "동시의", "The two events were simultaneous.", "그 두 사건은 동시에 일어났다.", "simul(동시에)"],
+  ["spontaneous", "a.", "자발적인, 자연 발생적인", "The reaction is spontaneous at 25°C.", "그 반응은 섭씨 25도에서 자발적이다.", "sponte(스스로)"],
+  ["inevitable", "a.", "불가피한", "Some error is inevitable.", "약간의 오차는 불가피하다.", "in-(부정)+evit(피하다)"],
+  ["irreversible", "a.", "되돌릴 수 없는", "The damage is irreversible.", "그 손상은 되돌릴 수 없다.", "ir-(부정)+reversible"],
+  ["reversible", "a.", "가역적인", "This reaction is reversible.", "이 반응은 가역적이다.", "re-+vers(돌다)"],
+  ["intrinsic", "a.", "본질적인, 고유한", "Mass is an intrinsic property.", "질량은 고유한 성질이다.", "intra-(안)"],
+  ["extrinsic", "a.", "외적인, 외부의", "Extrinsic factors affect the result.", "외적 요인이 결과에 영향을 준다.", "extra-(밖)"],
+  ["optimal", "a.", "최적의", "Find the optimal temperature.", "최적 온도를 찾아라.", "optimus(최선의)"],
+  ["relevant", "a.", "관련 있는", "Include only relevant data.", "관련 있는 자료만 포함하라.", "re-+lev(들어 올리다)"],
+  ["sophisticated", "a.", "정교한, 세련된", "They used sophisticated equipment.", "그들은 정교한 장비를 사용했다.", "sophos(지혜)"],
+  ["stable", "a.", "안정된", "The isotope is chemically stable.", "그 동위원소는 화학적으로 안정하다.", "st(서다)"],
+  ["volatile", "a.", "휘발성의, 변덕스러운", "Alcohol is a volatile liquid.", "알코올은 휘발성 액체이다.", "vol(날다)"],
+  ["antibiotic", "n.", "항생제", "Antibiotics do not kill viruses.", "항생제는 바이러스를 죽이지 못한다.", "anti-(반대)+bio(생명)"],
+  ["immune", "a.", "면역의", "The body builds an immune response.", "몸은 면역 반응을 형성한다.", "im-+mun(의무) → 의무를 면제받은"],
+  ["infection", "n.", "감염", "Wash hands to prevent infection.", "감염을 막으려면 손을 씻어라.", "in-+fect(만들다)"],
+  ["vaccine", "n.", "백신", "The vaccine trains the immune system.", "백신은 면역계를 훈련시킨다.", "vacca(소) → 우두에서 유래"],
+  ["genetic", "a.", "유전의", "Genetic factors influence height.", "유전적 요인이 키에 영향을 준다.", "gene(유전자)"],
+  ["hormone", "n.", "호르몬", "Hormones regulate growth.", "호르몬은 성장을 조절한다.", "horman(자극하다)"],
+  ["neuron", "n.", "뉴런, 신경세포", "Neurons transmit electrical signals.", "뉴런은 전기 신호를 전달한다.", "neuro(신경)"],
+  ["stimulus", "n.", "자극 (복수 stimuli)", "The cell reacts to a stimulus.", "그 세포는 자극에 반응한다.", "stimul(찌르다)"],
+  ["symptom", "n.", "증상", "Fever is a common symptom.", "열은 흔한 증상이다.", "sym-+pto(떨어지다) → 함께 나타남"],
+  ["therapy", "n.", "치료, 요법", "Gene therapy is still developing.", "유전자 치료는 아직 발전 중이다.", "therap(돌보다)"],
+  ["emission", "n.", "배출(물)", "Reduce carbon emissions sharply.", "탄소 배출을 대폭 줄여라.", "e-(밖)+miss(보내다)"],
+  ["depletion", "n.", "고갈, 소모", "Ozone depletion worries scientists.", "오존층 고갈이 과학자들을 걱정시킨다.", "de-+plet(채우다) → 채운 것을 비움"],
+  ["contaminate", "v.", "오염시키다", "Heavy metals contaminated the river.", "중금속이 그 강을 오염시켰다.", "con-+tamin(접촉)"],
+  ["biodegradable", "a.", "생분해성의", "Use biodegradable packaging.", "생분해성 포장재를 사용하라.", "bio-(생명)+degrade(분해하다)"],
+  ["fossil fuel", "phr.", "화석 연료", "Burning fossil fuel releases CO2.", "화석 연료를 태우면 이산화탄소가 나온다.", "fossil(화석)"],
+  ["greenhouse effect", "phr.", "온실 효과", "The greenhouse effect warms the planet.", "온실 효과가 지구를 데운다.", "greenhouse(온실)"],
+  ["desertification", "n.", "사막화", "Desertification spreads in dry regions.", "사막화가 건조 지역에서 확산된다.", "desert(사막)+-ification"],
+  ["sustainability", "n.", "지속 가능성", "Sustainability guides our design.", "지속 가능성이 우리 설계를 이끈다.", "sustain(지탱하다)"],
+  ["ozone", "n.", "오존", "The ozone layer blocks UV rays.", "오존층이 자외선을 막는다.", "ozein(냄새가 나다)"],
+  ["geothermal", "a.", "지열의", "Iceland uses geothermal energy.", "아이슬란드는 지열 에너지를 쓴다.", "geo-(땅)+thermal(열의)"],
+  ["advocacy", "n.", "옹호, 지지 활동", "Her advocacy changed the policy.", "그녀의 옹호 활동이 정책을 바꿨다.", "advocate의 명사형"],
+  ["controversy", "n.", "논란", "The study sparked controversy.", "그 연구는 논란을 일으켰다.", "contro-(반대)+vers(돌다)"],
+  ["ethical", "a.", "윤리적인", "Consider the ethical issues first.", "윤리적 쟁점을 먼저 고려하라.", "ethos(관습)"],
+  ["ethics", "n.", "윤리(학)", "Research ethics matter deeply.", "연구 윤리는 매우 중요하다.", "ethos(관습)"],
+  ["accountability", "n.", "책임, 책무", "Accountability matters in research.", "연구에서 책무성은 중요하다.", "account(설명)+-ability"],
+  ["integrity", "n.", "진실성, 온전함", "Scientific integrity is essential.", "과학적 진실성은 필수적이다.", "integer(온전한)"],
+  ["legitimate", "a.", "정당한, 합법적인", "That is a legitimate concern.", "그것은 정당한 우려이다.", "leg(법)"],
+  ["objectivity", "n.", "객관성", "Objectivity protects the conclusion.", "객관성이 결론을 지켜 준다.", "object(대상)"],
+  ["regulation", "n.", "규제, 규정", "New regulations limit emissions.", "새 규제가 배출을 제한한다.", "regul(규칙)"],
+  ["transparency", "n.", "투명성", "Transparency builds public trust.", "투명성은 대중의 신뢰를 쌓는다.", "transparent의 명사형"],
+  ["alternative", "n./a.", "대안; 대체의", "Solar power is a clean alternative.", "태양광은 깨끗한 대안이다.", "alter(다른)"],
+  ["consequence", "n.", "결과, 영향", "Every choice has consequences.", "모든 선택에는 결과가 따른다.", "con-+sequ(따르다)"],
+  ["incentive", "n.", "유인책, 동기", "Tax breaks act as an incentive.", "세금 감면이 유인책 역할을 한다.", "in-+cant(노래) → 마음을 부추김"],
+  ["innovation", "n.", "혁신", "Innovation drives the economy.", "혁신이 경제를 이끈다.", "in-+nov(새로운)"],
+  ["infrastructure", "n.", "기반 시설", "Good infrastructure supports research.", "좋은 기반 시설이 연구를 뒷받침한다.", "infra-(아래)+structure"],
+  ["priority", "n.", "우선순위", "Safety is our first priority.", "안전이 우리의 첫 번째 우선순위이다.", "prior(앞선)"],
+  ["criteria", "phr.", "평가 기준 (criterion의 복수)", "The criteria were clearly stated.", "평가 기준이 명확히 제시되었다.", "criterion의 복수형"],
+  ["stakeholder", "n.", "이해관계자", "Every stakeholder should be heard.", "모든 이해관계자의 의견을 들어야 한다.", "stake(이해관계)+holder"],
+  ["trade-off", "n.", "절충, 상충 관계", "There is a trade-off between speed and accuracy.", "속도와 정확도 사이에는 절충이 있다.", "trade(교환)+off"],
+  ["welfare", "n.", "복지", "Animal welfare is a key issue.", "동물 복지는 핵심 쟁점이다.", "well+fare(지내다)"],
+  ["elaborate on", "phr.", "~을 자세히 설명하다", "Could you elaborate on your method?", "당신의 방법을 자세히 설명해 주시겠어요?", "elaborate+on"],
+  ["in essence", "phr.", "본질적으로", "In essence, both models agree.", "본질적으로 두 모형은 일치한다.", "essence(본질)"],
+  ["to put it simply", "phr.", "간단히 말하면", "To put it simply, energy is conserved.", "간단히 말하면 에너지는 보존된다.", "put(표현하다)"],
+  ["from my perspective", "phr.", "내 관점에서는", "From my perspective, the risk is low.", "내 관점에서는 위험이 낮다.", "perspective(관점)"],
+  ["it follows that", "phr.", "따라서 ~이다", "It follows that the sets are equal.", "따라서 그 집합들은 같다.", "follow(뒤따르다)"],
+  ["as far as I know", "phr.", "내가 아는 한", "As far as I know, no one has proved it.", "내가 아는 한 아무도 그것을 증명하지 못했다.", "as far as(~하는 한)"],
+  ["on the contrary", "phr.", "그와는 반대로", "On the contrary, the effect increased.", "그와는 반대로 효과가 증가했다.", "contrary(반대)"],
+  ["to some extent", "phr.", "어느 정도는", "To some extent, I agree with you.", "어느 정도는 당신 말에 동의한다.", "extent(정도)"],
+  ["not necessarily", "phr.", "반드시 ~은 아니다", "Faster is not necessarily better.", "빠른 것이 반드시 더 좋은 것은 아니다.", "necessary(필요한)"],
+  ["let alone", "phr.", "~은 말할 것도 없고", "He can't add fractions, let alone integrate.", "그는 적분은커녕 분수 덧셈도 못 한다.", "alone(홀로)"],
+  ["if and only if", "phr.", "~일 때 그리고 그때만", "A is true if and only if B is true.", "A는 B가 참일 때 그리고 그때만 참이다.", "필요충분조건을 뜻함"],
+  ["necessary condition", "phr.", "필요조건", "Continuity is a necessary condition.", "연속성은 필요조건이다.", "necessary(필요한)"],
+  ["sufficient condition", "phr.", "충분조건", "This is a sufficient condition.", "이것은 충분조건이다.", "sufficient(충분한)"],
+  ["by contradiction", "phr.", "귀류법으로", "Prove it by contradiction.", "귀류법으로 그것을 증명하라.", "contradiction(모순)"],
+  ["without loss of generality", "phr.", "일반성을 잃지 않고", "Without loss of generality, assume a < b.", "일반성을 잃지 않고 a < b라 하자.", "generality(일반성)"],
+  ["respectively", "ad.", "각각", "The values are 2 and 5, respectively.", "값은 각각 2와 5이다.", "respective(각각의)"],
+  ["hold true", "phr.", "성립하다", "The law holds true at low speeds.", "그 법칙은 저속에서 성립한다.", "hold(유지되다)"],
+  ["be defined as", "phr.", "~로 정의되다", "Velocity is defined as displacement over time.", "속도는 변위를 시간으로 나눈 값으로 정의된다.", "define(정의하다)"],
+  ["tend to", "phr.", "~하는 경향이 있다", "The values tend to zero.", "그 값들은 0으로 가는 경향이 있다.", "tend(기울다)"],
+  ["at most", "phr.", "많아야, 기껏해야", "There are at most three roots.", "근은 많아야 세 개이다.", "most(최대)"],
+  ["alloy", "n.", "합금", "Brass is an alloy of copper and zinc.", "황동은 구리와 아연의 합금이다.", "al-+lig(묶다)"],
+  ["ceramic", "n./a.", "도자기; 세라믹의", "Ceramic resists high heat.", "세라믹은 높은 열을 견딘다.", "keramos(점토)"],
+  ["crystal", "n.", "결정", "Salt forms cubic crystals.", "소금은 정육면체 결정을 이룬다.", "krystallos(얼음)"],
+  ["fiber", "n.", "섬유", "Carbon fiber is light and strong.", "탄소 섬유는 가볍고 강하다.", "fibra(실)"],
+  ["polymer", "n.", "중합체, 고분자", "Plastic is a synthetic polymer.", "플라스틱은 합성 고분자이다.", "poly-(많은)+mer(부분)"],
+  ["particle", "n.", "입자", "Dust particles scatter light.", "먼지 입자가 빛을 산란시킨다.", "part(부분)"],
+  ["substance", "n.", "물질", "Pure substances have fixed melting points.", "순물질은 일정한 녹는점을 가진다.", "sub-+st(서다)"],
+  ["texture", "n.", "질감, 조직", "Note the texture of the surface.", "표면의 질감을 기록하라.", "text(짜다)"],
+  ["porous", "a.", "구멍이 많은, 다공성의", "Sponge is a porous material.", "스펀지는 다공성 물질이다.", "porus(구멍)"],
+  ["rigid", "a.", "단단한, 경직된", "Use a rigid frame for support.", "지지를 위해 단단한 틀을 써라.", "rigid(뻣뻣한)"],
+  ["dimension", "n.", "차원, 치수", "Check the dimensions of the box.", "상자의 치수를 확인하라.", "di-+mens(측정)"],
+  ["displacement", "n.", "변위, 치환", "Displacement is a vector, distance is not.", "변위는 벡터이고 거리는 아니다.", "dis-+plac(자리)"],
+  ["significant figure", "phr.", "유효숫자", "Round to three significant figures.", "유효숫자 세 자리로 반올림하라.", "significant(의미 있는)+figure(숫자)"],
+  ["quantity", "n.", "양, 수량", "Record the quantity of each reagent.", "각 시약의 양을 기록하라.", "quant(얼마나)"],
+  ["calibration", "n.", "보정, 눈금 맞추기", "Calibration reduces systematic error.", "보정은 계통 오차를 줄인다.", "calibrate의 명사형"],
+  ["tolerance", "n.", "허용 오차, 내성", "Keep within a tolerance of 1 mm.", "1밀리미터 허용 오차 안으로 유지하라.", "toler(견디다)"],
+  ["uncertainty", "n.", "불확실성, 오차", "State the uncertainty of each value.", "각 값의 불확실성을 밝혀라.", "un-+certain"],
+  ["coordinate", "n./v.", "좌표; 조정하다", "Plot the point at these coordinates.", "이 좌표에 그 점을 찍어라.", "co-+ordin(순서)"],
+  ["scale", "n./v.", "척도, 규모; 비례 조정하다", "Use a logarithmic scale.", "로그 척도를 사용하라.", "scala(사다리)"],
+  ["magnify", "v.", "확대하다", "The lens magnifies the image.", "렌즈가 상을 확대한다.", "magn(큰)+-ify"],
+  ["adhere", "v.", "들러붙다, 고수하다", "Adhere strictly to the protocol.", "규약을 엄격히 준수하라.", "ad-+her(붙다) → coherent와 같은 뿌리"],
+  ["aggregate", "v./n.", "모으다; 총계", "Aggregate the data by month.", "자료를 월별로 합산하라.", "ag-+greg(무리)"],
+  ["alternate", "v./a.", "번갈아 하다; 교대의", "Alternating current changes direction.", "교류는 방향이 바뀐다.", "alter(다른)"],
+  ["ascribe", "v.", "~의 탓으로 돌리다", "They ascribed the change to temperature.", "그들은 그 변화를 온도 탓으로 돌렸다.", "a-+scrib(쓰다) → 원인을 적어 넣다"],
+  ["characterize", "v.", "특징짓다", "Low density characterizes this material.", "낮은 밀도가 이 물질의 특징이다.", "character(특성)"],
+  ["discern", "v.", "분간하다, 식별하다", "Can you discern the two signals?", "두 신호를 분간할 수 있니?", "dis-+cern(거르다)"],
+  ["dispose", "v.", "처리하다, 배치하다", "Dispose of chemicals safely.", "화학 물질을 안전하게 처리하라.", "dis-+pos(놓다)"],
+  ["exert", "v.", "(힘을) 가하다, 행사하다", "Gravity exerts a downward force.", "중력은 아래 방향의 힘을 가한다.", "ex-+ser(묶다) → 밖으로 풀어내다"],
+  ["incorporate", "v.", "포함하다, 통합하다", "Incorporate the feedback into v2.", "그 의견을 2판에 반영하라.", "in-+corpor(몸) → 몸 안에 넣다"],
+  ["undertake", "v.", "착수하다, 떠맡다", "They undertook a five-year study.", "그들은 5년짜리 연구에 착수했다.", "under+take"],
+  ["attain", "v.", "달성하다, 이르다", "The gas attained a stable state.", "그 기체는 안정 상태에 이르렀다.", "at-+tain(붙잡다)"],
+  ["comply", "v.", "준수하다, 따르다", "All labs must comply with the rules.", "모든 실험실은 규칙을 준수해야 한다.", "com-+pl(채우다)"],
+  ["constrain", "v.", "제약하다", "Budget constrains the design.", "예산이 설계를 제약한다.", "con-+strain(조이다)"],
+  ["deviate", "v.", "벗어나다, 일탈하다", "The result deviates from prediction.", "그 결과는 예측에서 벗어난다.", "de-+via(길)"],
+  ["exceed", "v.", "초과하다", "The value exceeds the limit.", "그 값은 한계를 초과한다.", "ex-+ced(가다)"],
+  ["fluctuate", "v.", "변동하다", "Prices fluctuated all year.", "가격이 일 년 내내 변동했다.", "fluct(파도) → fluid와 같은 뿌리"],
+  ["persist", "v.", "지속하다, 고집하다", "The signal persisted for ten minutes.", "그 신호는 10분간 지속되었다.", "per-+sist(서다)"],
+  ["prevail", "v.", "우세하다, 널리 퍼지다", "Westerly winds prevail here.", "이곳에는 서풍이 우세하다.", "pre-+val(힘)"],
+  ["retain", "v.", "보유하다, 유지하다", "Soil retains moisture well.", "흙은 수분을 잘 보유한다.", "re-+tain(붙잡다)"],
+  ["suppress", "v.", "억제하다", "The drug suppresses the reaction.", "그 약이 반응을 억제한다.", "sub-+press(누르다)"],
+  ["apex", "n.", "정점, 꼭짓점", "The apex of the cone is sharp.", "원뿔의 꼭짓점은 뾰족하다.", "apex(끝)"],
+  ["array", "n.", "배열, 집합체", "Store values in a two-dimensional array.", "값을 2차원 배열에 저장하라.", "ar-+ray(정렬)"],
+  ["notation", "n.", "표기법", "Use standard mathematical notation.", "표준 수학 표기법을 사용하라.", "not(표시)+-ation"],
+  ["domain", "n.", "정의역, 영역", "Find the domain of the function.", "그 함수의 정의역을 구하라.", "domin(주인) → 다스리는 영역"],
+  ["range", "n.", "치역, 범위", "The range of this data is 40.", "이 자료의 범위는 40이다.", "rang(줄)"],
+  ["sequence", "n.", "수열, 순서", "Write the first five terms of the sequence.", "그 수열의 처음 다섯 항을 써라.", "sequ(따르다)"],
+  ["series", "n.", "급수, 연속", "Does this series converge?", "이 급수는 수렴하는가?", "ser(잇다)"],
+  ["subset", "n.", "부분집합", "Every set is a subset of itself.", "모든 집합은 자기 자신의 부분집합이다.", "sub-(아래)+set"],
+  ["vertex", "n.", "꼭짓점 (복수 vertices)", "A triangle has three vertices.", "삼각형은 꼭짓점이 세 개이다.", "vert(돌다) → 회전의 중심"],
+  ["locus", "n.", "자취 (복수 loci)", "Find the locus of the moving point.", "움직이는 점의 자취를 구하라.", "loc(장소)"],
+  ["constituent", "n.", "구성 성분", "Identify each constituent of the mixture.", "혼합물의 각 구성 성분을 밝혀라.", "con-+stitu(세우다) → constitute와 한 가족"],
+  ["analogy", "n.", "유추, 비유", "Explain it by analogy with water flow.", "물의 흐름에 빗대어 설명하라.", "ana-+log(비율) → analogous와 한 가족"],
+  ["equivalent", "n./a.", "등가물; 동등한", "One joule is equivalent to one newton-meter.", "1줄은 1뉴턴미터와 같다.", "equi-(같은)+val(가치)"],
+  ["medium", "n.", "매질, 매체 (복수 media)", "Sound needs a medium to travel.", "소리는 전달되려면 매질이 필요하다.", "medi(가운데)"],
+  ["manifestation", "n.", "발현, 나타남", "Fever is a manifestation of infection.", "열은 감염의 발현이다.", "manifest(분명한)"],
+  ["proportionality", "n.", "비례 관계", "The proportionality constant is k.", "비례상수는 k이다.", "proportion(비례)"],
+  ["residue", "n.", "잔여물, 잔류물", "A white residue remained.", "흰 잔류물이 남았다.", "re-+sid(앉다) → 남아 앉은 것"],
+  ["saturation", "n.", "포화", "The solution reached saturation.", "그 용액은 포화에 도달했다.", "satur(가득한)"],
+  ["trait", "n.", "특성, 형질", "Height is a polygenic trait.", "키는 다유전자 형질이다.", "tract(끌다) → 그어진 선"],
+  ["byproduct", "n.", "부산물", "Heat is a byproduct of the reaction.", "열은 그 반응의 부산물이다.", "by(곁)+product(생산물)"],
+  ["assess", "v.", "평가하다", "Assess the reliability of the source.", "그 출처의 신뢰성을 평가하라.", "as-+sess(앉다) → 곁에 앉아 판정"],
+  ["critique", "n./v.", "비평; 비평하다", "Write a short critique of the paper.", "그 논문에 대한 짧은 비평을 써라.", "krit(판단하다)"],
+  ["dismiss", "v.", "일축하다, 해산시키다", "Do not dismiss the outlier too fast.", "이상치를 너무 빨리 일축하지 마라.", "dis-+miss(보내다)"],
+  ["distinguish", "v.", "구별하다", "Distinguish correlation from causation.", "상관관계를 인과관계와 구별하라.", "dis-+stingu(찌르다)"],
+  ["evaluate", "v.", "평가하다, (값을) 구하다", "Evaluate the integral exactly.", "그 적분을 정확히 계산하라.", "e-+val(가치)"],
+  ["examine", "v.", "면밀히 조사하다", "Examine the residue under a microscope.", "현미경으로 잔류물을 면밀히 조사하라.", "exam(저울의 바늘)"],
+  ["interpret", "v.", "해석하다", "Interpret the graph in one sentence.", "그 그래프를 한 문장으로 해석하라.", "inter-+pret(중개하다)"],
+  ["overlook", "v.", "간과하다", "We overlooked a systematic error.", "우리는 계통 오차를 간과했다.", "over+look"],
+  ["scrutinize", "v.", "면밀히 검토하다", "Scrutinize every assumption.", "모든 가정을 면밀히 검토하라.", "scrut(쓰레기를 뒤지다)"],
+  ["speculate", "v.", "추측하다", "Do not speculate without data.", "자료 없이 추측하지 마라.", "specul(살피다) → spect와 같은 뿌리"],
+  ["apparent", "a.", "명백한, 겉보기의", "There is no apparent error.", "명백한 오류는 없다.", "ap-+par(보이다)"],
+  ["conceptual", "a.", "개념적인", "Draw a conceptual diagram.", "개념도를 그려라.", "concept(개념)"],
+  ["critical", "a.", "중대한, 비판적인", "Temperature is a critical factor.", "온도가 중대한 요인이다.", "krit(판단하다)"],
+  ["fundamental", "a.", "근본적인", "This is a fundamental law of physics.", "이것은 물리학의 근본 법칙이다.", "fund(바닥)"],
+  ["marginal", "a.", "미미한, 주변적인", "The gain was marginal.", "그 이득은 미미했다.", "margin(가장자리)"],
+  ["prominent", "a.", "두드러진, 저명한", "A prominent peak appeared at 500 nm.", "500나노미터에서 두드러진 봉우리가 나타났다.", "pro-+min(튀어나오다)"],
+  ["prone", "a.", "~하기 쉬운", "This method is prone to error.", "이 방법은 오류를 일으키기 쉽다.", "pron(앞으로 기운)"],
+  ["susceptible", "a.", "영향받기 쉬운, 취약한", "The crop is susceptible to frost.", "그 작물은 서리에 취약하다.", "sus-+cap(잡다)"],
+  ["theoretical", "a.", "이론적인", "The theoretical value is 9.8.", "이론값은 9.8이다.", "theory(이론)"],
+  ["tentative", "a.", "잠정적인", "This is a tentative conclusion.", "이것은 잠정적인 결론이다.", "tent(시도하다)"],
+  ["microscopic", "a.", "미시의, 현미경으로만 보이는", "Microscopic cracks weakened the beam.", "미세한 균열이 들보를 약화시켰다.", "micro-(작은)+scop(보다)"],
+  ["macroscopic", "a.", "거시적인", "Temperature is a macroscopic property.", "온도는 거시적 성질이다.", "macro-(큰)+scop(보다)"],
+  ["monochromatic", "a.", "단색의", "A laser emits monochromatic light.", "레이저는 단색광을 방출한다.", "mono-(하나)+chrom(색)"],
+  ["multidisciplinary", "a.", "여러 학문에 걸친", "This is a multidisciplinary project.", "이것은 여러 학문에 걸친 과제이다.", "multi-(많은)+discipline(학문)"],
+  ["interdependent", "a.", "상호 의존적인", "Species are interdependent.", "종들은 서로 의존한다.", "inter-(서로)+dependent"],
+  ["hyperactive", "a.", "과잉 활동의", "The sample became hyperactive.", "그 시료는 과도하게 활성화되었다.", "hyper-(과도한)+active"],
+  ["hypothermia", "n.", "저체온증", "Hypothermia sets in below 35°C.", "저체온증은 섭씨 35도 아래에서 시작된다.", "hypo-(아래)+therm(열)"],
+  ["supernatural", "a.", "초자연적인", "Science rejects supernatural causes.", "과학은 초자연적 원인을 배제한다.", "super-(넘어)+natural"],
+  ["antithesis", "n.", "정반대, 대립", "Chaos is the antithesis of order.", "혼돈은 질서의 정반대이다.", "anti-(반대)+thesis(놓기)"],
+  ["synchronize", "v.", "동기화하다", "Synchronize the two clocks.", "두 시계를 동기화하라.", "syn-(함께)+chron(시간)"],
+  ["axis", "n.", "축 (복수 axes)", "Label the horizontal axis.", "가로축에 이름을 붙여라.", "ax(축)"],
+  ["plot", "v./n.", "그래프로 나타내다; 도표", "Plot pressure against volume.", "부피에 대한 압력을 그래프로 그려라.", "plot(작은 구획)"],
+  ["slope", "n.", "기울기", "The slope equals the acceleration.", "그 기울기는 가속도와 같다.", "slip(미끄러지다)"],
+  ["intercept", "n.", "절편", "The y-intercept is two.", "y절편은 2이다.", "inter-+cept(잡다) → 중간에서 가로챔"],
+  ["trend", "n.", "경향, 추세", "The trend is clearly upward.", "그 추세는 분명히 상승세이다.", "trend(돌다)"],
+  ["outlier", "n.", "이상치", "Exclude the outlier and recalculate.", "이상치를 제외하고 다시 계산하라.", "out+lie → 바깥에 놓인 값"],
+  ["peak", "n./v.", "최고점; 정점에 이르다", "The curve peaks at noon.", "그 곡선은 정오에 정점에 이른다.", "peak(뾰족한 끝)"],
+  ["plateau", "n.", "안정기, 고원", "The graph reaches a plateau.", "그래프가 안정기에 도달한다.", "프랑스어 plat(평평한)"],
+  ["linear", "a.", "선형의", "The relationship is linear.", "그 관계는 선형이다.", "lin(선)"],
+  ["logarithmic", "a.", "로그의", "Use a logarithmic scale for the y-axis.", "y축에 로그 척도를 사용하라.", "logos(비율)+arithmos(수)"],
+  ["adhere to", "phr.", "~을 고수하다", "Adhere to the standard procedure.", "표준 절차를 고수하라.", "adhere(들러붙다)"],
+  ["arise from", "phr.", "~에서 비롯되다", "The error arose from rounding.", "그 오차는 반올림에서 비롯되었다.", "arise(생기다)"],
+  ["boil down to", "phr.", "결국 ~로 귀결되다", "It boils down to energy conservation.", "결국 에너지 보존으로 귀결된다.", "boil down(졸이다)"],
+  ["bring into play", "phr.", "작용하게 하다", "Temperature brings new effects into play.", "온도가 새로운 효과를 작용하게 한다.", "play(작용)"],
+  ["factor in", "phr.", "~을 고려에 넣다", "Factor in the measurement error.", "측정 오차를 고려에 넣어라.", "factor(요인)"],
+  ["come down to", "phr.", "결국 ~에 달려 있다", "It comes down to one variable.", "결국 변인 하나에 달려 있다.", "come down(내려오다)"],
+  ["hinge on", "phr.", "~에 달려 있다", "The proof hinges on this lemma.", "그 증명은 이 보조정리에 달려 있다.", "hinge(경첩)"],
+  ["rule out", "phr.", "배제하다", "We can rule out contamination.", "우리는 오염 가능성을 배제할 수 있다.", "rule(규정하다)+out"],
+  ["stem from", "phr.", "~에서 유래하다", "The problem stems from poor design.", "그 문제는 잘못된 설계에서 비롯된다.", "stem(줄기)"],
+  ["hold for", "phr.", "~에 대해 성립하다", "This formula holds for all integers.", "이 공식은 모든 정수에 대해 성립한다.", "hold(성립하다)"],
+  ["allegedly", "ad.", "주장에 따르면", "The method allegedly doubles speed.", "그 방법은 속도를 두 배로 한다고 주장된다.", "allege(주장하다)"],
+  ["approximately", "ad.", "대략", "The mass is approximately 2 kg.", "질량은 대략 2킬로그램이다.", "approximate(근사한)"],
+  ["essentially", "ad.", "본질적으로", "The two are essentially identical.", "그 둘은 본질적으로 동일하다.", "essence(본질)"],
+  ["invariably", "ad.", "변함없이, 예외 없이", "The result is invariably the same.", "결과는 예외 없이 동일하다.", "in-+vari(변하다)"],
+  ["marginally", "ad.", "아주 조금", "Accuracy improved marginally.", "정확도가 아주 조금 향상되었다.", "marginal(미미한)"],
+  ["predominantly", "ad.", "주로, 대개", "The gas is predominantly nitrogen.", "그 기체는 주로 질소이다.", "pre-+domin(지배)"],
+  ["presumably", "ad.", "아마도, 추정컨대", "Presumably, heat caused the shift.", "아마 열이 그 변화를 일으켰을 것이다.", "presume(추정하다)"],
+  ["relatively", "ad.", "상대적으로", "The error is relatively small.", "그 오차는 상대적으로 작다.", "relative(상대적인)"],
+  ["strikingly", "ad.", "두드러지게", "The curves are strikingly similar.", "그 곡선들은 두드러지게 비슷하다.", "strike(치다)"],
+  ["virtually", "ad.", "사실상, 거의", "The loss is virtually zero.", "손실은 사실상 0이다.", "virtual(사실상의)"],
+  ["principle", "n.", "원리, 원칙", "State the principle of superposition.", "중첩의 원리를 서술하라.", "principal(교장·주요한)과 철자 주의"],
+  ["adapt", "v.", "적응시키다, 각색하다", "Adapt the method to new data.", "그 방법을 새 자료에 맞게 조정하라.", "adopt(채택하다)와 혼동 주의"],
+  ["adopt", "v.", "채택하다, 입양하다", "They adopted a stricter standard.", "그들은 더 엄격한 기준을 채택했다.", "adapt(적응시키다)와 구분"],
+  ["affect", "v.", "영향을 미치다", "Humidity affects the reading.", "습도가 측정값에 영향을 미친다.", "effect(명사, 효과)와 구분"],
+  ["effect", "n.", "효과, 영향", "The Doppler effect shifts frequency.", "도플러 효과는 진동수를 이동시킨다.", "affect(동사)와 구분"],
+  ["elicit", "v.", "이끌어 내다", "The question elicited a clear answer.", "그 질문이 명확한 답을 이끌어 냈다.", "illicit(불법의)과 발음이 같다"],
+  ["illicit", "a.", "불법의", "Illicit data use is a serious issue.", "불법적 자료 사용은 중대한 문제이다.", "elicit(이끌어 내다)과 구분"],
+  ["complement", "n./v.", "보완물; 보완하다", "The two methods complement each other.", "그 두 방법은 서로를 보완한다.", "compliment(칭찬)와 철자 주의"],
+  ["discrete", "a.", "불연속의, 개별적인", "Digital signals are discrete.", "디지털 신호는 불연속적이다.", "discreet(신중한)과 혼동 주의"],
+  ["discreet", "a.", "신중한, 분별 있는", "Be discreet with sensitive data.", "민감한 자료는 신중히 다루어라.", "discrete(불연속의)와 구분"],
+  ["imply", "v.", "암시하다, 함의하다", "Smoke implies fire.", "연기는 불을 암시한다.", "말하는 쪽이 '함축'한다"],
+  ["infer", "v.", "추론하다", "We infer fire from smoke.", "우리는 연기에서 불을 추론한다.", "듣는 쪽이 '추론'한다"],
+  ["precede", "v.", "앞서다", "Lightning precedes thunder.", "번개가 천둥보다 앞선다.", "proceed(진행하다)와 구분"],
+  ["proceed", "v.", "진행하다, 나아가다", "Proceed to the next step.", "다음 단계로 진행하라.", "precede(앞서다)와 구분"],
+  ["assure", "v.", "확신시키다, 보장하다", "I assure you the data are correct.", "자료가 정확하다고 확언합니다.", "사람을 안심시킴"],
+  ["ensure", "v.", "확실하게 하다", "Ensure the sample is dry.", "시료가 마른 상태인지 확실히 하라.", "사실·상태를 확실히 함"],
+  ["insure", "v.", "보험에 들다", "Insure the equipment before shipping.", "배송 전에 장비에 보험을 들어라.", "보험과 관련"],
+  ["stationary", "a.", "정지한, 움직이지 않는", "The object remained stationary.", "그 물체는 정지해 있었다.", "stationery(문구류)와 철자 주의"],
+  ["eminent", "a.", "저명한", "An eminent physicist spoke first.", "저명한 물리학자가 먼저 발표했다.", "imminent(임박한)과 구분"],
+  ["imminent", "a.", "임박한", "A storm is imminent.", "폭풍이 임박했다.", "eminent(저명한)와 구분"],
+  ["aperture", "n.", "구멍, 조리개", "Widen the aperture to admit more light.", "더 많은 빛을 받으려면 조리개를 넓혀라.", "aper(열다)"],
+  ["gradient", "n.", "기울기, 변화율", "The temperature gradient drives the flow.", "온도 기울기가 흐름을 일으킨다.", "grad(걸음) → 단계적 변화"],
+  ["catalysis", "n.", "촉매 작용", "Catalysis lowers activation energy.", "촉매 작용은 활성화 에너지를 낮춘다.", "catalyst의 명사형"],
+  ["conduit", "n.", "도관, 통로", "The cable runs through a conduit.", "그 케이블은 도관을 통과한다.", "con-+duit(이끌다)"],
+  ["filament", "n.", "필라멘트, 가는 실", "The filament glows when heated.", "필라멘트는 가열되면 빛난다.", "fil(실)"],
+  ["lattice", "n.", "격자", "Atoms form a crystal lattice.", "원자들이 결정 격자를 이룬다.", "lattis(막대)"],
+  ["matrix", "n.", "행렬, 기반 (복수 matrices)", "Multiply the two matrices.", "두 행렬을 곱하라.", "mater(어머니) → 바탕"],
+  ["nucleus", "n.", "핵 (복수 nuclei)", "The nucleus holds protons and neutrons.", "핵은 양성자와 중성자를 품는다.", "nuc(견과) → 알맹이"],
+  ["quantum", "n./a.", "양자; 양자의", "Energy comes in discrete quanta.", "에너지는 불연속적인 양자로 존재한다.", "quant(얼마) → 최소 단위"],
+  ["vacuum", "n.", "진공", "Sound cannot travel in a vacuum.", "소리는 진공에서 전달되지 못한다.", "vac(비다) → vacant와 같은 뿌리"],
+  ["abbreviate", "v.", "줄여 쓰다, 축약하다", "Abbreviate 'meter' as 'm'.", "‘미터’를 ‘m’으로 축약하라.", "ab-+brev(짧은)"],
+  ["amplify", "v.", "증폭하다", "The circuit amplifies weak signals.", "그 회로는 약한 신호를 증폭한다.", "ampl(넓은)+-ify"],
+  ["attenuate", "v.", "약화시키다, 감쇠시키다", "Thick walls attenuate sound.", "두꺼운 벽은 소리를 감쇠시킨다.", "at-+tenu(가는)"],
+  ["dissipate", "v.", "소산시키다, 흩어지다", "Friction dissipates kinetic energy.", "마찰은 운동에너지를 소산시킨다.", "dis-+sipa(던지다)"],
+  ["emit", "v.", "방출하다", "Hot objects emit infrared light.", "뜨거운 물체는 적외선을 방출한다.", "e-(밖)+mit(보내다)"],
+  ["absorb", "v.", "흡수하다", "Dark surfaces absorb more heat.", "어두운 표면은 열을 더 많이 흡수한다.", "ab-+sorb(빨아들이다)"],
+  ["transmit", "v.", "전달하다, 투과시키다", "Glass transmits visible light.", "유리는 가시광선을 투과시킨다.", "trans-+mit(보내다)"],
+  ["scatter", "v.", "산란시키다, 흩뿌리다", "Air molecules scatter blue light.", "공기 분자는 푸른빛을 산란시킨다.", "scatter(흩다)"],
+  ["penetrate", "v.", "관통하다, 침투하다", "X-rays penetrate soft tissue.", "엑스선은 연조직을 관통한다.", "penetr(안으로 들어가다)"],
+  ["saturate", "v.", "포화시키다, 흠뻑 적시다", "The solution is fully saturated.", "그 용액은 완전히 포화되었다.", "satur(가득한)"],
+  ["correlate", "v.", "상관관계가 있다", "Height correlates with shoe size.", "키는 신발 크기와 상관관계가 있다.", "co-+relate"],
+  ["designate", "v.", "지정하다, 명명하다", "Designate one person as recorder.", "한 사람을 기록자로 지정하라.", "de-+sign(표시)"],
+  ["entail", "v.", "수반하다, 필요로 하다", "The method entails heavy computation.", "그 방법은 많은 계산을 수반한다.", "en-+tail(자르다)"],
+  ["entitle", "v.", "자격을 주다, 제목을 붙이다", "The award entitles her to a grant.", "그 상은 그녀에게 연구비 자격을 준다.", "en-+title(칭호)"],
+  ["necessitate", "v.", "필요로 하다", "Higher accuracy necessitates more trials.", "더 높은 정확도는 더 많은 시행을 필요로 한다.", "necessary(필요한)"],
+  ["elucidate", "v.", "명료하게 설명하다", "Elucidate the mechanism step by step.", "그 메커니즘을 단계별로 명료하게 설명하라.", "e-(밖)+luc(빛) → 빛을 비추어 밝히다"],
+  ["presume", "v.", "추정하다", "We presume the sample is pure.", "우리는 그 시료가 순수하다고 추정한다.", "pre-+sum(취하다)"],
+  ["render", "v.", "~하게 만들다, 표현하다", "Heat renders the plastic soft.", "열은 그 플라스틱을 무르게 만든다.", "re-+dd(주다)"],
+  ["undermine", "v.", "약화시키다, 훼손하다", "Poor data undermine the conclusion.", "부실한 자료는 결론을 약화시킨다.", "under+mine(굴을 파다)"],
+  ["warrant", "v./n.", "정당화하다; 근거", "The result warrants further study.", "그 결과는 추가 연구를 정당화한다.", "warrant(보증)"],
+  ["breakthrough", "n.", "돌파구, 획기적 발견", "The discovery was a major breakthrough.", "그 발견은 중대한 돌파구였다.", "break+through"],
+  ["empiricism", "n.", "경험주의", "Empiricism values observation.", "경험주의는 관찰을 중시한다.", "empirical의 명사형"],
+  ["ingenious", "a.", "독창적인, 기발한", "It was an ingenious experiment.", "그것은 기발한 실험이었다.", "in-+gen(태어나다) → 타고난 재능"],
+  ["insight", "n.", "통찰(력)", "Her insight solved the puzzle.", "그녀의 통찰이 그 수수께끼를 풀었다.", "in+sight"],
+  ["intuition", "n.", "직관", "Intuition guides, proof confirms.", "직관은 이끌고 증명은 확인한다.", "in-+tui(보다)"],
+  ["legacy", "n.", "유산", "Newton left a lasting legacy.", "뉴턴은 오래 남을 유산을 남겼다.", "leg(법, 위임)"],
+  ["milestone", "n.", "이정표, 중대 사건", "The vaccine was a milestone.", "그 백신은 하나의 이정표였다.", "mile+stone"],
+  ["pioneer", "n./v.", "선구자; 개척하다", "She pioneered a new field.", "그녀는 새로운 분야를 개척했다.", "pion(보병)"],
+  ["revolutionary", "a.", "혁명적인", "Relativity was revolutionary.", "상대성 이론은 혁명적이었다.", "revolution(혁명)"],
+  ["skepticism", "n.", "회의(론)", "Healthy skepticism drives science.", "건강한 회의는 과학을 이끈다.", "skeptic(회의론자)"],
+  ["by contrast", "phr.", "그에 반해", "By contrast, the control showed no change.", "그에 반해 대조군은 변화가 없었다.", "contrast(대조)"],
+  ["for instance", "phr.", "예를 들어", "For instance, consider a falling body.", "예를 들어 낙하하는 물체를 생각해 보자.", "instance(사례)"],
+  ["in light of", "phr.", "~에 비추어", "In light of the new data, revise the model.", "새 자료에 비추어 모형을 수정하라.", "light(빛, 관점)"],
+  ["on the whole", "phr.", "전체적으로", "On the whole, the theory holds.", "전체적으로 그 이론은 성립한다.", "whole(전체)"],
+  ["that is to say", "phr.", "즉, 다시 말해", "That is to say, energy is conserved.", "즉 에너지는 보존된다.", "that is(즉)"],
+  ["to be precise", "phr.", "정확히 말하면", "To be precise, it is 9.81 m/s².", "정확히 말하면 초당 9.81미터제곱이다.", "precise(정확한)"],
+  ["under the assumption that", "phr.", "~라는 가정하에", "Under the assumption that air is ideal...", "공기가 이상적이라는 가정하에…", "assumption(가정)"],
+  ["with the exception of", "phr.", "~을 제외하고", "With the exception of helium, all reacted.", "헬륨을 제외하고 모두 반응했다.", "exception(예외)"],
+  ["provided that", "phr.", "~라는 조건이라면", "Provided that T is constant, PV is constant.", "T가 일정하다면 PV는 일정하다.", "provide(제공하다)"],
+  ["insofar as", "phr.", "~하는 한에서는", "Insofar as the data allow, we conclude...", "자료가 허용하는 한 우리는 결론짓는다…", "in so far as"],
+  ["acute", "a.", "예각의, 급성의, 예리한", "An acute angle is less than 90°.", "예각은 90도보다 작다.", "acu(뾰족한)"],
+  ["obtuse", "a.", "둔각의, 둔한", "An obtuse angle exceeds 90°.", "둔각은 90도를 넘는다.", "ob-+tus(두드리다) → 무뎌진"],
+  ["concave", "a.", "오목한", "A concave lens spreads light.", "오목 렌즈는 빛을 퍼뜨린다.", "con-+cav(동굴)"],
+  ["convex", "a.", "볼록한", "A convex lens focuses light.", "볼록 렌즈는 빛을 모은다.", "con-+vex(나르다)"],
+  ["parallel", "a./n.", "평행한; 평행선", "Draw a line parallel to AB.", "AB에 평행한 직선을 그어라.", "para-(옆)+allel(서로)"],
+  ["perpendicular", "a.", "수직인", "Draw a perpendicular bisector.", "수직이등분선을 그어라.", "per-+pend(매달다) → 추가 늘어진 방향"],
+  ["tangent", "n./a.", "접선, 탄젠트; 접하는", "Find the tangent at this point.", "이 점에서의 접선을 구하라.", "tang(닿다) → contact와 같은 뿌리"],
+  ["congruent", "a.", "합동인", "The two triangles are congruent.", "그 두 삼각형은 합동이다.", "con-+gru(일치하다)"],
+  ["symmetrical", "a.", "대칭적인", "The figure is symmetrical about the y-axis.", "그 도형은 y축에 대해 대칭이다.", "symmetry의 형용사형"],
+  ["proportional", "a.", "비례하는", "Current is proportional to voltage.", "전류는 전압에 비례한다.", "proportion(비례)"],
+  ["figure", "n.", "그림, 도표, 수치", "Refer to figure 2 for the trend.", "추세는 그림 2를 참조하라.", "fig(만들다, 빚다)"],
+  ["appendix", "n.", "부록 (복수 appendices)", "Raw data appear in the appendix.", "원자료는 부록에 실려 있다.", "ap-+pend(매달다)"],
+  ["citation", "n.", "인용, 출처 표기", "Add a citation for every claim.", "모든 주장에 출처를 달아라.", "cit(부르다)"],
+  ["acknowledgment", "n.", "감사의 글, 인정", "The acknowledgment thanks the funders.", "감사의 글에서 지원 기관에 감사를 표한다.", "ac-+knowledge(알다)"],
+  ["discussion", "n.", "고찰, 논의", "The discussion interprets the results.", "고찰에서는 결과를 해석한다.", "dis-+cuss(흔들다)"],
+  ["literature", "n.", "(학술) 문헌", "Review the literature first.", "먼저 문헌을 검토하라.", "liter(문자)"],
+  ["methodology", "n.", "방법론", "Describe your methodology precisely.", "방법론을 정확히 기술하라.", "method+logy"],
+  ["peer review", "phr.", "동료 심사", "Peer review checks scientific quality.", "동료 심사는 과학적 수준을 점검한다.", "peer(동료)+review(검토)"],
+  ["reference", "n.", "참고 문헌, 참조", "List all references at the end.", "끝에 모든 참고 문헌을 나열하라.", "re-+fer(나르다)"],
+  ["limitation", "n.", "한계", "State the limitations of your study.", "연구의 한계를 밝혀라.", "limit(한계)"],
+  ["in conclusion", "phr.", "결론적으로", "In conclusion, the hypothesis holds.", "결론적으로 그 가설은 성립한다.", "conclusion(결론)"],
+  ["as evidenced by", "phr.", "~에서 드러나듯이", "As evidenced by figure 2, the trend rises.", "그림 2에서 드러나듯 추세가 상승한다.", "evidence(증거)"],
+  ["be consistent with", "phr.", "~와 일치하다", "The result is consistent with theory.", "그 결과는 이론과 일치한다.", "consistent(일관된)"],
+  ["be subject to", "phr.", "~의 영향을 받다, ~하기 쉽다", "The value is subject to change.", "그 값은 변경될 수 있다.", "subject(지배받는)"],
+  ["in accordance with", "phr.", "~에 따라", "Proceed in accordance with the manual.", "설명서에 따라 진행하라.", "accordance(일치)"],
+  ["lend support to", "phr.", "~을 뒷받침하다", "The data lend support to the model.", "그 자료는 모형을 뒷받침한다.", "support(지지)"],
+  ["pave the way for", "phr.", "~의 길을 열다", "This paves the way for new research.", "이것은 새로운 연구의 길을 연다.", "pave(포장하다)"],
+  ["shed light on", "phr.", "~을 밝히다, 해명하다", "The study sheds light on the cause.", "그 연구는 원인을 밝혀 준다.", "shed(비추다)+light"],
+  ["take precedence over", "phr.", "~보다 우선하다", "Safety takes precedence over speed.", "안전이 속도보다 우선한다.", "precede(앞서다)"],
+  ["to the best of my knowledge", "phr.", "내가 아는 한에서는", "To the best of my knowledge, this is new.", "내가 아는 한 이것은 새로운 것이다.", "knowledge(지식)"]
+];
+
+/* === [2] 3단계 문제은행 ================================================
+   {q:질문, opts:[4개 보기], a:정답 인덱스(0~3), exp:해설,
+    tags:[관련 단어들], kind:"혼동어"|"동의어"|"반의어"}
+   tags 에 적힌 단어가 그날의 10개 안에 있으면 그 문제를 우선 출제한다.
+   맞는 문제가 3개보다 적으면 나머지는 은행 전체에서 골라 채운다.
+   ====================================================================== */
+const CQ = [
+  { q: "빈칸에 알맞은 말은?  Smoke ______ fire, and we ______ fire from smoke.",
+    opts: ["infers / implies", "implies / infer", "implies / imply", "infers / infer"], a: 1, kind: "혼동어",
+    exp: "말하는 쪽(증거)이 imply(함축하다), 보는 쪽(사람)이 infer(추론하다)야. 주체가 누구인지로 구분해!",
+    tags: ["imply", "infer", "inference"] },
+  { q: "빈칸에 알맞은 말은?  Lightning ______ thunder by a few seconds.",
+    opts: ["proceeds", "precedes", "proceeds to", "preceded by"], a: 1, kind: "혼동어",
+    exp: "precede는 '시간상 앞서다', proceed는 '계속 나아가다'야. pre-(앞)에 주목!",
+    tags: ["precede", "proceed"] },
+  { q: "빈칸에 알맞은 말은?  ______ the sample is completely dry before weighing.",
+    opts: ["Assure", "Ensure", "Insure", "Assume"], a: 1, kind: "혼동어",
+    exp: "ensure는 '(사실·상태를) 확실히 하다', assure는 '(사람을) 안심시키다', insure는 '보험에 들다'야.",
+    tags: ["ensure", "assure", "insure"] },
+  { q: "빈칸에 알맞은 말은?  They decided to ______ the stricter international standard.",
+    opts: ["adapt", "adopt", "adept", "adjust"], a: 1, kind: "혼동어",
+    exp: "adopt은 '채택하다', adapt은 '맞게 바꾸다'야. 기준을 그대로 받아들였으니 adopt!",
+    tags: ["adopt", "adapt"] },
+  { q: "빈칸에 알맞은 말은?  We had to ______ the method to a new data set.",
+    opts: ["adopt", "adapt", "adept", "admit"], a: 1, kind: "혼동어",
+    exp: "새 자료에 '맞게 고쳐 쓰는' 것이므로 adapt!",
+    tags: ["adapt", "adopt"] },
+  { q: "빈칸에 알맞은 말은?  Integers are ______ values, not continuous ones.",
+    opts: ["discreet", "discrete", "discreetly", "decrease"], a: 1, kind: "혼동어",
+    exp: "discrete는 '불연속의, 별개의', discreet는 '신중한'이야. 발음은 같지만 뜻이 전혀 달라!",
+    tags: ["discrete", "discreet"] },
+  { q: "빈칸에 알맞은 말은?  Please be ______ when handling personal data.",
+    opts: ["discrete", "discreet", "discretely", "discredit"], a: 1, kind: "혼동어",
+    exp: "민감한 자료를 '신중하게' 다루는 것이므로 discreet!",
+    tags: ["discreet", "discrete"] },
+  { q: "빈칸에 알맞은 말은?  The question ______ a surprisingly clear answer.",
+    opts: ["illicit", "elicited", "elusive", "illicited"], a: 1, kind: "혼동어",
+    exp: "elicit은 '이끌어 내다', illicit은 '불법의'야. 발음이 같아 시험에 자주 나와!",
+    tags: ["elicit", "illicit"] },
+  { q: "빈칸에 알맞은 말은?  A ______ angle is smaller than 90 degrees.",
+    opts: ["obtuse", "acute", "convex", "concave"], a: 1, kind: "혼동어",
+    exp: "acute(예각) < 90° < obtuse(둔각). acu-는 '뾰족한'이라는 뜻이야.",
+    tags: ["acute", "obtuse"] },
+  { q: "빈칸에 알맞은 말은?  A ______ lens makes parallel rays converge to a focus.",
+    opts: ["concave", "convex", "compound", "complex"], a: 1, kind: "혼동어",
+    exp: "convex(볼록)는 빛을 모으고 concave(오목)는 퍼뜨려. con-'vex'의 x를 '모임'으로 기억해 봐!",
+    tags: ["convex", "concave", "converge"] },
+  { q: "빈칸에 알맞은 말은?  State the ______ of superposition clearly.",
+    opts: ["principal", "principle", "principally", "principals"], a: 1, kind: "혼동어",
+    exp: "principle은 '원리·원칙', principal은 '교장·주요한'이야. 과학에서는 거의 principle!",
+    tags: ["principle"] },
+  { q: "빈칸에 알맞은 말은?  The object remained ______ throughout the trial.",
+    opts: ["stationery", "stationary", "station", "stationed"], a: 1, kind: "혼동어",
+    exp: "stationary(a, 정지한)와 stationery(e, 문구류)는 철자 한 글자 차이야. a는 'at rest'로 외워 봐!",
+    tags: ["stationary"] },
+  { q: "빈칸에 알맞은 말은?  An ______ physicist opened the conference.",
+    opts: ["imminent", "eminent", "immanent", "emanate"], a: 1, kind: "혼동어",
+    exp: "eminent는 '저명한', imminent는 '임박한'이야. e-(밖으로 튀어나온) → 유명한!",
+    tags: ["eminent", "imminent"] },
+  { q: "빈칸에 알맞은 말은?  The two approaches ______ each other nicely.",
+    opts: ["compliment", "complement", "complimentary", "comply"], a: 1, kind: "혼동어",
+    exp: "complement는 '보완하다'(complete와 같은 뿌리), compliment는 '칭찬하다'야!",
+    tags: ["complement"] },
+  { q: "빈칸에 알맞은 말은?  Velocity is a vector, ______ speed is a scalar.",
+    opts: ["therefore", "whereas", "thereby", "hence"], a: 1, kind: "혼동어",
+    exp: "whereas는 '반면에'로 대조를 나타내. therefore·hence·thereby는 결과를 나타내!",
+    tags: ["whereas", "hence", "thereby"] },
+  { q: "빈칸에 알맞은 말은?  The method works, ______ more slowly than expected.",
+    opts: ["albeit", "although", "despite", "whereas"], a: 0, kind: "혼동어",
+    exp: "albeit 뒤에는 형용사·부사구가 바로 와. although 뒤에는 '주어+동사'가 필요해!",
+    tags: ["albeit", "notwithstanding"] },
+  { q: "빈칸에 알맞은 말은?  ______ the high cost, the project continued.",
+    opts: ["Although", "Notwithstanding", "Nevertheless", "Whereas"], a: 1, kind: "혼동어",
+    exp: "notwithstanding은 전치사라 명사(구)와 쓰여. although는 접속사로 문장이 필요해!",
+    tags: ["notwithstanding", "albeit", "nevertheless"] },
+  { q: "'A is true if and only if B is true' 가 뜻하는 것은?",
+    opts: ["A는 B의 필요조건", "A와 B는 필요충분조건", "A는 B의 충분조건", "A와 B는 무관"], a: 1, kind: "혼동어",
+    exp: "if and only if(iff)는 양방향 조건, 즉 필요충분조건을 뜻해!",
+    tags: ["if and only if", "necessary condition", "sufficient condition"] },
+  { q: "다음 중 '상관관계가 곧 인과관계는 아니다'를 바르게 옮긴 것은?",
+    opts: ["Causation implies correlation only.", "Correlation does not imply causation.", "Correlation always proves causation.", "Causation is correlation."], a: 1, kind: "혼동어",
+    exp: "과학 글쓰기의 기본 문장이야. 상관(correlation)이 있다고 인과(causation)가 증명되지는 않아!",
+    tags: ["correlation", "causation", "correlate"] },
+  { q: "빈칸에 알맞은 말은?  Differentiate the function ______ time.",
+    opts: ["in terms of", "with respect to", "regardless of", "in spite of"], a: 1, kind: "혼동어",
+    exp: "with respect to x = x에 대하여(미분·편미분에서 늘 쓰는 표현)!",
+    tags: ["with respect to", "in terms of"] },
+  { q: "빈칸에 알맞은 말은?  Express the area ______ the radius r.",
+    opts: ["with respect to", "in terms of", "according to", "due to"], a: 1, kind: "혼동어",
+    exp: "in terms of = ~로 나타내어. '반지름 r로 표현하라'는 뜻이야!",
+    tags: ["in terms of", "with respect to"] },
+  { q: "빈칸에 알맞은 말은?  The error ______ rounding at the third step.",
+    opts: ["arose from", "aroused from", "rose from", "raised from"], a: 0, kind: "혼동어",
+    exp: "arise from = ~에서 비롯되다. arise의 과거형은 arose이고 목적어가 필요 없어!",
+    tags: ["arise from", "stem from"] },
+  { q: "빈칸에 알맞은 말은?  Heat ______ the plastic soft and flexible.",
+    opts: ["makes to", "renders", "turns to", "becomes"], a: 1, kind: "혼동어",
+    exp: "render + 목적어 + 형용사 = ~을 …하게 만들다. 학술 글에서 자주 쓰여!",
+    tags: ["render"] },
+  { q: "빈칸에 알맞은 말은?  The gas is ______ nitrogen, with traces of argon.",
+    opts: ["predominantly", "presumably", "approximately", "invariably"], a: 0, kind: "혼동어",
+    exp: "predominantly = 주로, 대부분. presumably(아마), invariably(예외 없이)와 구분하자!",
+    tags: ["predominantly", "presumably", "invariably"] },
+  { q: "빈칸에 알맞은 말은?  Air resistance is ______ in this calculation.",
+    opts: ["considerable", "negligible", "substantial", "prominent"], a: 1, kind: "혼동어",
+    exp: "negligible = 무시해도 좋을 만큼 작은. neglect(무시하다)에서 왔어!",
+    tags: ["negligible", "substantial"] },
+  { q: "빈칸에 알맞은 말은?  This reaction is ______; it proceeds without added energy.",
+    opts: ["simultaneous", "spontaneous", "stationary", "sufficient"], a: 1, kind: "혼동어",
+    exp: "spontaneous는 '자발적인'. 화학에서 외부 에너지 없이 일어나는 반응을 뜻해!",
+    tags: ["spontaneous", "simultaneous"] },
+  { q: "빈칸에 알맞은 말은?  Stir until the mixture becomes ______.",
+    opts: ["heterogeneous", "homogeneous", "hypothetical", "hierarchical"], a: 1, kind: "혼동어",
+    exp: "homo-(같은)+gen(종류) → 균질한. hetero-(다른)는 반대야!",
+    tags: ["homogeneous", "heterogeneous"] },
+  { q: "빈칸에 알맞은 말은?  Brown eyes are a ______ trait; blue eyes are ______.",
+    opts: ["recessive / dominant", "dominant / recessive", "dominant / dominant", "recessive / recessive"], a: 1, kind: "혼동어",
+    exp: "dominant는 '우성', recessive는 '열성'이야. domin(주인) ↔ re-cess(물러나다)!",
+    tags: ["dominant", "recessive"] },
+  { q: "어근 spect / spic 는 무슨 뜻일까?",
+    opts: ["듣다", "보다", "쓰다", "가다"], a: 1, kind: "어근",
+    exp: "spect = 보다. perspective(관점), conspicuous(눈에 띄는), spectrum, inspect 모두 한 가족이야!",
+    tags: ["perspective", "prospect", "retrospect", "conspicuous", "spectrum"] },
+  { q: "어근 duc / duct 는 무슨 뜻일까?",
+    opts: ["이끌다", "나누다", "묶다", "던지다"], a: 0, kind: "어근",
+    exp: "duc = 이끌다. conduct(전도하다), induce(유도하다), deduce(연역하다), ductile(연성의) 모두 같은 뿌리!",
+    tags: ["conduct", "induce", "deduce", "ductile", "deduct", "seduce", "conduit"] },
+  { q: "어근 ject 는 무슨 뜻일까?",
+    opts: ["끌다", "던지다", "보다", "서다"], a: 1, kind: "어근",
+    exp: "ject = 던지다. project(투사하다), inject(주입하다), eject(배출하다), trajectory(궤적)!",
+    tags: ["inject", "eject", "trajectory", "projectile"] },
+  { q: "어근 tract 는 무슨 뜻일까?",
+    opts: ["끌다", "놓다", "쓰다", "자르다"], a: 0, kind: "어근",
+    exp: "tract = 끌다. extract(추출하다), contract(수축하다), distract(주의를 끌다), traction(견인력)!",
+    tags: ["extract", "contract", "distract", "traction", "abstract"] },
+  { q: "어근 fer 는 무슨 뜻일까?",
+    opts: ["나르다", "붙이다", "자르다", "보다"], a: 0, kind: "어근",
+    exp: "fer = 나르다. refer(참조하다), confer(수여하다), circumference(원주), fertile(비옥한)!",
+    tags: ["refer", "confer", "fertile", "circumference", "fertility", "differentiate"] },
+  { q: "접두사 syn- / sym- 은 무슨 뜻일까?",
+    opts: ["반대의", "함께", "아래", "밖으로"], a: 1, kind: "어근",
+    exp: "syn-/sym- = 함께. synthesis(합성), symmetry(대칭), synchronize(동기화), symptom!",
+    tags: ["synthesis", "symmetry", "synchronize", "symptom", "symmetrical"] },
+  { q: "접두사 hypo- 는 무슨 뜻일까?",
+    opts: ["위에", "아래에", "밖에", "사이에"], a: 1, kind: "어근",
+    exp: "hypo- = 아래. hypothesis(가설, 밑에 놓아둔 생각), hypothermia(저체온증)! 반대는 hyper-(과도한)",
+    tags: ["hypothesis", "hypothermia", "hyperactive"] },
+  { q: "접두사 trans- 는 무슨 뜻일까?",
+    opts: ["가로질러, 통과하여", "둘레에", "앞에", "뒤에"], a: 0, kind: "어근",
+    exp: "trans- = 가로질러. transmit(전달하다), transparent(투명한), transfer, transform!",
+    tags: ["transmit", "transparent", "trajectory"] },
+  { q: "접두사 con- / com- 이 더하는 뜻으로 알맞은 것은?",
+    opts: ["함께, 완전히", "반대로", "아래로", "다시"], a: 0, kind: "어근",
+    exp: "con-/com- = 함께. compose(구성하다), converge(수렴하다), conduct, consensus!",
+    tags: ["compose", "converge", "consensus", "component", "conduct"] },
+  { q: "접두사 de- 가 'dehydrate, decompose, deplete' 에서 더하는 뜻은?",
+    opts: ["더하다, 늘리다", "떼어 내다, 줄이다", "반복하다", "함께하다"], a: 1, kind: "어근",
+    exp: "de- = 아래로·떼어 냄. decompose(분해하다), depletion(고갈), deviate(벗어나다)!",
+    tags: ["decompose", "depletion", "deviate", "deduct"] },
+  { q: "'in-, im-, ir-, il-' 이 공통으로 더할 수 있는 뜻은?",
+    opts: ["부정(~이 아닌)", "강조", "반복", "방향"], a: 0, kind: "어근",
+    exp: "infinite(무한한), inevitable(불가피한), irreversible(되돌릴 수 없는), illicit(불법의)!",
+    tags: ["infinite", "inevitable", "irreversible", "illicit"] },
+  { q: "어근 st / sist / stat 는 무슨 뜻일까?",
+    opts: ["서다", "가다", "보다", "주다"], a: 0, kind: "어근",
+    exp: "st = 서다. constant(일정한), persist(지속하다), resistance(저항), stationary(정지한)!",
+    tags: ["constant", "persist", "stable", "stationary"] },
+  { q: "어근 vert / vers 는 무슨 뜻일까?",
+    opts: ["돌다", "떨어지다", "묶다", "열다"], a: 0, kind: "어근",
+    exp: "vers = 돌다. conversely(반대로), reversible(가역의), vertex(꼭짓점), controversy(논란)!",
+    tags: ["conversely", "reversible", "vertex", "controversy", "irreversible"] },
+  { q: "어근 gen 은 무슨 뜻일까?",
+    opts: ["태어나다, 종류", "측정하다", "보내다", "묶다"], a: 0, kind: "어근",
+    exp: "gen = 태어나다·종류. genetic(유전의), homogeneous(동질의), ingenious(독창적인)!",
+    tags: ["genetic", "homogeneous", "heterogeneous", "ingenious"] },
+  { q: "어근 metr / meter 는 무슨 뜻일까?",
+    opts: ["측정하다", "움직이다", "쓰다", "부수다"], a: 0, kind: "어근",
+    exp: "metr = 측정. symmetry(대칭), geometric(기하의), thermometer, parameter!",
+    tags: ["symmetry", "geometric", "symmetrical"] },
+  { q: "어근 therm 은 무슨 뜻일까?",
+    opts: ["빛", "열", "소리", "물"], a: 1, kind: "어근",
+    exp: "therm = 열. thermal(열의), hypothermia(저체온증), geothermal(지열의), thermometer!",
+    tags: ["thermal", "hypothermia", "geothermal"] },
+  { q: "어근 photo / phot 는 무슨 뜻일까?",
+    opts: ["생명", "빛", "땅", "소리"], a: 1, kind: "어근",
+    exp: "photo = 빛. photosynthesis(광합성), photon(광자), photograph!",
+    tags: ["photosynthesis"] },
+  { q: "어근 bio 는 무슨 뜻일까?",
+    opts: ["생명", "땅", "물", "공기"], a: 0, kind: "어근",
+    exp: "bio = 생명. biodiversity(생물 다양성), antibiotic(항생제), biodegradable(생분해성의)!",
+    tags: ["biodiversity", "antibiotic", "biodegradable"] },
+  { q: "접두사 anti- / counter- 의 공통된 뜻은?",
+    opts: ["반대, 대항", "증가", "반복", "축소"], a: 0, kind: "어근",
+    exp: "antibody(항체), antithesis(정반대), counteract(상쇄하다), counterexample(반례)!",
+    tags: ["antibody", "antithesis", "counteract", "counterexample"] },
+  { q: "어근 cid / cis 는 무슨 뜻일까?",
+    opts: ["자르다", "앉다", "보다", "걷다"], a: 0, kind: "어근",
+    exp: "cis = 자르다. precision(정밀도, 날카롭게 자름), decide(잘라서 정하다), scissors!",
+    tags: ["precision"] },
+  { q: "다음 중 'facilitate'와 뜻이 가장 가까운 것은?",
+    opts: ["hinder", "ease", "delay", "prevent"], a: 1, kind: "동의어",
+    exp: "facilitate = make easier = 수월하게 하다. hinder·prevent는 반대!",
+    tags: ["facilitate"] },
+  { q: "다음 중 'substantiate'와 뜻이 가장 가까운 것은?",
+    opts: ["support with evidence", "deny", "assume", "ignore"], a: 0, kind: "동의어",
+    exp: "substantiate = 증거로 뒷받침하다 = validate = verify!",
+    tags: ["substantiate", "validate", "verify"] },
+  { q: "다음 중 'refute'와 뜻이 가장 가까운 것은?",
+    opts: ["prove", "disprove", "assume", "predict"], a: 1, kind: "동의어",
+    exp: "refute = rebut = disprove = 반박하다, 논파하다!",
+    tags: ["refute", "rebut", "counterexample"] },
+  { q: "다음 중 'ascertain'과 뜻이 가장 가까운 것은?",
+    opts: ["find out for certain", "guess", "forget", "hide"], a: 0, kind: "동의어",
+    exp: "ascertain = determine = 확실히 알아내다. certain(확실한)이 들어 있어!",
+    tags: ["ascertain", "verify"] },
+  { q: "다음 중 'augment'와 뜻이 가장 가까운 것은?",
+    opts: ["increase", "decrease", "maintain", "remove"], a: 0, kind: "동의어",
+    exp: "augment = increase = 증대시키다!",
+    tags: ["augment", "accumulate"] },
+  { q: "다음 중 'mitigate'와 뜻이 가장 가까운 것은?",
+    opts: ["alleviate", "aggravate", "accelerate", "amplify"], a: 0, kind: "동의어",
+    exp: "mitigate = alleviate = 완화하다. aggravate(악화시키다)는 반대!",
+    tags: ["mitigate", "alleviate"] },
+  { q: "다음 중 'plausible'과 뜻이 가장 가까운 것은?",
+    opts: ["believable", "impossible", "proven", "certain"], a: 0, kind: "동의어",
+    exp: "plausible = 그럴듯한, 믿을 만한. 단 '증명된'은 아니라는 점이 핵심!",
+    tags: ["plausible", "valid"] },
+  { q: "다음 중 'rigorous'와 뜻이 가장 가까운 것은?",
+    opts: ["strict and exact", "rough", "casual", "vague"], a: 0, kind: "동의어",
+    exp: "rigorous = 엄밀한, 철저한. rigorous proof = 엄밀한 증명!",
+    tags: ["rigorous", "precision"] },
+  { q: "다음 중 'intricate'와 뜻이 가장 가까운 것은?",
+    opts: ["complex", "simple", "plain", "obvious"], a: 0, kind: "동의어",
+    exp: "intricate = complex = 복잡하고 정교한!",
+    tags: ["intricate", "complexity", "sophisticated"] },
+  { q: "다음 중 'inherent'와 뜻이 가장 가까운 것은?",
+    opts: ["intrinsic", "external", "temporary", "optional"], a: 0, kind: "동의어",
+    exp: "inherent = intrinsic = 본질적인, 내재된. extrinsic(외적인)은 반대!",
+    tags: ["inherent", "intrinsic", "extrinsic"] },
+  { q: "다음 중 'feasible'과 뜻이 가장 가까운 것은?",
+    opts: ["practicable", "impossible", "theoretical", "imaginary"], a: 0, kind: "동의어",
+    exp: "feasible = viable = practicable = 실현 가능한!",
+    tags: ["feasible", "viable"] },
+  { q: "다음 중 'anomaly'와 뜻이 가장 가까운 것은?",
+    opts: ["irregularity", "regularity", "standard", "average"], a: 0, kind: "동의어",
+    exp: "anomaly = 변칙, 이상치. outlier와도 통하는 개념이야!",
+    tags: ["anomaly", "outlier", "norm"] },
+  { q: "다음 중 'discern'과 뜻이 가장 가까운 것은?",
+    opts: ["distinguish", "confuse", "combine", "ignore"], a: 0, kind: "동의어",
+    exp: "discern = distinguish = 분간하다, 식별하다!",
+    tags: ["discern", "distinguish"] },
+  { q: "다음 중 'exert'와 뜻이 가장 가까운 것은?",
+    opts: ["apply (force)", "absorb", "remove", "measure"], a: 0, kind: "동의어",
+    exp: "exert a force = 힘을 가하다. 물리 지문에 반드시 나오는 표현이야!",
+    tags: ["exert"] },
+  { q: "다음 중 'attenuate'와 뜻이 가장 가까운 것은?",
+    opts: ["weaken", "strengthen", "amplify", "emit"], a: 0, kind: "동의어",
+    exp: "attenuate = weaken = 약화·감쇠시키다. amplify(증폭하다)는 반대!",
+    tags: ["attenuate", "amplify"] },
+  { q: "다음 중 'undermine'과 뜻이 가장 가까운 것은?",
+    opts: ["weaken", "support", "confirm", "establish"], a: 0, kind: "동의어",
+    exp: "undermine = 밑을 파서 약화시키다. 글의 신뢰를 떨어뜨릴 때 자주 쓰여!",
+    tags: ["undermine", "substantiate"] },
+  { q: "다음 중 'scrutinize'와 뜻이 가장 가까운 것은?",
+    opts: ["examine closely", "glance at", "overlook", "dismiss"], a: 0, kind: "동의어",
+    exp: "scrutinize = 면밀히 검토하다. overlook(간과하다)과 정반대야!",
+    tags: ["scrutinize", "overlook", "examine"] },
+  { q: "다음 중 'tentative'와 뜻이 가장 가까운 것은?",
+    opts: ["provisional", "final", "certain", "permanent"], a: 0, kind: "동의어",
+    exp: "tentative = 잠정적인 = provisional. preliminary(예비의)와도 통해!",
+    tags: ["tentative", "preliminary"] },
+  { q: "다음 중 'prevail'과 뜻이 가장 가까운 것은?",
+    opts: ["be dominant", "disappear", "decline", "fail"], a: 0, kind: "동의어",
+    exp: "prevail = 우세하다, 널리 퍼지다. dominant(우세한)와 한 가족!",
+    tags: ["prevail", "dominant", "predominantly"] },
+  { q: "다음 중 'yield' 가 과학 지문에서 뜻하는 것으로 가장 알맞은 것은?",
+    opts: ["produce / give as a result", "destroy", "measure", "delay"], a: 0, kind: "동의어",
+    exp: "The reaction yields two products. = 그 반응은 두 생성물을 산출한다!",
+    tags: ["yield"] },
+  { q: "다음 중 'approximately'와 뜻이 가장 가까운 것은?",
+    opts: ["roughly", "exactly", "barely", "never"], a: 0, kind: "동의어",
+    exp: "approximately = roughly = about = 대략!",
+    tags: ["approximately", "approximate"] },
+  { q: "다음 중 'in essence'와 뜻이 가장 가까운 것은?",
+    opts: ["essentially", "literally", "rarely", "partly"], a: 0, kind: "동의어",
+    exp: "in essence = essentially = 본질적으로!",
+    tags: ["in essence", "essentially"] },
+  { q: "다음 중 'converge'의 반대말은?",
+    opts: ["approach", "diverge", "meet", "gather"], a: 1, kind: "반의어",
+    exp: "converge(수렴하다) ↔ diverge(발산하다). con-(함께) ↔ di-(떨어져)!",
+    tags: ["converge", "diverge"] },
+  { q: "다음 중 'finite'의 반대말은?",
+    opts: ["limited", "infinite", "definite", "final"], a: 1, kind: "반의어",
+    exp: "finite(유한한) ↔ infinite(무한한). in-은 부정의 접두사!",
+    tags: ["finite", "infinite"] },
+  { q: "다음 중 'explicit'의 반대말은?",
+    opts: ["obvious", "implicit", "clear", "exact"], a: 1, kind: "반의어",
+    exp: "explicit(명시적인) ↔ implicit(암시적인). ex-(밖으로 펼침) ↔ im-(안으로 접힘)!",
+    tags: ["explicit", "implicit"] },
+  { q: "다음 중 'conductor'의 반대말은?",
+    opts: ["semiconductor", "insulator", "resistor", "capacitor"], a: 1, kind: "반의어",
+    exp: "conductor(도체) ↔ insulator(절연체)! 그 중간이 semiconductor(반도체)야.",
+    tags: ["conductor", "insulator", "semiconductor"] },
+  { q: "다음 중 'oxidation'의 짝이 되는 말은?",
+    opts: ["saturation", "reduction", "dilution", "synthesis"], a: 1, kind: "반의어",
+    exp: "산화(oxidation)와 환원(reduction)은 항상 함께 일어나. 묶어서 redox라고 불러!",
+    tags: ["oxidize", "reduction"] },
+  { q: "다음 중 'absorb'의 반대말로 가장 알맞은 것은?",
+    opts: ["transmit", "emit", "scatter", "reflect"], a: 1, kind: "반의어",
+    exp: "absorb(흡수하다) ↔ emit(방출하다)!",
+    tags: ["absorb", "emit"] },
+  { q: "다음 중 'homogeneous'의 반대말은?",
+    opts: ["uniform", "heterogeneous", "identical", "equal"], a: 1, kind: "반의어",
+    exp: "homogeneous(균질한) ↔ heterogeneous(이질적인)!",
+    tags: ["homogeneous", "heterogeneous"] },
+  { q: "다음 중 'dominant'의 반대말은(유전학)?",
+    opts: ["prominent", "recessive", "prevalent", "inherent"], a: 1, kind: "반의어",
+    exp: "우성(dominant) ↔ 열성(recessive)!",
+    tags: ["dominant", "recessive"] },
+  { q: "다음 중 'reversible'의 반대말은?",
+    opts: ["irreversible", "inevitable", "invariable", "incredible"], a: 0, kind: "반의어",
+    exp: "reversible(가역의) ↔ irreversible(비가역의). r로 시작하므로 ir-이 붙어!",
+    tags: ["reversible", "irreversible"] },
+  { q: "다음 중 'discrete'의 반대말은?",
+    opts: ["separate", "continuous", "distinct", "individual"], a: 1, kind: "반의어",
+    exp: "discrete(불연속의) ↔ continuous(연속의). 수학·정보 지문의 단골 대비야!",
+    tags: ["discrete", "discrete"] },
+  { q: "다음 중 'intrinsic'의 반대말은?",
+    opts: ["inherent", "extrinsic", "internal", "essential"], a: 1, kind: "반의어",
+    exp: "intrinsic(내재적인) ↔ extrinsic(외재적인). intra-(안) ↔ extra-(밖)!",
+    tags: ["intrinsic", "extrinsic", "inherent"] },
+  { q: "다음 중 'negligible'의 반대말로 가장 알맞은 것은?",
+    opts: ["marginal", "substantial", "slight", "minor"], a: 1, kind: "반의어",
+    exp: "negligible(무시할 만한) ↔ substantial(상당한)!",
+    tags: ["negligible", "substantial", "marginal"] },
+  { q: "다음 중 'macroscopic'의 반대말은?",
+    opts: ["microscopic", "telescopic", "periscopic", "gigantic"], a: 0, kind: "반의어",
+    exp: "macro-(큰) ↔ micro-(작은)!",
+    tags: ["macroscopic", "microscopic"] },
+  { q: "다음 중 'accelerate'의 뜻과 반대되는 현상은?",
+    opts: ["velocity", "deceleration", "momentum", "inertia"], a: 1, kind: "반의어",
+    exp: "acceleration(가속) ↔ deceleration(감속). de-는 '내려감'을 뜻해!",
+    tags: ["acceleration", "velocity"] },
+  { q: "다음 중 'optimal'의 반대말로 가장 알맞은 것은?",
+    opts: ["ideal", "suboptimal", "maximal", "minimal"], a: 1, kind: "반의어",
+    exp: "optimal(최적의) ↔ suboptimal(최적에 못 미치는). sub-는 '아래'야!",
+    tags: ["optimal", "optimize"] },
+  { q: "다음 중 'extinct'의 반대말로 가장 알맞은 것은?",
+    opts: ["endangered", "extant", "extended", "extracted"], a: 1, kind: "반의어",
+    exp: "extinct(멸종한) ↔ extant(현존하는). 둘 다 ex-로 시작해 헷갈리니 주의!",
+    tags: ["extinct", "evolve"] },
+  { q: "다음 중 'consensus'의 반대말로 가장 알맞은 것은?",
+    opts: ["agreement", "controversy", "harmony", "unity"], a: 1, kind: "반의어",
+    exp: "consensus(합의) ↔ controversy(논란)!",
+    tags: ["consensus", "controversy"] },
+  { q: "다음 중 'accuracy'와 'precision'의 차이로 알맞은 것은?",
+    opts: ["둘은 완전히 같은 말이다", "accuracy는 참값에 가까움, precision은 값끼리 모여 있음", "accuracy는 값끼리 모여 있음, precision은 참값에 가까움", "precision은 오차의 다른 말이다"], a: 1, kind: "혼동어",
+    exp: "정확도(accuracy)는 참값에 얼마나 가까운가, 정밀도(precision)는 반복 측정값이 얼마나 모여 있는가야!",
+    tags: ["accuracy", "precision"] },
+  { q: "다음 중 'necessary condition'과 'sufficient condition'의 관계로 알맞은 것은?",
+    opts: ["필요조건이면 항상 충분조건이다", "충분조건이면 항상 필요조건이다", "둘은 서로 다른 조건이며 반드시 일치하지 않는다", "둘은 같은 말이다"], a: 2, kind: "혼동어",
+    exp: "필요조건과 충분조건은 다른 개념이고, 둘 다 만족할 때 필요충분조건(iff)이 돼!",
+    tags: ["necessary condition", "sufficient condition", "if and only if"] },
+  { q: "다음 중 'hypothesis'의 복수형으로 알맞은 것은?",
+    opts: ["hypothesises", "hypotheses", "hypothesis'", "hypothesii"], a: 1, kind: "혼동어",
+    exp: "-is로 끝나는 그리스계 명사는 -es로 바뀌어: hypothesis→hypotheses, axis→axes, nucleus→nuclei(라틴계)!",
+    tags: ["hypothesis", "axis", "nucleus"] },
+  { q: "다음 중 복수형이 잘못 짝지어진 것은?",
+    opts: ["criterion → criteria", "phenomenon → phenomena", "matrix → matrices", "medium → mediums(매질)"], a: 3, kind: "혼동어",
+    exp: "매질을 뜻할 때 medium의 복수는 media야. mediums는 '영매'처럼 다른 뜻일 때만 써!",
+    tags: ["criterion", "phenomenon", "matrix", "medium"] }
+];
+
+/* === [3] 저장소 ====================================================== */
+const KEY = 'sy-adv-vocab-gifted-v1';
+const store = {
+  d: { session: 0, done: [], rate: 0.85, wrongWords: [], wrongQs: [], extra: [] },
+  load() { try { const r = localStorage.getItem(KEY); if (r) Object.assign(this.d, JSON.parse(r)); }
+           catch (e) { console.warn('기록 불러오기 실패', e); } },
+  save() { try { localStorage.setItem(KEY, JSON.stringify(this.d)); }
+           catch (e) { console.warn('저장 실패', e); } }
+};
+store.load();
+
+/* 기본 단어 + 사용자가 추가한 단어 */
+function allWords() { return WORDS.concat(store.d.extra || []); }
+function sessionCount() { return Math.ceil(allWords().length / 10); }
+function sessionWords(i) { return allWords().slice(i * 10, i * 10 + 10); }
+
+/* === [4] 유틸 ======================================================== */
+function el(t, c, x) { const n = document.createElement(t); if (c) n.className = c;
+                       if (x !== undefined && x !== null) n.textContent = x; return n; }
+const $ = s => document.querySelector(s);
+let tt = null;
+function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.remove('hidden');
+                    clearTimeout(tt); tt = setTimeout(() => t.classList.add('hidden'), 2600); }
+function shuffle(a) { const b = a.slice();
+  for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; }
+  return b; }
+
+/* === [5] TTS ========================================================= */
+const TTS = {
+  voices: [],
+  init() { const load = () => { this.voices = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang)); };
+           load(); if (typeof speechSynthesis.onvoiceschanged !== 'undefined') speechSynthesis.onvoiceschanged = load; },
+  speak(text) {
+    if (!('speechSynthesis' in window)) { toast('이 브라우저는 음성 읽기를 지원하지 않아.'); return; }
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US'; u.rate = store.d.rate;
+    const v = this.voices.find(x => /en-US/i.test(x.lang)) || this.voices[0];
+    if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  }
+};
+
+/* === [6] 한국어 주관식 채점기 ==========================================
+   뜻이 여러 개면 하나만 맞아도 정답. 조사·어미 차이도 정답으로 인정한다.
+   예) "버리다" / "버림" / "포기하다" → 모두 정답
+   ====================================================================== */
+function normKo(s) {
+  let t = String(s)
+    .replace(/\(.*?\)|\[.*?\]/g, ' ')          // 괄호 설명 제거
+    .replace(/[~·ㆍ・…'"'".,!?]/g, ' ')
+    .replace(/\s+/g, '');
+  // 조사·어미는 떼어 내되, 떼고 나서 두 글자 이상 남을 때만 (예: "증가"는 그대로 둔다)
+  const cut = t.replace(/(하다|되다|시키다|이다|한|히|의|을|를|는|은|이|가)$/, '');
+  if (cut.length >= 2) t = cut;
+  return t;
+}
+function meaningTokens(meaning) {
+  return String(meaning).split(/[,/;]/).map(normKo).filter(t => t.length > 0);
+}
+/* 한글을 자모로 풀어 쓴다. "버리" → ㅂㅓㄹㅣ
+   이렇게 하면 "버리다"와 "버림"처럼 어미만 다른 답도 같은 줄기로 인식된다. */
+const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ'.split('');
+const JUNG = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'.split('');
+const JONG = ['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ',
+              'ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+function toJamo(s) {
+  let out = '';
+  for (const ch of String(s)) {
+    const code = ch.charCodeAt(0) - 0xAC00;
+    if (code >= 0 && code <= 11171) {
+      out += CHO[Math.floor(code / 588)] + JUNG[Math.floor((code % 588) / 28)] + JONG[code % 28];
+    } else out += ch;
+  }
+  return out;
+}
+const stem = s => toJamo(String(s).replace(/다$/, ''));
+
+const isVowel = c => JUNG.indexOf(c) >= 0;
+
+function matchOne(a, t) {
+  if (!a || !t) return false;
+  if (t === a) return true;                            // "기후" → "기후"
+  if (a.length >= 2 && t.includes(a)) return true;     // "버리" → "버리다"
+  if (t.length >= 2 && a.includes(t)) return true;     // "영향" → "영향을 미치다"
+  // 어미만 다른 답을 인정한다: 자모로 풀어 줄기가 같으면 정답
+  const aj = stem(a), tj = stem(t);
+  const short = Math.min(aj.length, tj.length);
+  if (short < 4) return false;                         // 너무 짧으면 우연의 일치를 막는다
+  // "버림" → "버리다" : 줄기가 같고 뒤에 붙은 어미가 한 음절 이내일 때만 인정
+  // (이 조건이 없으면 "기분좋은"이 "기부"의 답으로 처리되어 버린다)
+  if ((aj.startsWith(tj) || tj.startsWith(aj)) &&
+      Math.max(aj.length, tj.length) - short <= 3) return true;
+  if (aj.length === tj.length) {                                     // "버려" → "버리다"
+    let cp = 0; while (cp < short && aj[cp] === tj[cp]) cp++;
+    if (cp === short - 1 && isVowel(aj[cp]) && isVowel(tj[cp])) return true;
+  }
+  return false;
+}
+function gradeKo(answer, meaning) {
+  const a = normKo(answer);
+  if (!a) return false;
+  const toks = meaningTokens(meaning);
+  // 답을 통째로 쓴 경우와, 쉼표로 여러 뜻을 적은 경우를 모두 인정
+  const parts = String(answer).split(/[,/;]/).map(normKo).filter(Boolean);
+  return toks.some(t => matchOne(a, t) || parts.some(pp => matchOne(pp, t)));
+}
+
+/* === [7] 세션 상태 ==================================================== */
+const S = { step: 1, quiz: [], quizDone: false, cq: [], cqIdx: 0, cqScore: 0, quizScore: 0 };
+
+function curWords() { return sessionWords(store.d.session); }
+
+function setStep(n) {
+  S.step = n;
+  ['#step1','#step2','#step3'].forEach((id, i) => $(id).classList.toggle('hidden', i + 1 !== n));
+  $('#note').classList.add('hidden'); $('#menu').classList.add('hidden');
+  $('#actionbar').classList.remove('hidden');
+  [1,2,3].forEach(i => {
+    const p = $('#pill-' + i);
+    p.className = 'rounded-lg py-1.5 text-center text-[11px] font-bold ' +
+      (i < n ? 'step-done' : i === n ? 'step-now' : 'step-wait');
+  });
+  $('#bar').style.width = ((n - 1) / 3 * 100) + '%';
+  updateMain();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateMain() {
+  const b = $('#btn-main');
+  b.disabled = false;
+  b.className = 'tap flex-1 rounded-xl bg-teal-600 text-ink text-sm font-extrabold';
+  if (S.step === 1) b.textContent = '암기 완료 ▶ 2단계로';
+  else if (S.step === 2) b.textContent = S.quizDone ? '3단계로 ▶' : '채점하기';
+  else b.textContent = S.cqIdx >= S.cq.length ? '다음 세션 ▶' : ('문제를 풀어 보자 (' + (S.cqIdx) + '/' + S.cq.length + ')');
+  if (S.step === 3 && S.cqIdx < S.cq.length) {
+    b.disabled = true;
+    b.className = 'tap flex-1 rounded-xl bg-black/10 text-ink/50 text-sm font-extrabold';
+  }
+}
+
+/* === [8] 1단계 ======================================================== */
+function render1() {
+  const box = $('#word-list'); box.replaceChildren();
+  curWords().forEach((w, i) => {
+    const n = store.d.session * 10 + i + 1;
+    const c = el('article', 'pop bg-card rounded-2xl shadow-soft p-3.5');
+    const top = el('div', 'flex items-start gap-2.5');
+    top.appendChild(el('span', 'shrink-0 w-7 h-7 rounded-lg bg-teal-50 text-teal-700 grid place-items-center text-xs font-extrabold', String(n)));
+    const mid = el('div', 'min-w-0 flex-1');
+    const line = el('div', 'flex flex-wrap items-baseline gap-x-2');
+    line.appendChild(el('span', 'font-en font-extrabold text-[19px] break-all', w[0]));
+    line.appendChild(el('span', 'text-[11px] text-ink/55 font-en', w[1]));
+    mid.appendChild(line);
+    mid.appendChild(el('p', 'text-sm font-bold text-teal-700 mt-0.5', w[2]));
+    top.appendChild(mid);
+    const sp = el('button', 'tap shrink-0 w-11 rounded-xl bg-teal-600 text-ink text-base', '🔊');
+    sp.setAttribute('aria-label', w[0] + ' 발음 듣기');
+    sp.addEventListener('click', () => TTS.speak(w[0]));
+    top.appendChild(sp);
+    c.appendChild(top);
+
+    const ex = el('div', 'mt-2.5 pt-2.5 border-t border-line/60');
+    const exline = el('div', 'flex items-start gap-2');
+    exline.appendChild(el('p', 'font-en text-[13px] leading-snug flex-1', w[3]));
+    const sp2 = el('button', 'tap shrink-0 w-9 rounded-lg bg-line/50 text-sm', '🔊');
+    sp2.setAttribute('aria-label', '예문 듣기');
+    sp2.addEventListener('click', () => TTS.speak(w[3]));
+    exline.appendChild(sp2);
+    ex.appendChild(exline);
+    ex.appendChild(el('p', 'text-[12px] text-ink/50 mt-1', w[4]));
+    c.appendChild(ex);
+
+    // 어근·접사 풀이 (6번째 필드가 있을 때만)
+    if (w[5]) {
+      const root = el('div', 'mt-2 rounded-lg px-2.5 py-1.5 bg-teal-50 border-l-2 border-teal-400');
+      root.appendChild(el('p', 'text-[11px] text-teal-400 leading-relaxed', '🧬 ' + w[5]));
+      c.appendChild(root);
+    }
+    box.appendChild(c);
+  });
+}
+
+/* === [9] 2단계 ======================================================== */
+function build2() {
+  S.quiz = shuffle(curWords()).slice(0, 5).map(w => ({ w, ans: '', ok: null }));
+  S.quizDone = false;
+  render2();
+}
+function render2() {
+  const box = $('#quiz-list'); box.replaceChildren();
+  S.quiz.forEach((q, i) => {
+    const c = el('article', 'pop bg-card rounded-2xl shadow-soft p-3.5');
+    const top = el('div', 'flex items-center gap-2.5');
+    top.appendChild(el('span', 'shrink-0 w-7 h-7 rounded-lg bg-sun-100 text-sun-500 grid place-items-center text-xs font-extrabold', String(i + 1)));
+    const t = el('div', 'min-w-0 flex-1');
+    const l = el('div', 'flex flex-wrap items-baseline gap-x-2');
+    l.appendChild(el('span', 'font-en font-extrabold text-[19px] break-all', q.w[0]));
+    l.appendChild(el('span', 'text-[11px] text-ink/55 font-en', q.w[1]));
+    t.appendChild(l);
+    top.appendChild(t);
+    const sp = el('button', 'tap shrink-0 w-11 rounded-xl bg-line/50 text-base', '🔊');
+    sp.addEventListener('click', () => TTS.speak(q.w[0]));
+    top.appendChild(sp);
+    c.appendChild(top);
+
+    const inp = el('input', 'w-full mt-2.5 px-3 py-2.5 rounded-xl border-2 text-sm outline-none ' +
+      (q.ok === null ? 'border-line focus:border-teal-400' : q.ok ? 'border-teal-400 bg-teal-50' : 'border-rose-400 bg-rose-50'));
+    inp.type = 'text'; inp.value = q.ans; inp.placeholder = '뜻을 한국어로 입력';
+    inp.setAttribute('enterkeyhint', 'next');
+    inp.setAttribute('autocomplete', 'off'); inp.setAttribute('autocapitalize', 'off');
+    if (S.quizDone) inp.readOnly = true;
+    inp.addEventListener('input', e => { q.ans = e.target.value; });
+    inp.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const next = box.querySelectorAll('input')[i + 1];
+      if (next) next.focus(); else grade2();
+    });
+    c.appendChild(inp);
+
+    if (q.ok !== null) {
+      const r = el('p', 'text-xs mt-2 leading-relaxed ' + (q.ok ? 'text-teal-700' : 'text-rose-500'),
+        (q.ok ? '⭕ 정답! ' : '❌ 정답은 ') + q.w[2]);
+      c.appendChild(r);
+      if (!q.ok) {
+        c.appendChild(el('p', 'text-[11px] text-ink/50 mt-1 font-en', q.w[3]));
+        c.appendChild(el('p', 'text-[11px] text-ink/55', q.w[4]));
+        if (q.w[5]) c.appendChild(el('p', 'text-[11px] text-teal-400 mt-1', '🧬 ' + q.w[5]));
+      }
+    }
+    box.appendChild(c);
+  });
+}
+function grade2() {
+  if (S.quizDone) return;
+  if (S.quiz.some(q => !q.ans.trim())) { toast('아직 비어 있는 칸이 있어. 모르면 "모름"이라고 적어도 돼!'); return; }
+  S.quizDone = true;
+  S.quizScore = 0;
+  S.quiz.forEach(q => {
+    q.ok = gradeKo(q.ans, q.w[2]);
+    if (q.ok) S.quizScore++;
+    else addWrongWord(q.w);
+  });
+  render2();
+
+  const wrong = S.quiz.filter(q => !q.ok);
+  const box = $('#quiz-result'); box.replaceChildren(); box.classList.remove('hidden');
+  const card = el('div', 'pop bg-card rounded-2xl shadow-soft p-4 border-2 ' +
+    (S.quizScore === 5 ? 'border-teal-400' : 'border-sun-400'));
+  card.appendChild(el('p', 'text-center text-3xl', S.quizScore === 5 ? '🎉' : S.quizScore >= 3 ? '👍' : '💪'));
+  card.appendChild(el('p', 'text-center font-en font-extrabold text-2xl mt-1', S.quizScore + ' / 5'));
+  card.appendChild(el('p', 'text-center text-xs text-ink/60 mt-1',
+    S.quizScore === 5 ? '완벽해! 바로 3단계로 가 보자.'
+    : S.quizScore >= 3 ? '잘했어! 틀린 단어만 한 번 더 보고 가자.'
+    : '괜찮아, 처음엔 다 그래. 틀린 단어를 소리 내어 3번 읽어 보자!'));
+  if (wrong.length) {
+    const t = el('div', 'mt-3 pt-3 border-t border-line/60');
+    t.appendChild(el('p', 'text-xs font-bold mb-1.5', '🔁 다시 짚고 갈 단어'));
+    wrong.forEach(q => {
+      const r = el('div', 'flex items-baseline gap-2 py-1');
+      r.appendChild(el('span', 'font-en font-bold text-sm', q.w[0]));
+      r.appendChild(el('span', 'text-xs text-ink/60', q.w[2]));
+      t.appendChild(r);
+    });
+    t.appendChild(el('p', 'text-[11px] text-ink/55 mt-1.5', '오답노트에 자동으로 담아 뒀어.'));
+    card.appendChild(t);
+  }
+  box.appendChild(card);
+  updateMain();
+  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function addWrongWord(w) {
+  const list = store.d.wrongWords;
+  if (!list.some(x => x[0] === w[0])) { list.push(w); store.save(); }
+}
+
+/* === [10] 3단계 ======================================================= */
+function build3() {
+  const ten = new Set(curWords().map(w => String(w[0]).toLowerCase()));
+  const matched = shuffle(CQ.filter(q => q.tags.some(t => ten.has(String(t).toLowerCase()))));
+  const rest = shuffle(CQ.filter(q => !matched.includes(q)));
+  S.cq = matched.concat(rest).slice(0, 3);
+  S.cqIdx = 0; S.cqScore = 0;
+  render3();
+}
+function render3() {
+  const box = $('#cq-list'); box.replaceChildren();
+  $('#final').classList.add('hidden');
+  S.cq.forEach((q, i) => {
+    if (i > S.cqIdx) return;                       // 한 문제씩 공개
+    const c = el('article', 'pop bg-card rounded-2xl shadow-soft p-4');
+    const h = el('div', 'flex items-center gap-2 mb-2');
+    h.appendChild(el('span', 'text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-50 text-teal-700', q.kind));
+    h.appendChild(el('span', 'text-[11px] text-ink/50', 'Q' + (i + 1) + ' / ' + S.cq.length));
+    c.appendChild(h);
+    c.appendChild(el('p', 'text-sm font-bold leading-relaxed', q.q));
+
+    const opts = el('div', 'flex flex-col gap-2 mt-3');
+    q.opts.forEach((o, k) => {
+      const picked = q.picked !== undefined;
+      let cls = 'tap w-full text-left px-3 py-2.5 rounded-xl border-2 text-sm transition flex items-center gap-2 ';
+      if (!picked) cls += 'border-line bg-card hover:border-teal-400 active:bg-teal-50';
+      else if (k === q.a) cls += 'border-teal-500 bg-teal-50 font-bold';
+      else if (k === q.picked) cls += 'border-rose-400 bg-rose-50';
+      else cls += 'border-line/60 bg-card text-ink/50';
+      const b = el('button', cls);
+      b.appendChild(el('span', 'shrink-0 w-6 h-6 rounded-md bg-line/50 grid place-items-center text-[11px] font-bold', String(k + 1)));
+      b.appendChild(el('span', 'font-en flex-1', o));
+      if (picked && k === q.a) b.appendChild(el('span', 'text-teal-600', '⭕'));
+      if (picked && k === q.picked && k !== q.a) b.appendChild(el('span', 'text-rose-500', '❌'));
+      if (!picked) b.addEventListener('click', () => pick(i, k));
+      opts.appendChild(b);
+    });
+    c.appendChild(opts);
+
+    if (q.picked !== undefined) {
+      const ok = q.picked === q.a;
+      const fb = el('div', 'mt-3 rounded-xl px-3 py-2.5 border-l-4 ' +
+        (ok ? 'bg-teal-50 border-teal-500' : 'bg-sun-50 border-sun-400'));
+      fb.appendChild(el('p', 'text-xs font-bold', ok ? '⭕ 정답이야! 잘했어.' : '❌ 아쉬워! 정답은 ' + (q.a + 1) + '번 ' + q.opts[q.a]));
+      fb.appendChild(el('p', 'text-[12px] text-ink/65 mt-1 leading-relaxed', q.exp));
+      c.appendChild(fb);
+    }
+    box.appendChild(c);
+  });
+  if (S.cqIdx >= S.cq.length) renderFinal();
+  updateMain();
+}
+function pick(i, k) {
+  const q = S.cq[i];
+  if (q.picked !== undefined) return;
+  q.picked = k;
+  if (k === q.a) S.cqScore++;
+  else {
+    const list = store.d.wrongQs;
+    if (!list.some(x => x.q === q.q)) { list.push({ q: q.q, opts: q.opts, a: q.a, exp: q.exp, kind: q.kind }); store.save(); }
+  }
+  S.cqIdx = i + 1;
+  render3();
+  setTimeout(() => {
+    const cards = $('#cq-list').children;
+    const target = cards[Math.min(i + 1, cards.length - 1)];
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 120);
+}
+function renderFinal() {
+  const total = S.quizScore + S.cqScore, max = 8;
+  const f = $('#final'); f.replaceChildren(); f.classList.remove('hidden');
+  const c = el('div', 'pop bg-card rounded-2xl shadow-soft p-4 border-2 border-teal-400 text-center');
+  c.appendChild(el('p', 'text-3xl', total >= 7 ? '🏆' : total >= 5 ? '🥈' : '🌱'));
+  c.appendChild(el('p', 'text-sm font-bold mt-1', '세션 ' + (store.d.session + 1) + ' 완료!'));
+  c.appendChild(el('p', 'font-en font-extrabold text-2xl mt-0.5', total + ' / ' + max));
+  c.appendChild(el('p', 'text-xs text-ink/55 mt-1',
+    '2단계 ' + S.quizScore + '/5 · 3단계 ' + S.cqScore + '/3'));
+  c.appendChild(el('p', 'text-xs text-ink/60 mt-2 leading-relaxed',
+    total >= 7 ? '아주 훌륭해! 이 속도면 2000개도 금방이야. 다음 세션으로 가자.'
+    : total >= 5 ? '잘하고 있어! 오답노트만 한 번 보고 다음으로 넘어가자.'
+    : '오늘 틀린 건 오답노트에 담아 뒀어. 내일 다시 보면 꼭 네 것이 될 거야.'));
+  f.appendChild(c);
+
+  if (!store.d.done.includes(store.d.session)) { store.d.done.push(store.d.session); store.save(); }
+}
+
+/* === [11] 세션 이동 ==================================================== */
+function goSession(i) {
+  const n = sessionCount();
+  if (i < 0 || i >= n) { toast('마지막 세션이야! 메뉴에서 단어를 더 추가할 수 있어.'); return; }
+  store.d.session = i; store.save();
+  S.quizDone = false; S.quizScore = 0; S.cqScore = 0; S.cqIdx = 0;
+  $('#quiz-result').classList.add('hidden');
+  const w = curWords();
+  $('#sess-label').textContent = '세션 ' + (i + 1) + ' / ' + n + ' · 단어 ' + (i * 10 + 1) + '~' + (i * 10 + w.length);
+  render1(); build2(); build3();
+  setStep(1);
+  renderGrid();
+}
+function renderGrid() {
+  const g = $('#sess-grid'); g.replaceChildren();
+  for (let i = 0; i < sessionCount(); i++) {
+    const on = i === store.d.session, ok = store.d.done.includes(i);
+    const b = el('button', 'tap rounded-lg text-[11px] font-bold border transition ' +
+      (on ? 'bg-teal-600 text-ink border-teal-600' : ok ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-card text-ink/50 border-line'),
+      (ok && !on ? '✓' : '') + (i + 1));
+    b.addEventListener('click', () => { goSession(i); });
+    g.appendChild(b);
+  }
+  const done = store.d.done.length, n = sessionCount();
+  $('#stat').textContent = '총 단어 ' + allWords().length + '개 · 세션 ' + n + '개 · 완료 ' + done + '개 · ' +
+    '오답 단어 ' + store.d.wrongWords.length + '개 · 오답 문제 ' + store.d.wrongQs.length + '개' +
+    (store.d.extra.length ? ' · 직접 추가한 단어 ' + store.d.extra.length + '개' : '');
+}
+
+/* === [12] 오답노트 ===================================================== */
+function renderNote() {
+  const box = $('#note-list'); box.replaceChildren();
+  const ws = store.d.wrongWords, qs = store.d.wrongQs;
+  $('#note-count').textContent = '틀린 단어 ' + ws.length + '개 · 틀린 문제 ' + qs.length + '개';
+  if (!ws.length && !qs.length) {
+    box.appendChild(el('p', 'text-center text-sm text-ink/50 py-14', '아직 오답이 없어. 좋은 출발이야! 🎉'));
+    return;
+  }
+  ws.forEach(w => {
+    const c = el('div', 'bg-card rounded-2xl shadow-soft p-3.5');
+    const t = el('div', 'flex items-center gap-2');
+    t.appendChild(el('span', 'font-en font-extrabold text-[17px] flex-1 break-all', w[0]));
+    const sp = el('button', 'tap shrink-0 w-10 rounded-lg bg-line/50', '🔊');
+    sp.addEventListener('click', () => TTS.speak(w[0]));
+    t.appendChild(sp);
+    const del = el('button', 'tap shrink-0 w-10 rounded-lg bg-line/50 text-xs', '✓');
+    del.title = '외웠어요';
+    del.addEventListener('click', () => {
+      store.d.wrongWords = store.d.wrongWords.filter(x => x[0] !== w[0]);
+      store.save(); renderNote(); renderGrid(); toast('오답노트에서 지웠어. 잘했어!');
+    });
+    t.appendChild(del);
+    c.appendChild(t);
+    c.appendChild(el('p', 'text-sm font-bold text-teal-700 mt-0.5', w[2]));
+    c.appendChild(el('p', 'text-[12px] text-ink/50 mt-1 font-en', w[3]));
+    c.appendChild(el('p', 'text-[12px] text-ink/55', w[4]));
+    if (w[5]) c.appendChild(el('p', 'text-[11px] text-teal-400 mt-1', '🧬 ' + w[5]));
+    box.appendChild(c);
+  });
+  qs.forEach(q => {
+    const c = el('div', 'bg-card rounded-2xl shadow-soft p-3.5');
+    c.appendChild(el('span', 'text-[10px] font-bold px-2 py-0.5 rounded-md bg-sun-100 text-sun-500', q.kind));
+    c.appendChild(el('p', 'text-sm font-bold leading-relaxed mt-1.5', q.q));
+    c.appendChild(el('p', 'text-xs text-teal-700 font-bold mt-1.5', '정답: ' + (q.a + 1) + '번 ' + q.opts[q.a]));
+    c.appendChild(el('p', 'text-[12px] text-ink/60 mt-1 leading-relaxed', q.exp));
+    box.appendChild(c);
+  });
+}
+
+/* === [13] 단어 가져오기 =============================================== */
+function importWords(text) {
+  const rows = text.split(/\r?\n/).map(r => r.trim()).filter(Boolean);
+  const added = [], bad = [];
+  rows.forEach((r, i) => {
+    const p = r.split(/\t|,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(x => x.trim().replace(/^"|"$/g, ''));
+    if (p.length >= 3 && p[0]) added.push([p[0], p[1] || '', p[2] || '', p[3] || '', p[4] || '', p[5] || '']);
+    else bad.push(i + 1);
+  });
+  if (!added.length) return { added: 0, bad };
+  const seen = new Set(allWords().map(w => String(w[0]).toLowerCase()));
+  const fresh = added.filter(w => !seen.has(String(w[0]).toLowerCase()));
+  store.d.extra = (store.d.extra || []).concat(fresh);
+  store.save();
+  return { added: fresh.length, dup: added.length - fresh.length, bad };
+}
+
+/* === [14] 이벤트 ====================================================== */
+$('#rate').addEventListener('input', e => {
+  store.d.rate = parseFloat(e.target.value);
+  $('#rate-val').textContent = store.d.rate.toFixed(2); store.save();
+});
+$('#btn-main').addEventListener('click', () => {
+  if (S.step === 1) { setStep(2); }
+  else if (S.step === 2) { if (!S.quizDone) grade2(); else setStep(3); }
+  else { goSession(store.d.session + 1); }
+});
+$('#btn-prev').addEventListener('click', () => {
+  if (!$('#note').classList.contains('hidden') || !$('#menu').classList.contains('hidden')) { setStep(S.step); return; }
+  if (S.step > 1) setStep(S.step - 1);
+  else goSession(store.d.session - 1);
+});
+$('#btn-note').addEventListener('click', () => {
+  ['#step1','#step2','#step3','#menu'].forEach(i => $(i).classList.add('hidden'));
+  $('#note').classList.remove('hidden'); renderNote();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+$('#note-close').addEventListener('click', () => setStep(S.step));
+$('#btn-menu').addEventListener('click', () => {
+  ['#step1','#step2','#step3','#note'].forEach(i => $(i).classList.add('hidden'));
+  $('#menu').classList.remove('hidden'); renderGrid();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+$('#menu-close').addEventListener('click', () => setStep(S.step));
+$('#import-go').addEventListener('click', () => {
+  const t = $('#import-box').value;
+  if (!t.trim()) { toast('붙여 넣은 내용이 없어!'); return; }
+  const r = importWords(t);
+  const m = $('#import-msg');
+  if (!r.added) { m.className = 'text-[11px] mt-2 text-rose-500';
+                  m.textContent = '추가된 단어가 없어. 형식을 다시 확인해 줘 (단어/품사/뜻 최소 3칸).'; return; }
+  m.className = 'text-[11px] mt-2 text-teal-700';
+  m.textContent = r.added + '개 추가 완료!' + (r.dup ? ' (중복 ' + r.dup + '개 제외)' : '') +
+                  (r.bad.length ? ' / ' + r.bad.length + '줄은 형식이 맞지 않아 건너뛰었어.' : '');
+  $('#import-box').value = '';
+  renderGrid();
+});
+$('#import-clear').addEventListener('click', () => {
+  if (!confirm('직접 추가한 단어를 모두 지울까? (기본 단어는 그대로야)')) return;
+  store.d.extra = []; if (store.d.session >= sessionCount()) store.d.session = sessionCount() - 1;
+  store.save(); renderGrid(); goSession(store.d.session); toast('추가한 단어를 지웠어.');
+});
+$('#btn-reset').addEventListener('click', () => {
+  if (!confirm('진도·오답노트·추가 단어를 모두 지울까? 되돌릴 수 없어!')) return;
+  store.d = { session: 0, done: [], rate: 0.85, wrongWords: [], wrongQs: [], extra: [] };
+  store.save(); goSession(0); toast('모든 기록을 초기화했어.');
+});
+
+/* === [15] 시작 ======================================================== */
+(function init() {
+  $('#rate').value = store.d.rate;
+  $('#rate-val').textContent = Number(store.d.rate).toFixed(2);
+  TTS.init();
+  if (store.d.session >= sessionCount()) store.d.session = 0;
+  goSession(store.d.session);
+})();
+</script>
+</body>
+</html>
