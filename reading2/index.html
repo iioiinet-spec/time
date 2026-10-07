@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0B1F2A" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<title>학술 지문 독해 표현집 · 영재고/과학고</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+
+<script>
+  if (window.tailwind) tailwind.config = {
+    theme: { extend: {
+      fontFamily: { sans:['Noto Sans KR','system-ui','sans-serif'], en:['Nunito','Noto Sans KR','sans-serif'] },
+      colors: {
+        ivory:'#0B1F2A', ink:'#E8F1F2', card:'#13303D', line:'#23485A',
+        teal:{50:'#17404E',100:'#1C4C5C',400:'#5FD3C0',500:'#3FC3AD',600:'#2BB29B',700:'#1E8F7C'},
+        sun:{50:'#2B2A1A',100:'#3A3620',400:'#F2C14E',500:'#E0A92F'},
+        rose:{50:'#38222A',400:'#F08A80',500:'#E06A5E'}
+      },
+      boxShadow:{ soft:'0 6px 24px -8px rgba(0,0,0,.5)' }
+    } }
+  };
+</script>
+
+<style>
+  .hidden { display:none !important; }
+  html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
+  body { -webkit-tap-highlight-color:transparent; overscroll-behavior-y:contain; }
+  input, select, textarea, button { font-size:16px; font-family:inherit; }
+  input, textarea, select { background:#0E2834; color:#E8F1F2; }
+  input::placeholder { color:#6E8C99; }
+  .tap { min-height:44px; }
+  .safe-b { padding-bottom:calc(env(safe-area-inset-bottom,0px) + 12px); }
+  .safe-t { padding-top:env(safe-area-inset-top,0px); }
+  ::selection { background:#2BB29B; color:#0B1F2A; }
+  ::-webkit-scrollbar { width:9px; height:9px; }
+  ::-webkit-scrollbar-thumb { background:#23485A; border-radius:9px; }
+  @keyframes pop { 0%{transform:translateY(8px);opacity:0} 100%{transform:none;opacity:1} }
+  .pop { animation:pop .22s ease-out both; }
+  .tab-on  { background:#2BB29B; color:#0B1F2A; }
+  .tab-off { background:#17333F; color:#7C97A4; }
+  input[type=range] { accent-color:#3FC3AD; }
+  /* 지문 문장: 클릭하면 해석이 열린다 */
+  .sent { cursor:pointer; border-left:3px solid transparent; transition:background .15s, border-color .15s; }
+  .sent:hover { background:rgba(95,211,192,.07); }
+  .sent.open { background:rgba(95,211,192,.10); border-left-color:#3FC3AD; }
+  mark { background:rgba(242,193,78,.28); color:#F2C14E; border-radius:3px; padding:0 2px; }
+</style>
+</head>
+
+<body class="bg-ivory text-ink font-sans min-h-screen">
+
+<header class="sticky top-0 z-30 bg-ivory/95 backdrop-blur border-b border-line/60 safe-t">
+  <div class="max-w-3xl mx-auto px-4 py-2.5 flex items-center gap-2.5">
+    <div class="w-9 h-9 rounded-xl bg-teal-500 text-ivory grid place-items-center text-lg shrink-0">📑</div>
+    <div class="min-w-0 flex-1">
+      <h1 class="font-en font-extrabold text-base leading-tight">Academic Reading Phrases</h1>
+      <p id="sub" class="text-[11px] text-ink/55 truncate">학술 표현 300 · 지문 10편 · 기출 40문항</p>
+    </div>
+    <button id="btn-star" class="tap text-[11px] px-2.5 rounded-lg border border-line text-ink/60">⭐ 즐겨찾기</button>
+  </div>
+  <div class="max-w-3xl mx-auto px-4 pb-2.5 grid grid-cols-3 gap-1.5">
+    <button data-m="book" class="mtab tap rounded-lg text-[12px] font-bold">📖 표현집</button>
+    <button data-m="read" class="mtab tap rounded-lg text-[12px] font-bold">📰 지문 독해</button>
+    <button data-m="quiz" class="mtab tap rounded-lg text-[12px] font-bold">🎯 기능 훈련</button>
+  </div>
+</header>
+
+<main class="max-w-3xl mx-auto px-4 py-4 pb-28">
+
+  <!-- ═══════ 표현집 ═══════ -->
+  <section id="m-book">
+    <div class="bg-card rounded-2xl shadow-soft p-4 mb-3">
+      <p class="text-sm font-bold mb-1">📖 기능별 학술 표현 300</p>
+      <p class="text-xs text-ink/60 leading-relaxed">
+        학술 지문은 <b>표현이 글의 방향을 미리 알려 준다.</b> 각 표현의
+        <span class="text-teal-400 font-bold">독해 신호</span>는 그 표현이 나왔을 때
+        <b>뒤에 무엇이 올지</b>를 알려 주는 단서야. 뜻만 외우지 말고 신호를 함께 익히자.
+      </p>
+    </div>
+    <input id="search" type="search" placeholder="표현·뜻·기능으로 검색…"
+      class="w-full px-4 py-3 rounded-2xl border border-line shadow-soft text-sm outline-none focus:ring-2 focus:ring-teal-400/40 mb-3" />
+    <div id="chips" class="flex gap-2 overflow-x-auto pb-3 -mx-1 px-1"></div>
+    <p id="count" class="text-[11px] text-ink/50 mb-2"></p>
+    <div id="list" class="flex flex-col gap-2.5"></div>
+    <p id="empty" class="hidden text-center text-sm text-ink/50 py-14">검색 결과가 없어 🔍</p>
+  </section>
+
+  <!-- ═══════ 지문 독해 ═══════ -->
+  <section id="m-read" class="hidden">
+    <div id="p-picker">
+      <div class="bg-card rounded-2xl shadow-soft p-4 mb-3">
+        <p class="text-sm font-bold mb-1">📰 학술 지문 10편</p>
+        <p class="text-xs text-ink/60 leading-relaxed">
+          실제 학술 글의 호흡으로 쓴 지문이야. 문장을 누르면 <b>해석과 그 문장의 기능</b>이 열려.
+          핵심 표현은 <mark>이렇게</mark> 표시돼 있어. <b>문제 모드</b>로 바꾸면 해석이 숨겨지고 빈칸 추론·문장 삽입·연결어 추론 등 기출 유형 4문항을 풀 수 있어.
+        </p>
+      </div>
+      <div id="p-list" class="flex flex-col gap-2.5"></div>
+    </div>
+
+    <div id="p-stage" class="hidden">
+      <div class="bg-card rounded-2xl shadow-soft p-4 mb-3 flex items-start gap-3">
+        <div class="min-w-0 flex-1">
+          <p id="p-title" class="font-bold text-[15px]"></p>
+          <p id="p-topic" class="text-[11px] text-ink/55 mt-0.5"></p>
+        </div>
+        <button id="p-back" class="tap text-[11px] px-3 rounded-lg border border-line text-ink/60 shrink-0">목록</button>
+      </div>
+
+      <!-- 학습 모드 / 문제 모드 -->
+      <div class="grid grid-cols-2 gap-1.5 p-1.5 bg-line/40 rounded-2xl mb-3">
+        <button id="p-mode-study" class="ptab tap rounded-xl text-[12px] font-bold">📖 학습 모드</button>
+        <button id="p-mode-exam"  class="ptab tap rounded-xl text-[12px] font-bold">✍️ 문제 모드</button>
+      </div>
+
+      <div id="p-tools" class="flex gap-2 mb-3">
+        <button id="p-all" class="tap flex-1 rounded-xl bg-line/50 text-xs font-bold">전체 해석 보기</button>
+        <button id="p-listen" class="tap flex-1 rounded-xl bg-line/50 text-xs font-bold">🔊 지문 듣기</button>
+        <button id="p-reset" class="tap px-3 rounded-xl bg-line/50 text-xs font-bold">접기</button>
+      </div>
+
+      <p id="p-guide" class="hidden text-[11px] text-ink/55 leading-relaxed mb-2 px-1"></p>
+
+      <div id="p-body" class="bg-card rounded-2xl shadow-soft p-2 mb-3"></div>
+
+      <div id="p-quiz" class="flex flex-col gap-3"></div>
+      <div id="p-score" class="hidden mt-3"></div>
+    </div>
+  </section>
+
+  <!-- ═══════ 기능 훈련 ═══════ -->
+  <section id="m-quiz" class="hidden">
+    <div class="bg-card rounded-2xl shadow-soft p-4 mb-3">
+      <p class="text-sm font-bold mb-1">🎯 기능 훈련</p>
+      <p class="text-xs text-ink/60 leading-relaxed">
+        표현을 보고 <b>그것이 글에서 하는 역할</b>을 맞혀 보자. 뜻을 몰라도 기능을 알면 지문의 흐름을 따라갈 수 있어.
+        10문제를 풀면 결과와 함께 틀린 표현만 모아 줄게.
+      </p>
+      <div class="flex gap-2 mt-3">
+        <select id="q-scope" class="flex-1 text-xs border border-line rounded-lg px-2 py-2.5"></select>
+        <button id="q-start" class="tap px-4 rounded-xl bg-teal-600 text-ivory text-xs font-extrabold">시작</button>
+      </div>
+    </div>
+    <div id="q-body" class="flex flex-col gap-3"></div>
+    <div id="q-result" class="hidden mt-3"></div>
+  </section>
+
+  <!-- ═══════ 즐겨찾기 ═══════ -->
+  <section id="m-star" class="hidden">
+    <div class="bg-card rounded-2xl shadow-soft p-4 mb-3 flex items-center justify-between gap-2">
+      <div>
+        <p class="text-sm font-bold">⭐ 즐겨찾기 &amp; 오답</p>
+        <p id="star-count" class="text-xs text-ink/55 mt-0.5"></p>
+      </div>
+      <button id="star-close" class="tap text-[11px] px-3 rounded-lg bg-teal-600 text-ivory font-bold">돌아가기</button>
+    </div>
+    <div id="star-list" class="flex flex-col gap-2.5"></div>
+  </section>
+</main>
+
+<footer class="pb-24 text-center text-[11px] text-ink/50">
+  세영코딩연구소 &nbsp;&nbsp; 저자 : 컴퓨터공학박사 KIM
+</footer>
+
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-6 z-50 hidden px-4 py-2.5 rounded-xl bg-teal-600 text-ivory text-xs font-bold shadow-lg max-w-[90%] text-center"></div>
+
+<script>
+/* ==========================================================================
+   학술 지문 독해 표현집 (Single HTML File)
+   ① 표현집: 기능별 300개 — 뜻 + 독해 신호 + 예문
+   ② 지문 독해: 학술 지문 10편 — 문장 클릭 시 해석·기능 공개, 이해 문제
+   ③ 기능 훈련: 표현의 기능을 맞히는 4지선다
+   TTS: speechSynthesis / 저장: localStorage / 외부 서버 불필요
+   ========================================================================== */
+
+/* === [1] 표현 데이터 ===================================================
+   [표현, 뜻, 기능, 독해 신호, 예문, 해석]
+   ★ 확장 ★ 같은 형식으로 계속 이어 붙이면 칩·검색·퀴즈가 자동으로 늘어난다.
+   ====================================================================== */
+const EXPR = [
+  ["refer to", "~을 가리키다, 지칭하다", "정의·도입", "새 용어가 처음 등장했다는 신호. 뒤에 그 용어의 정의가 온다.", "Entropy refers to the degree of disorder in a system.", "엔트로피란 계의 무질서한 정도를 가리킨다."],
+  ["be defined as", "~로 정의된다", "정의·도입", "엄밀한 정의가 제시된다. 시험에서 밑줄의 근거가 되는 문장이다.", "Velocity is defined as the rate of change of position.", "속도는 위치의 변화율로 정의된다."],
+  ["be known as", "~로 알려져 있다", "정의·도입", "현상에 붙은 명칭이 소개된다. 이름 자체가 뒤 내용의 열쇳말이 된다.", "This process is known as natural selection.", "이 과정은 자연선택으로 알려져 있다."],
+  ["what is meant by X", "X가 의미하는 바", "정의·도입", "필자가 용어를 다시 풀어 설명하려 한다. 앞 용어가 어려웠다는 뜻이다.", "What is meant by 'fitness' is reproductive success.", "‘적응도’가 의미하는 바는 번식 성공률이다."],
+  ["the term X denotes", "X라는 용어는 ~을 나타낸다", "정의·도입", "학술적 정의. denote는 refer to보다 격식 있는 표현이다.", "The term 'locus' denotes the set of all such points.", "‘자취’라는 용어는 그러한 모든 점의 집합을 나타낸다."],
+  ["in the sense that", "~라는 점에서", "정의·도입", "앞 주장의 적용 범위를 좁힌다. 어떤 의미로 쓴 말인지 한정한다.", "The model is ideal in the sense that friction is ignored.", "그 모형은 마찰을 무시한다는 점에서 이상적이다."],
+  ["broadly speaking", "대체로 말하면", "정의·도입", "큰 틀을 먼저 제시한다. 뒤에 예외나 세부가 따라올 가능성이 높다.", "Broadly speaking, metals conduct heat well.", "대체로 말하면 금속은 열을 잘 전도한다."],
+  ["be characterized by", "~을 특징으로 하다", "정의·도입", "대상의 핵심 속성이 나열된다. 분류 문제의 근거가 된다.", "Deserts are characterized by low rainfall.", "사막은 적은 강수량을 특징으로 한다."],
+  ["fall into the category of", "~의 범주에 속하다", "정의·도입", "분류가 진행된다. 앞뒤로 다른 범주가 함께 제시되기 쉽다.", "Viruses fall into a category of their own.", "바이러스는 그 자체로 하나의 범주에 속한다."],
+  ["as the name suggests", "이름에서 알 수 있듯이", "정의·도입", "용어의 뜻을 어원으로 풀어 준다. 모르는 단어라도 추론할 수 있다.", "As the name suggests, photosynthesis uses light.", "이름에서 알 수 있듯이 광합성은 빛을 이용한다."],
+  ["a phenomenon whereby", "~하는 현상", "정의·도입", "현상에 대한 설명이 관계절로 길게 이어진다.", "Resonance is a phenomenon whereby amplitude grows sharply.", "공명은 진폭이 급격히 커지는 현상이다."],
+  ["be classified into", "~로 분류되다", "정의·도입", "분류 기준과 항목 수가 뒤따른다. 개수를 메모해 두면 좋다.", "Rocks are classified into three main types.", "암석은 세 가지 주요 유형으로 분류된다."],
+  ["by definition", "정의상", "정의·도입", "정의만으로 당연히 참임을 밝힌다. 추가 증명이 필요 없다는 뜻이다.", "By definition, a prime has exactly two divisors.", "정의상 소수는 약수가 정확히 두 개이다."],
+  ["that is to say", "즉, 다시 말해", "정의·도입", "바로 앞 문장을 쉬운 말로 바꿔 준다. 앞을 놓쳤다면 여기서 건질 수 있다.", "The system is closed; that is to say, no matter enters or leaves.", "그 계는 닫혀 있다. 즉 물질이 드나들지 않는다."],
+  ["in other words", "바꿔 말하면", "정의·도입", "같은 내용의 쉬운 반복. 두 문장은 같은 뜻이므로 하나만 이해해도 된다.", "The force is zero; in other words, the object is in equilibrium.", "힘이 0이다. 바꿔 말하면 그 물체는 평형 상태이다."],
+  ["be regarded as", "~로 여겨지다", "정의·도입", "통념이나 학계의 일반적 평가. 뒤에 however가 오면 반박이 시작된다.", "Newton is regarded as the founder of classical mechanics.", "뉴턴은 고전역학의 창시자로 여겨진다."],
+  ["serve as", "~의 역할을 하다", "정의·도입", "기능 중심의 설명. 무엇의 역할인지 짝을 찾아야 한다.", "The membrane serves as a selective barrier.", "그 막은 선택적 장벽 역할을 한다."],
+  ["consist of", "~로 구성되다", "정의·도입", "구성 요소가 열거된다. 개수와 항목이 문제로 나오기 쉽다.", "An atom consists of a nucleus and electrons.", "원자는 핵과 전자로 구성된다."],
+  ["be composed of", "~로 이루어지다", "정의·도입", "consist of와 같은 뜻이나 수동태로 쓰인다는 점이 다르다.", "Water is composed of hydrogen and oxygen.", "물은 수소와 산소로 이루어져 있다."],
+  ["so-called", "이른바", "정의·도입", "필자가 그 명칭에 거리를 두기도 한다. 비판이 뒤따를 수 있다.", "The so-called 'junk DNA' turned out to be functional.", "이른바 ‘정크 DNA’는 기능이 있는 것으로 밝혀졌다."],
+  ["give rise to", "~을 일으키다, 낳다", "인과", "원인 → 결과. 앞이 원인, 뒤가 결과이다.", "Friction gives rise to heat.", "마찰은 열을 발생시킨다."],
+  ["stem from", "~에서 비롯되다", "인과", "결과 → 원인. 앞이 결과, 뒤가 원인으로 순서가 뒤집힌다.", "The error stems from a flawed assumption.", "그 오류는 잘못된 가정에서 비롯된다."],
+  ["be attributed to", "~의 탓으로 여겨지다", "인과", "결과 → 원인. 다만 '여겨진다'이므로 단정이 아니라 해석이다.", "The warming is attributed to greenhouse gases.", "그 온난화는 온실가스 때문으로 여겨진다."],
+  ["account for", "설명하다; (비율을) 차지하다", "인과", "두 뜻이 있으니 주어를 보라. 숫자가 뒤따르면 '차지하다'이다.", "This factor accounts for most of the variation.", "이 요인이 변이의 대부분을 설명한다."],
+  ["result in", "~을 초래하다", "인과", "원인 → 결과. result from과 방향이 정반대이니 주의하라.", "Overfishing results in population collapse.", "남획은 개체군 붕괴를 초래한다."],
+  ["result from", "~에서 비롯되다", "인과", "결과 → 원인. result in과 헷갈리면 인과가 거꾸로 읽힌다.", "The collapse resulted from overfishing.", "그 붕괴는 남획에서 비롯되었다."],
+  ["lead to", "~로 이어지다", "인과", "원인 → 결과. 여러 단계를 거친 간접적 결과에도 쓰인다.", "Higher temperature leads to faster diffusion.", "더 높은 온도는 더 빠른 확산으로 이어진다."],
+  ["bring about", "야기하다", "인과", "의도적·구조적 변화를 일으킬 때 자주 쓰인다.", "The invention brought about a social shift.", "그 발명은 사회적 변화를 야기했다."],
+  ["trigger", "촉발하다", "인과", "작은 자극이 큰 변화를 시작시킨다. 임계점 논의가 뒤따르기 쉽다.", "A small vibration triggered the collapse.", "작은 진동이 그 붕괴를 촉발했다."],
+  ["owing to", "~ 때문에", "인과", "전치사이므로 뒤에 명사가 온다. because of와 같은 뜻이다.", "Owing to its density, ice floats on water.", "밀도 덕분에 얼음은 물에 뜬다."],
+  ["as a consequence of", "~의 결과로", "인과", "원인을 전치사구로 묶어 제시한다. 뒤가 결과이다.", "As a consequence of the drought, yields fell.", "가뭄의 결과로 수확량이 떨어졌다."],
+  ["in turn", "결과적으로, 차례로", "인과", "연쇄 반응의 두 번째 고리. A→B→C의 B와 C 사이에 놓인다.", "Ice melts, which in turn lowers reflectivity.", "얼음이 녹고, 그 결과 반사율이 낮아진다."],
+  ["thereby", "그렇게 함으로써", "인과", "앞 행동이 곧 원인이다. 뒤에 -ing 형태가 따라오는 일이 많다.", "We reduced noise, thereby improving accuracy.", "우리는 잡음을 줄여 그로써 정확도를 높였다."],
+  ["be responsible for", "~의 원인이다", "인과", "책임 소재가 아니라 '원인'을 뜻하는 과학적 용법이다.", "This gene is responsible for eye color.", "이 유전자가 눈 색깔을 결정한다."],
+  ["contribute to", "~에 기여하다, 한몫하다", "인과", "유일한 원인이 아니라 여러 원인 중 하나라는 뉘앙스이다.", "Deforestation contributes to soil erosion.", "삼림 파괴는 토양 침식에 한몫한다."],
+  ["arise from", "~에서 생기다", "인과", "문제·현상이 자연히 발생할 때 쓰인다. 목적어가 필요 없다.", "Many errors arise from rounding.", "많은 오차가 반올림에서 생긴다."],
+  ["underlie", "~의 근저에 있다", "인과", "겉으로 드러나지 않은 근본 원인. 글의 핵심 주장일 때가 많다.", "A single principle underlies both phenomena.", "하나의 원리가 두 현상의 근저에 있다."],
+  ["be driven by", "~에 의해 추동되다", "인과", "지속적인 구동력. 에너지·동기 등 '계속 미는 힘'을 가리킨다.", "Ocean currents are driven by temperature differences.", "해류는 온도 차에 의해 추동된다."],
+  ["pave the way for", "~의 길을 열다", "인과", "후속 발전의 토대가 되었다는 평가. 과학사 지문의 단골이다.", "This discovery paved the way for modern genetics.", "이 발견은 현대 유전학의 길을 열었다."],
+  ["at the expense of", "~을 희생하여", "인과", "이득과 대가가 함께 제시된다. 절충(trade-off) 논의로 이어진다.", "Speed was gained at the expense of accuracy.", "정확도를 희생하여 속도를 얻었다."],
+  ["by contrast", "그에 반해", "대조·반전", "앞 내용과 정반대가 온다. 두 대상을 비교하는 단락의 신호이다.", "By contrast, insulators resist the flow of charge.", "그에 반해 절연체는 전하의 흐름을 막는다."],
+  ["conversely", "반대로", "대조·반전", "방향이 뒤집힌 명제가 온다. 수학에서는 '역'을 뜻하기도 한다.", "Conversely, lowering the temperature slows the reaction.", "반대로 온도를 낮추면 반응이 느려진다."],
+  ["whereas", "반면에", "대조·반전", "한 문장 안에서 두 대상을 맞세운다. 쉼표 앞뒤가 대조쌍이다.", "Gold is dense, whereas aluminum is light.", "금은 밀도가 높은 반면 알루미늄은 가볍다."],
+  ["on the other hand", "다른 한편으로는", "대조·반전", "앞에 on the one hand가 있었는지 확인하라. 두 측면의 균형 서술이다.", "On the other hand, the method is far cheaper.", "다른 한편으로 그 방법은 훨씬 저렴하다."],
+  ["far from", "결코 ~이 아닌", "대조·반전", "강한 부정. 통념을 깨뜨리는 문장이 이어진다.", "Far from being settled, the debate has intensified.", "논쟁은 정리되기는커녕 더 격해졌다."],
+  ["contrary to", "~와 달리, ~에 반해", "대조·반전", "통념(popular belief, expectation)과 반대되는 사실이 온다.", "Contrary to expectation, the rate decreased.", "예상과 달리 그 비율은 감소했다."],
+  ["rather than", "~라기보다는", "대조·반전", "필자가 고르는 쪽은 rather than 앞이다. 순서를 혼동하지 마라.", "The change is gradual rather than sudden.", "그 변화는 갑작스럽다기보다 점진적이다."],
+  ["instead of", "~ 대신에", "대조·반전", "대체 관계. 채택된 것과 버려진 것이 한 문장에 놓인다.", "Use a model instead of a full simulation.", "전체 시뮬레이션 대신 모형을 사용하라."],
+  ["unlike", "~와 달리", "대조·반전", "전치사이므로 뒤에 명사가 온다. 차이점이 핵심이다.", "Unlike mammals, birds have hollow bones.", "포유류와 달리 새는 뼈 속이 비어 있다."],
+  ["nonetheless", "그럼에도 불구하고", "대조·반전", "앞의 불리한 조건에도 결론은 유지된다. 필자의 주장이 뒤에 온다.", "The data are sparse; nonetheless, the trend is clear.", "자료는 적다. 그럼에도 추세는 분명하다."],
+  ["nevertheless", "그렇지만", "대조·반전", "nonetheless와 같은 뜻. 뒤 문장이 글의 결론일 때가 많다.", "The theory is old; nevertheless, it still holds.", "그 이론은 오래되었지만 여전히 성립한다."],
+  ["yet", "그렇지만", "대조·반전", "짧지만 강한 반전. 접속사 자리에 오면 but과 같다.", "The model is simple, yet remarkably accurate.", "그 모형은 단순하지만 놀랄 만큼 정확하다."],
+  ["in reality", "실제로는", "대조·반전", "앞의 가정·통념을 뒤집는다. 뒤가 사실이다.", "In reality, the process is far more complex.", "실제로 그 과정은 훨씬 더 복잡하다."],
+  ["paradoxically", "역설적이게도", "대조·반전", "상식과 반대되는 결과가 온다. 필자가 흥미롭게 여기는 지점이다.", "Paradoxically, more data made the model worse.", "역설적이게도 자료가 많아지자 모형이 더 나빠졌다."],
+  ["at odds with", "~와 상충하는", "대조·반전", "두 결과·이론이 충돌한다. 뒤에 해소 시도가 이어지기 쉽다.", "This finding is at odds with earlier work.", "이 발견은 이전 연구와 상충한다."],
+  ["depart from", "~에서 벗어나다", "대조·반전", "기존 방식과의 결별. 새로움을 강조하는 신호이다.", "The approach departs from classical methods.", "그 접근법은 고전적 방법에서 벗어난다."],
+  ["whilst", "~인 반면, ~하는 동안", "대조·반전", "while의 격식체. 영국식 학술 글에 자주 보인다.", "Whilst useful, the model has clear limits.", "유용하긴 하지만 그 모형에는 분명한 한계가 있다."],
+  ["not so much A as B", "A라기보다는 B", "대조·반전", "강조점은 B에 있다. A를 답으로 고르면 틀린다.", "It is not so much a law as a rule of thumb.", "그것은 법칙이라기보다 경험칙이다."],
+  ["the opposite is true", "그 반대가 참이다", "대조·반전", "앞 명제를 정면으로 뒤집는다. 아주 강한 반박이다.", "For deep water, the opposite is true.", "깊은 물에서는 그 반대가 참이다."],
+  ["contrary to popular belief", "흔한 통념과 달리", "대조·반전", "독자의 상식을 깨며 시작한다. 글 전체의 주제문일 때가 많다.", "Contrary to popular belief, glass is not a liquid.", "흔한 통념과 달리 유리는 액체가 아니다."],
+  ["granted that", "~은 인정하지만", "양보", "필자가 잠시 물러선다. 곧 but·yet으로 반격이 온다.", "Granted that the data are limited, the pattern is striking.", "자료가 제한적임은 인정하지만 그 양상은 두드러진다."],
+  ["admittedly", "인정하건대", "양보", "약점을 먼저 밝힌 뒤 주장을 지킨다. 뒤 문장이 핵심이다.", "Admittedly, the sample was small.", "인정하건대 표본이 작았다."],
+  ["to be sure", "분명히 ~이긴 하다", "양보", "양보 후 반전이 거의 반드시 따라온다. 뒤를 끝까지 읽어야 한다.", "To be sure, the method has drawbacks.", "분명 그 방법에는 단점이 있다."],
+  ["it is true that", "~인 것은 사실이다", "양보", "상대 주장을 일부 받아들인다. However가 뒤에 올 확률이 높다.", "It is true that the cost is high.", "비용이 높은 것은 사실이다."],
+  ["while it may be", "~일 수는 있지만", "양보", "가능성을 열어 두고 곧 제한한다.", "While it may be elegant, the proof is long.", "우아할지는 몰라도 그 증명은 길다."],
+  ["even though", "비록 ~이지만", "양보", "접속사. 뒤에 주어+동사가 온다. 주절이 필자의 주장이다.", "Even though it rained, the reaction proceeded.", "비가 왔지만 반응은 진행되었다."],
+  ["in spite of", "~에도 불구하고", "양보", "전치사구. 뒤에 명사가 온다. despite와 같은 뜻이다.", "In spite of the noise, the signal was detected.", "잡음에도 불구하고 신호가 검출되었다."],
+  ["notwithstanding", "~에도 불구하고", "양보", "격식이 매우 높다. 명사 앞뒤 모두에 올 수 있다.", "Notwithstanding these limits, the result stands.", "이러한 한계에도 불구하고 그 결과는 유효하다."],
+  ["albeit", "비록 ~일지라도", "양보", "뒤에 형용사·부사구만 온다. 문장이 오면 틀린 용법이다.", "The effect is real, albeit small.", "그 효과는 작지만 실재한다."],
+  ["at least in part", "적어도 부분적으로는", "양보", "전면 긍정은 피하면서 일부를 인정한다.", "The rise is explained, at least in part, by migration.", "그 증가는 적어도 부분적으로 이주로 설명된다."],
+  ["this is not to say that", "그렇다고 ~라는 말은 아니다", "양보", "독자의 과잉 해석을 막는다. 필자의 주장 범위를 좁힌다.", "This is not to say that the theory is wrong.", "그렇다고 그 이론이 틀렸다는 말은 아니다."],
+  ["while acknowledging", "~을 인정하면서도", "양보", "앞의 인정과 뒤의 주장이 한 문장에 담긴다.", "While acknowledging the risk, they proceeded.", "위험을 인정하면서도 그들은 진행했다."],
+  ["concede", "인정하다, 양보하다", "양보", "필자나 등장인물이 약점을 받아들인다. 반전의 예고이다.", "Critics concede that the method is fast.", "비판자들도 그 방법이 빠르다는 점은 인정한다."],
+  ["regardless of", "~와 상관없이", "양보", "조건이 결과에 영향을 주지 않음을 밝힌다.", "Regardless of mass, all objects fall alike.", "질량과 상관없이 모든 물체는 같게 떨어진다."],
+  ["for all its", "그 모든 ~에도 불구하고", "양보", "장점을 먼저 인정하고 한계를 지적한다.", "For all its elegance, the model fails here.", "그 모든 우아함에도 그 모형은 여기서 실패한다."],
+  ["may well be", "~일 수도 있다", "양보", "가능성을 인정하되 단정하지 않는다. 뒤에 but이 잦다.", "The effect may well be real, but it is tiny.", "그 효과는 실재할 수도 있지만 매우 작다."],
+  ["to some extent", "어느 정도는", "양보", "부분적 동의. 완전한 긍정이 아님을 기억하라.", "To some extent, both explanations hold.", "어느 정도는 두 설명이 모두 성립한다."],
+  ["with the exception of", "~을 제외하고는", "양보", "예외를 명시한다. 그 예외가 문제의 정답이 되기도 한다.", "With the exception of helium, all gases reacted.", "헬륨을 제외하고 모든 기체가 반응했다."],
+  ["apart from", "~을 제외하면, ~ 외에도", "양보", "제외와 추가 두 뜻이 있다. 문맥으로 가려야 한다.", "Apart from one outlier, the fit is excellent.", "이상치 하나를 빼면 적합도가 뛰어나다."],
+  ["if anything", "오히려", "양보", "예상과 반대로 기울었음을 조심스럽게 말한다.", "If anything, the effect grew stronger.", "오히려 그 효과는 더 강해졌다."],
+  ["a case in point", "적절한 예", "예시", "바로 앞 주장을 뒷받침하는 사례가 온다.", "Antibiotic resistance is a case in point.", "항생제 내성이 그 적절한 예이다."],
+  ["to illustrate", "예를 들어 보이자면", "예시", "추상적 설명 뒤에 구체 사례가 온다. 이해를 돕는 부분이다.", "To illustrate, consider a falling stone.", "예를 들자면 떨어지는 돌을 생각해 보라."],
+  ["for instance", "예를 들어", "예시", "for example과 같다. 예시는 보조 정보이므로 주장과 구분하라.", "Some metals, for instance mercury, are liquid.", "어떤 금속은, 예를 들어 수은은 액체이다."],
+  ["such as", "~와 같은", "예시", "바로 앞 명사의 하위 사례이다. 열거가 이어진다.", "Noble gases such as argon rarely react.", "아르곤과 같은 비활성 기체는 거의 반응하지 않는다."],
+  ["including", "~을 포함하여", "예시", "전체 중 일부를 든다. 전부가 아님에 유의하라.", "Several factors, including humidity, matter.", "습도를 포함한 여러 요인이 중요하다."],
+  ["namely", "즉, 다름 아닌", "예시", "앞에서 말한 대상을 콕 집어 지목한다.", "One element is missing, namely oxygen.", "원소 하나가 빠져 있다. 다름 아닌 산소이다."],
+  ["as exemplified by", "~에서 잘 드러나듯", "예시", "사례가 주장을 증명하는 구조이다.", "This is exemplified by the Mpemba effect.", "이는 음펨바 효과에서 잘 드러난다."],
+  ["take X for example", "X를 예로 들어 보자", "예시", "필자가 독자를 사례로 안내한다. 구어적 설명 방식이다.", "Take the water cycle, for example.", "물의 순환을 예로 들어 보자."],
+  ["consider", "~을 생각해 보라", "예시", "사고 실험의 시작. 가정이 뒤따른다.", "Consider a particle moving in a straight line.", "직선으로 움직이는 입자를 생각해 보라."],
+  ["suppose that", "~라고 가정하자", "예시", "수학·물리 지문의 전형. 조건이 설정된다.", "Suppose that the collision is perfectly elastic.", "그 충돌이 완전 탄성이라고 가정하자."],
+  ["as seen in", "~에서 보이듯이", "예시", "그림·표를 가리킨다. 자료 해석 문제의 근거가 된다.", "As seen in Figure 3, the curve flattens.", "그림 3에서 보이듯 곡선이 평평해진다."],
+  ["typical of", "~의 전형적인", "예시", "대표성을 주장한다. 일반화가 뒤따른다.", "This pattern is typical of predator-prey systems.", "이 양상은 포식자-피식자 계의 전형이다."],
+  ["a prime example", "대표적인 예", "예시", "여러 예 중 가장 좋은 하나를 든다.", "The eye is a prime example of convergent evolution.", "눈은 수렴 진화의 대표적인 예이다."],
+  ["among others", "그중에서도", "예시", "나열된 것이 전부가 아님을 밝힌다.", "Darwin, among others, noted this pattern.", "다윈을 비롯한 여러 사람이 이 양상에 주목했다."],
+  ["as follows", "다음과 같다", "예시", "바로 뒤에 목록·절차가 온다. 순서를 메모하라.", "The procedure is as follows.", "절차는 다음과 같다."],
+  ["in particular", "특히", "예시", "앞의 일반 진술 중 한 부분을 확대한다.", "Heavy metals, in particular lead, are toxic.", "중금속, 특히 납은 독성이 있다."],
+  ["specifically", "구체적으로 말하면", "예시", "범위를 좁혀 정확히 짚는다.", "Specifically, the rate doubled every ten degrees.", "구체적으로 그 속도는 10도마다 두 배가 되었다."],
+  ["to name a few", "몇 가지만 들자면", "예시", "예시 열거의 끝. 더 있음을 암시한다.", "Iron, copper, and zinc, to name a few.", "철, 구리, 아연 등 몇 가지만 들어도 그렇다."],
+  ["in the case of", "~의 경우에는", "예시", "특정 조건으로 범위를 한정한다.", "In the case of gases, volume changes greatly.", "기체의 경우 부피가 크게 변한다."],
+  ["as an analogy", "비유하자면", "예시", "어려운 개념을 익숙한 것에 빗댄다. 비유와 실제를 혼동하지 마라.", "As an analogy, think of heat as a crowd.", "비유하자면 열을 군중이라고 생각해 보라."],
+  ["put another way", "달리 표현하면", "부연·환언", "같은 내용을 다른 각도로 반복한다. 앞을 놓쳤다면 여기서 잡아라.", "Put another way, energy cannot be created.", "달리 표현하면 에너지는 창조될 수 없다."],
+  ["in essence", "본질적으로", "부연·환언", "군더더기를 걷어낸 핵심이 온다. 요약 문제의 근거가 된다.", "In essence, the two models are identical.", "본질적으로 그 두 모형은 동일하다."],
+  ["essentially", "본질적으로, 사실상", "부연·환언", "세부를 생략하고 큰 줄기만 말한다.", "The problem is essentially one of scale.", "그 문제는 사실상 규모의 문제이다."],
+  ["simply put", "간단히 말해", "부연·환언", "쉬운 말로 바꾼 핵심 문장. 독해의 디딤돌이다.", "Simply put, hotter means faster.", "간단히 말해 더 뜨겁다는 것은 더 빠르다는 뜻이다."],
+  ["to put it differently", "달리 말하면", "부연·환언", "앞 문장의 재진술. 새 정보는 없다.", "To put it differently, the net force vanishes.", "달리 말하면 알짜힘이 사라진다."],
+  ["more precisely", "더 정확히 말하면", "부연·환언", "앞의 느슨한 표현을 엄밀하게 고친다. 정확한 쪽이 뒤이다.", "More precisely, the value is 9.81, not 10.", "더 정확히 말하면 그 값은 10이 아니라 9.81이다."],
+  ["that is", "즉", "부연·환언", "짧은 환언. 보통 쉼표 사이에 끼어든다.", "The region is isothermal, that is, at constant temperature.", "그 영역은 등온이다. 즉 온도가 일정하다."],
+  ["in short", "요컨대", "부연·환언", "긴 설명을 한 문장으로 줄인다. 단락 요약이다.", "In short, the hypothesis survived every test.", "요컨대 그 가설은 모든 검증을 통과했다."],
+  ["the upshot is", "요점은 ~이다", "부연·환언", "긴 논의의 결론을 한마디로 못 박는다.", "The upshot is that the method scales poorly.", "요점은 그 방법이 규모 확장에 약하다는 것이다."],
+  ["boil down to", "결국 ~로 귀결되다", "부연·환언", "복잡한 논의를 하나로 압축한다. 핵심이 뒤에 온다.", "It boils down to a single trade-off.", "결국 하나의 절충 문제로 귀결된다."],
+  ["amount to", "결국 ~인 셈이다", "부연·환언", "표현만 다를 뿐 같은 것임을 밝힌다.", "This amounts to assuming no friction.", "이는 결국 마찰이 없다고 가정하는 셈이다."],
+  ["in effect", "사실상", "부연·환언", "형식과 실질이 다를 때 실질을 말한다.", "The rule is, in effect, a ban.", "그 규칙은 사실상 금지이다."],
+  ["be tantamount to", "~와 다름없다", "부연·환언", "강한 동일시. 비판적 평가에 자주 쓰인다.", "Ignoring the data is tantamount to guessing.", "자료를 무시하는 것은 추측이나 다름없다."],
+  ["namely that", "다름 아니라 ~라는 것", "부연·환언", "앞 명사의 내용을 구체적으로 펼친다.", "One fact remains, namely that energy is conserved.", "한 가지 사실이 남는다. 다름 아니라 에너지가 보존된다는 것이다."],
+  ["in a sense", "어떤 의미에서는", "부연·환언", "비유적·부분적 진술임을 알린다. 문자 그대로 읽지 마라.", "In a sense, DNA is a code.", "어떤 의미에서 DNA는 암호이다."],
+  ["it follows that", "따라서 ~이다", "부연·환언", "논리적 귀결. 앞 전제에서 자동으로 나온다는 뜻이다.", "It follows that the two sets are equal.", "따라서 그 두 집합은 같다."],
+  ["which is to say", "즉 ~라는 뜻이다", "부연·환언", "앞 절을 받아 풀어 준다. 관계절 형태이다.", "The flow is laminar, which is to say orderly.", "그 흐름은 층류이다. 즉 질서 있다는 뜻이다."],
+  ["by the same token", "같은 이유로", "부연·환언", "앞 논리를 그대로 다른 사례에 적용한다.", "By the same token, cooling slows diffusion.", "같은 이유로 냉각은 확산을 늦춘다."],
+  ["as noted above", "앞서 언급했듯이", "부연·환언", "앞 내용을 다시 불러온다. 지문 앞쪽을 참조하라는 신호이다.", "As noted above, the sample was small.", "앞서 언급했듯이 표본이 작았다."],
+  ["what this means is", "이것이 뜻하는 바는", "부연·환언", "필자가 직접 해석을 제시한다. 요지일 때가 많다.", "What this means is that prediction is impossible.", "이것이 뜻하는 바는 예측이 불가능하다는 것이다."],
+  ["moreover", "게다가", "추가·열거", "같은 방향의 근거가 하나 더 온다. 주장이 강화된다.", "Moreover, the effect persists at low pressure.", "게다가 그 효과는 저압에서도 지속된다."],
+  ["furthermore", "더욱이", "추가·열거", "moreover와 같다. 논거의 누적을 뜻한다.", "Furthermore, the sample size was doubled.", "더욱이 표본 크기가 두 배가 되었다."],
+  ["in addition", "덧붙여", "추가·열거", "추가 정보. 앞뒤 내용은 대등하다.", "In addition, costs fell sharply.", "덧붙여 비용이 급격히 떨어졌다."],
+  ["what is more", "더구나", "추가·열거", "앞보다 더 강한 근거가 온다. 강조의 누적이다.", "What is more, the result was reproducible.", "더구나 그 결과는 재현 가능했다."],
+  ["not only A but also B", "A뿐만 아니라 B도", "추가·열거", "무게 중심은 B에 있다. B가 필자의 강조점이다.", "It not only explains but also predicts.", "그것은 설명할 뿐 아니라 예측도 한다."],
+  ["likewise", "마찬가지로", "추가·열거", "앞과 같은 양상이 반복된다. 대조가 아니다.", "Likewise, the second trial showed no change.", "마찬가지로 두 번째 시행에서도 변화가 없었다."],
+  ["similarly", "비슷하게", "추가·열거", "평행 사례. 두 사례의 공통점이 핵심이다.", "Similarly, plants adjust to light levels.", "비슷하게 식물도 빛의 양에 맞춰 조절한다."],
+  ["to begin with", "우선", "추가·열거", "열거의 첫 항목. 뒤에 second, finally가 이어진다.", "To begin with, the apparatus must be clean.", "우선 장치가 깨끗해야 한다."],
+  ["in the first place", "첫째로, 애초에", "추가·열거", "순서의 첫째 또는 '애초에'라는 두 뜻이 있다.", "In the first place, the premise is doubtful.", "애초에 그 전제가 의심스럽다."],
+  ["subsequently", "그 후에", "추가·열거", "시간 순서. 실험 절차 서술에 자주 쓰인다.", "The sample was heated and subsequently cooled.", "시료를 가열한 뒤 이어서 냉각했다."],
+  ["meanwhile", "그동안, 한편", "추가·열거", "동시에 일어난 다른 일. 장면 전환의 신호이다.", "Meanwhile, the control group remained stable.", "한편 대조군은 안정적으로 유지되었다."],
+  ["alongside", "~와 나란히", "추가·열거", "두 요소가 함께 작용한다.", "Alongside temperature, pressure was recorded.", "온도와 나란히 압력도 기록되었다."],
+  ["coupled with", "~와 결합하여", "추가·열거", "두 요인의 상승 작용. 복합 원인을 뜻한다.", "Drought coupled with heat destroyed the crop.", "가뭄에 더위가 겹쳐 작물이 망가졌다."],
+  ["as well as", "~뿐만 아니라", "추가·열거", "앞쪽이 주된 정보이다. not only와 무게 중심이 반대이다.", "The study examined soil as well as water.", "그 연구는 물뿐 아니라 토양도 조사했다."],
+  ["a further", "또 하나의", "추가·열거", "근거·문제를 하나 더 보탠다.", "A further limitation is the short duration.", "또 하나의 한계는 짧은 기간이다."],
+  ["equally important", "그만큼 중요한 것은", "추가·열거", "추가 항목의 비중이 앞과 같음을 밝힌다.", "Equally important is the role of enzymes.", "그만큼 중요한 것이 효소의 역할이다."],
+  ["finally", "마지막으로", "추가·열거", "열거의 끝. 결론과 혼동하지 마라.", "Finally, the residue was weighed.", "마지막으로 잔류물의 무게를 쟀다."],
+  ["last but not least", "마지막이지만 중요한", "추가·열거", "마지막 항목이 사소하지 않음을 강조한다.", "Last but not least, safety must be ensured.", "마지막이지만 중요한 것은 안전 확보이다."],
+  ["on top of that", "게다가", "추가·열거", "구어적 추가. 부담이 더해지는 느낌이다.", "On top of that, the equipment failed twice.", "게다가 장비가 두 번이나 고장 났다."],
+  ["in parallel", "동시에, 병행하여", "추가·열거", "두 과정이 나란히 진행된다.", "The two reactions proceed in parallel.", "그 두 반응은 병행하여 진행된다."],
+  ["be analogous to", "~와 유사하다", "비교·유사", "구조적 닮음. 비유로 개념을 설명하려는 신호이다.", "Heat flow is analogous to electric current.", "열의 흐름은 전류와 유사하다."],
+  ["bear a resemblance to", "~와 닮아 있다", "비교·유사", "겉모습·양상의 유사. 동일하다는 뜻은 아니다.", "The curve bears a resemblance to a parabola.", "그 곡선은 포물선과 닮아 있다."],
+  ["in much the same way", "거의 같은 방식으로", "비교·유사", "앞 설명을 그대로 적용한다. 반복 설명을 줄여 준다.", "In much the same way, ions move toward charge.", "거의 같은 방식으로 이온은 전하 쪽으로 이동한다."],
+  ["parallel to", "~와 평행하게, 유사하게", "비교·유사", "두 흐름이 나란히 간다. 구조의 대응을 보라.", "Parallel to this, costs declined steadily.", "이와 나란히 비용도 꾸준히 감소했다."],
+  ["just as A, so B", "A인 것처럼 B도", "비교·유사", "두 문장이 대응 구조를 이룬다. 짝을 찾아 읽어라.", "Just as water flows downhill, so heat flows to cold.", "물이 아래로 흐르듯 열도 찬 쪽으로 흐른다."],
+  ["compared with", "~와 비교하면", "비교·유사", "비교 대상이 명시된다. 기준이 무엇인지 확인하라.", "Compared with 1990, emissions have doubled.", "1990년과 비교하면 배출량이 두 배가 되었다."],
+  ["relative to", "~에 비해, ~에 대한", "비교·유사", "상대적 기준. 절대값이 아님을 기억하라.", "The error is small relative to the signal.", "그 오차는 신호에 비해 작다."],
+  ["twice as many as", "~의 두 배만큼", "비교·유사", "배수 비교. 숫자 문제의 단골 표현이다.", "The sample contained twice as many cells.", "그 시료에는 두 배 많은 세포가 들어 있었다."],
+  ["the more A, the more B", "A할수록 더 B하다", "비교·유사", "상관관계를 압축한 구문. 그래프의 기울기로 이어진다.", "The hotter the gas, the faster the molecules.", "기체가 뜨거울수록 분자는 더 빠르다."],
+  ["far more than", "~보다 훨씬 많이", "비교·유사", "격차가 크다는 강조. 수치가 뒤따르기 쉽다.", "Oceans absorb far more heat than the air.", "바다는 공기보다 훨씬 많은 열을 흡수한다."],
+  ["to a lesser extent", "그보다는 덜한 정도로", "비교·유사", "두 번째 요인의 비중이 작음을 밝힌다.", "Soil, and to a lesser extent air, carries spores.", "흙이, 그보다는 덜하지만 공기도 포자를 옮긴다."],
+  ["on a par with", "~와 대등한", "비교·유사", "성능·수준이 같다는 평가이다.", "The new model is on a par with the old one.", "새 모형은 기존 모형과 대등하다."],
+  ["differ markedly from", "~와 뚜렷이 다르다", "비교·유사", "차이가 크다. 뒤에 수치 근거가 온다.", "The results differ markedly from predictions.", "그 결과는 예측과 뚜렷이 다르다."],
+  ["in contrast to", "~와 대조적으로", "비교·유사", "명시적 대조. 두 대상이 함께 제시된다.", "In contrast to metals, ceramics are brittle.", "금속과 대조적으로 세라믹은 잘 부서진다."],
+  ["have little in common", "공통점이 거의 없다", "비교·유사", "유사성을 부정한다. 분류 문제의 근거가 된다.", "The two processes have little in common.", "그 두 과정은 공통점이 거의 없다."],
+  ["mirror", "그대로 반영하다", "비교·유사", "한쪽이 다른 쪽을 그대로 따라간다.", "Lab results mirror field observations.", "실험실 결과가 현장 관찰을 그대로 반영한다."],
+  ["be comparable to", "~에 견줄 만하다", "비교·유사", "규모나 수준이 비슷하다. 동일하다는 뜻은 아니다.", "The energy is comparable to a lightning strike.", "그 에너지는 번개 한 번에 견줄 만하다."],
+  ["as opposed to", "~와는 달리", "비교·유사", "두 선택지를 맞세운다. 필자가 고른 쪽이 앞이다.", "Use mass, as opposed to weight, in this formula.", "이 공식에서는 무게가 아니라 질량을 써라."],
+  ["vary from A to B", "A에서 B까지 다양하다", "비교·유사", "범위가 제시된다. 최솟값과 최댓값을 메모하라.", "Values vary from 2 to 15 depending on depth.", "값은 깊이에 따라 2에서 15까지 다양하다."],
+  ["be no different from", "~와 다를 바 없다", "비교·유사", "차이를 부정한다. 반박의 근거로 쓰이기도 한다.", "In this regard, it is no different from water.", "이 점에서 그것은 물과 다를 바 없다."],
+  ["provided that", "~라는 조건이라면", "조건·가정", "조건이 충족될 때만 결론이 성립한다. 조건을 반드시 확인하라.", "Provided that T is constant, PV is constant.", "T가 일정하다면 PV는 일정하다."],
+  ["assuming that", "~라고 가정하면", "조건·가정", "전제를 명시한다. 그 전제가 깨지면 결론도 깨진다.", "Assuming that air resistance is zero...", "공기 저항이 0이라고 가정하면…"],
+  ["if and only if", "~일 때 그리고 그때만", "조건·가정", "필요충분조건. 양방향이 모두 성립한다는 뜻이다.", "A triangle is equilateral if and only if all angles are 60°.", "삼각형이 정삼각형인 것은 모든 각이 60도일 때 그리고 그때만이다."],
+  ["unless", "~하지 않는 한", "조건·가정", "부정 조건. if not과 같은 뜻이다.", "Unless cooled, the reaction runs away.", "냉각하지 않는 한 그 반응은 폭주한다."],
+  ["in the absence of", "~이 없을 때", "조건·가정", "변인을 제거한 상황을 가정한다. 대조 실험의 서술이다.", "In the absence of oxygen, the cell switches pathways.", "산소가 없을 때 세포는 경로를 바꾼다."],
+  ["given that", "~임을 고려하면", "조건·가정", "이미 참인 사실을 전제로 삼는다. 추론의 출발점이다.", "Given that the sample is small, caution is needed.", "표본이 작음을 고려하면 신중함이 필요하다."],
+  ["were it not for", "~이 없었다면", "조건·가정", "가정법. 실제와 반대되는 상황을 그린다.", "Were it not for the atmosphere, Earth would freeze.", "대기가 없었다면 지구는 얼어붙을 것이다."],
+  ["otherwise", "그렇지 않으면", "조건·가정", "조건이 깨졌을 때의 결과가 온다.", "Keep it sealed; otherwise, moisture enters.", "밀봉해 두어라. 그렇지 않으면 습기가 들어간다."],
+  ["on condition that", "~라는 조건으로", "조건·가정", "명시적 단서. 계약적·엄격한 조건이다.", "Access is granted on condition that data are cited.", "자료를 인용한다는 조건으로 접근이 허용된다."],
+  ["as long as", "~하는 한", "조건·가정", "조건이 유지되는 동안만 성립한다.", "As long as the field is uniform, the path is straight.", "장이 균일한 한 경로는 직선이다."],
+  ["in principle", "원칙적으로는", "조건·가정", "이론상 가능하다는 뜻. 현실적 제약이 뒤따르기 쉽다.", "In principle, the reaction is reversible.", "원칙적으로 그 반응은 가역적이다."],
+  ["in practice", "실제로는", "조건·가정", "이론과 현실의 간극을 드러낸다. in principle과 짝을 이룬다.", "In practice, losses make it irreversible.", "실제로는 손실 때문에 비가역적이 된다."],
+  ["hypothetically", "가정하자면", "조건·가정", "사고 실험임을 분명히 한다. 사실 진술이 아니다.", "Hypothetically, if gravity doubled, orbits would shrink.", "가정하자면 중력이 두 배가 되면 궤도는 줄어들 것이다."],
+  ["barring", "~이 없다면, ~을 제외하면", "조건·가정", "예외를 미리 빼 둔다.", "Barring equipment failure, results arrive today.", "장비 고장이 없다면 결과는 오늘 나온다."],
+  ["under these conditions", "이러한 조건에서는", "조건·가정", "앞에서 설정한 조건을 다시 묶는다.", "Under these conditions, the gas behaves ideally.", "이러한 조건에서 그 기체는 이상적으로 행동한다."],
+  ["should X occur", "만약 X가 일어난다면", "조건·가정", "if를 생략한 도치 구문. 격식 있는 조건절이다.", "Should the pressure rise, the valve opens.", "압력이 올라가면 밸브가 열린다."],
+  ["all else being equal", "다른 조건이 같다면", "조건·가정", "변인 통제의 전제. 경제·생물 지문의 단골이다.", "All else being equal, larger wings mean slower flight.", "다른 조건이 같다면 날개가 클수록 비행이 느리다."],
+  ["insofar as", "~하는 한에서는", "조건·가정", "적용 범위를 한정한다. 조건부 동의이다.", "Insofar as the data allow, the claim holds.", "자료가 허용하는 한에서 그 주장은 성립한다."],
+  ["at the risk of", "~할 위험을 무릅쓰고", "조건·가정", "필자가 조심스럽게 단순화하거나 반복함을 알린다.", "At the risk of oversimplifying, heat is motion.", "지나친 단순화의 위험을 무릅쓰고 말하면 열은 운동이다."],
+  ["to the extent that", "~하는 정도만큼", "조건·가정", "정도에 비례해 결론이 성립한다.", "The model works to the extent that assumptions hold.", "가정이 성립하는 정도만큼 그 모형이 작동한다."],
+  ["tend to", "~하는 경향이 있다", "완화·단정회피", "예외를 허용하는 진술. '항상'으로 읽으면 틀린다.", "Larger animals tend to live longer.", "몸집이 큰 동물은 더 오래 사는 경향이 있다."],
+  ["appear to", "~인 것처럼 보이다", "완화·단정회피", "겉보기일 뿐 확정은 아니다. 뒤에 반전이 올 수 있다.", "The two variables appear to be unrelated.", "그 두 변인은 무관해 보인다."],
+  ["it is plausible that", "~일 법하다", "완화·단정회피", "가능성 있는 설명일 뿐 증명된 것은 아니다.", "It is plausible that heat caused the shift.", "열이 그 변화를 일으켰을 법하다."],
+  ["arguably", "아마도, 주장하건대", "완화·단정회피", "논쟁의 여지를 인정하며 주장한다.", "This is arguably the most important result.", "이것은 아마도 가장 중요한 결과일 것이다."],
+  ["to a certain degree", "어느 정도까지는", "완화·단정회피", "부분적 성립. 전면 긍정이 아니다.", "The rule applies to a certain degree.", "그 규칙은 어느 정도까지는 적용된다."],
+  ["suggest", "시사하다", "완화·단정회피", "prove보다 훨씬 약한 말. 증명이 아니라 암시이다.", "The data suggest a weak correlation.", "그 자료는 약한 상관관계를 시사한다."],
+  ["imply", "함축하다, 암시하다", "완화·단정회피", "직접 말하지 않고 담아 둔 뜻이다.", "The result implies a hidden variable.", "그 결과는 숨은 변인을 암시한다."],
+  ["be likely to", "~할 가능성이 높다", "완화·단정회피", "확률적 진술. 단정형과 구분하라.", "Warmer winters are likely to shift ranges.", "따뜻한 겨울은 서식 범위를 옮길 가능성이 높다."],
+  ["may well", "~일 가능성이 상당하다", "완화·단정회피", "may보다 확신이 강하지만 여전히 추정이다.", "The effect may well be real.", "그 효과는 실재할 가능성이 상당하다."],
+  ["seemingly", "겉보기에는", "완화·단정회피", "겉과 속이 다를 것임을 예고한다.", "The seemingly random pattern has structure.", "겉보기에 무작위인 그 양상에는 구조가 있다."],
+  ["presumably", "아마도", "완화·단정회피", "근거 있는 추정. 확인된 사실은 아니다.", "Presumably, the sample was contaminated.", "아마 그 시료가 오염되었을 것이다."],
+  ["roughly", "대략", "완화·단정회피", "정확한 값이 아님을 밝힌다. 수치 문제에 주의하라.", "The ratio is roughly three to one.", "그 비는 대략 3대 1이다."],
+  ["more or less", "거의, 대체로", "완화·단정회피", "근사치 진술. 엄밀함을 요구하지 않는다.", "The curve is more or less linear.", "그 곡선은 대체로 선형이다."],
+  ["if not", "~까지는 아니더라도", "완화·단정회피", "더 강한 표현을 조심스럽게 덧붙인다.", "The result is surprising, if not revolutionary.", "그 결과는 혁명적까지는 아니어도 놀랍다."],
+  ["so far as we know", "우리가 아는 한", "완화·단정회피", "지식의 한계를 인정한다. 반례 가능성을 열어 둔다.", "So far as we know, no exception exists.", "우리가 아는 한 예외는 없다."],
+  ["remains to be seen", "아직 지켜봐야 한다", "완화·단정회피", "결론을 유보한다. 글의 마지막에 자주 온다.", "Whether it scales remains to be seen.", "규모 확장이 가능한지는 지켜봐야 한다."],
+  ["be open to question", "의문의 여지가 있다", "완화·단정회피", "앞 주장에 대한 유보. 반론이 뒤따른다.", "That assumption is open to question.", "그 가정에는 의문의 여지가 있다."],
+  ["not necessarily", "반드시 ~은 아니다", "완화·단정회피", "성급한 일반화를 막는다. 부분 부정이다.", "Faster is not necessarily better.", "빠른 것이 반드시 더 좋은 것은 아니다."],
+  ["with caution", "조심스럽게", "완화·단정회피", "해석에 주의를 당부한다. 한계 서술과 함께 온다.", "These figures should be read with caution.", "이 수치는 조심스럽게 읽어야 한다."],
+  ["at best", "기껏해야", "완화·단정회피", "최대로 봐도 그 정도라는 평가 절하이다.", "The evidence is at best indirect.", "그 증거는 기껏해야 간접적이다."],
+  ["it is precisely because", "바로 ~ 때문에", "강조", "원인을 강하게 못 박는다. 필자가 중요하게 보는 지점이다.", "It is precisely because of this that errors accumulate.", "바로 이 때문에 오차가 누적된다."],
+  ["what matters is", "중요한 것은 ~이다", "강조", "핵심을 직접 지목한다. 주제문일 확률이 높다.", "What matters is not speed but reliability.", "중요한 것은 속도가 아니라 신뢰성이다."],
+  ["above all", "무엇보다도", "강조", "여러 항목 중 최우선을 가린다.", "Above all, the sample must be pure.", "무엇보다도 시료가 순수해야 한다."],
+  ["indeed", "실제로, 과연", "강조", "앞 주장을 더 강한 사례로 확인한다. 반전이 아니다.", "Indeed, the effect was larger than predicted.", "실제로 그 효과는 예측보다 컸다."],
+  ["in fact", "사실", "강조", "앞을 바로잡거나 더 강하게 말한다. 문맥으로 판단하라.", "In fact, the opposite was observed.", "사실 정반대가 관찰되었다."],
+  ["notably", "특히, 주목할 만하게", "강조", "여럿 중 하나를 부각한다. 예시 겸 강조이다.", "Notably, only one species survived.", "특히 단 한 종만 살아남았다."],
+  ["crucially", "결정적으로", "강조", "논증의 급소를 알린다. 놓치면 글 전체가 흔들린다.", "Crucially, the control group was unchanged.", "결정적으로 대조군은 변하지 않았다."],
+  ["it should be emphasized that", "~을 강조해야 한다", "강조", "필자가 독자에게 직접 당부한다. 요지이다.", "It should be emphasized that correlation is not cause.", "상관이 인과가 아님을 강조해야 한다."],
+  ["no less than", "무려 ~나", "강조", "수치가 크다는 놀라움을 담는다.", "No less than 90% of the light was absorbed.", "빛의 무려 90퍼센트가 흡수되었다."],
+  ["only when", "~할 때에만", "강조", "조건을 유일하게 한정한다. 도치가 따라오기도 한다.", "Only when the field reverses does the current flow.", "장이 역전될 때에만 전류가 흐른다."],
+  ["never before", "전에 없이", "강조", "전례 없음을 강조한다. 새로움의 주장이다.", "Never before had such precision been achieved.", "전에 없던 정밀도가 달성되었다."],
+  ["the key point is", "핵심은 ~이다", "강조", "필자가 요지를 명시한다. 밑줄 그을 문장이다.", "The key point is that energy is conserved.", "핵심은 에너지가 보존된다는 것이다."],
+  ["far more important", "훨씬 더 중요한", "강조", "우선순위를 재조정한다. 앞 항목을 상대적으로 낮춘다.", "Far more important is the long-term trend.", "훨씬 더 중요한 것은 장기 추세이다."],
+  ["cannot be overstated", "아무리 강조해도 지나치지 않다", "강조", "최상급 강조의 관용 표현이다.", "The importance of replication cannot be overstated.", "재현의 중요성은 아무리 강조해도 지나치지 않다."],
+  ["strikingly", "두드러지게", "강조", "결과가 눈에 띄게 뚜렷함을 알린다.", "The two curves are strikingly similar.", "그 두 곡선은 두드러지게 비슷하다."],
+  ["remarkably", "놀랍게도", "강조", "예상 밖의 결과임을 표시한다.", "Remarkably, the pattern held for all species.", "놀랍게도 그 양상은 모든 종에서 유지되었다."],
+  ["in no way", "결코 ~이 아니다", "강조", "강한 부정. 오해를 차단한다.", "This in no way proves causation.", "이것은 결코 인과를 증명하지 않는다."],
+  ["what is striking is", "인상적인 점은 ~이다", "강조", "필자의 관심사를 드러낸다.", "What is striking is the speed of the change.", "인상적인 점은 그 변화의 속도이다."],
+  ["of particular interest", "특히 흥미로운 것은", "강조", "여러 결과 중 하나를 골라 집중한다.", "Of particular interest is the second peak.", "특히 흥미로운 것은 두 번째 봉우리이다."],
+  ["it is worth noting that", "~은 주목할 만하다", "강조", "부수적이지만 중요한 사실을 덧붙인다.", "It is worth noting that the trend reversed in 2010.", "2010년에 추세가 역전되었다는 점은 주목할 만하다."],
+  ["contend", "주장하다", "저자 태도", "논쟁을 염두에 둔 주장. 반대 견해가 존재한다는 뜻이다.", "Some researchers contend that the model is flawed.", "일부 연구자들은 그 모형에 결함이 있다고 주장한다."],
+  ["argue that", "~라고 주장하다", "저자 태도", "근거를 갖춘 주장. 누구의 주장인지 주어를 확인하라.", "The author argues that the data were misread.", "저자는 자료가 잘못 읽혔다고 주장한다."],
+  ["maintain that", "~라고 (계속) 주장하다", "저자 태도", "반박에도 입장을 굽히지 않는다는 뉘앙스이다.", "He maintains that the effect is genuine.", "그는 그 효과가 진짜라고 계속 주장한다."],
+  ["claim", "주장하다", "저자 태도", "필자가 거리를 둘 때 쓴다. 검증되지 않았을 수 있다.", "They claim to have solved the problem.", "그들은 그 문제를 풀었다고 주장한다."],
+  ["point out", "지적하다", "저자 태도", "사실을 짚어 준다. 비판의 출발점이 되기도 한다.", "Critics point out a flaw in the sampling.", "비판자들은 표집의 결함을 지적한다."],
+  ["call into question", "~에 의문을 제기하다", "저자 태도", "기존 견해를 흔든다. 반박 단락의 시작이다.", "The finding calls the theory into question.", "그 발견은 그 이론에 의문을 제기한다."],
+  ["cast doubt on", "~에 의구심을 던지다", "저자 태도", "직접 부정하지 않고 신뢰를 떨어뜨린다.", "New data cast doubt on the earlier estimate.", "새 자료가 이전 추정치에 의구심을 던진다."],
+  ["dismiss", "일축하다", "저자 태도", "충분히 따지지 않고 물리친다. 부정적 평가이다.", "They dismissed the anomaly as noise.", "그들은 그 이상치를 잡음이라며 일축했다."],
+  ["underscore", "강조하다, 뒷받침하다", "저자 태도", "결과가 주장을 밑줄 치듯 강화한다.", "The results underscore the need for caution.", "그 결과는 신중함의 필요성을 강조한다."],
+  ["caution against", "~에 대해 경고하다", "저자 태도", "성급한 결론을 막는다. 한계 서술과 함께 온다.", "The authors caution against overinterpretation.", "저자들은 과잉 해석을 경계한다."],
+  ["acknowledge", "인정하다", "저자 태도", "약점이나 상대의 공로를 받아들인다.", "The study acknowledges its small sample.", "그 연구는 표본이 작음을 인정한다."],
+  ["challenge", "반박하다, 이의를 제기하다", "저자 태도", "기존 정설에 맞선다. 글의 핵심 동작이다.", "These findings challenge the standard model.", "이 발견들은 표준 모형에 이의를 제기한다."],
+  ["be skeptical of", "~에 회의적이다", "저자 태도", "믿지 않는 태도. 필자의 입장을 드러낸다.", "Many remain skeptical of the claim.", "많은 이가 그 주장에 여전히 회의적이다."],
+  ["advocate", "옹호하다, 지지하다", "저자 태도", "특정 입장을 적극 밀어 준다.", "She advocates a more cautious approach.", "그녀는 더 신중한 접근을 옹호한다."],
+  ["overlook", "간과하다", "저자 태도", "상대가 놓친 점을 꼬집는다. 비판의 전형이다.", "Earlier studies overlooked this variable.", "이전 연구들은 이 변인을 간과했다."],
+  ["take issue with", "~에 이의를 제기하다", "저자 태도", "구체적 지점을 걸고넘어진다.", "He takes issue with their definition.", "그는 그들의 정의에 이의를 제기한다."],
+  ["be at pains to", "애써 ~하려 하다", "저자 태도", "필자가 특별히 공들여 설명하는 부분이다.", "The authors are at pains to stress the limits.", "저자들은 한계를 애써 강조한다."],
+  ["warrant further study", "추가 연구가 필요하다", "저자 태도", "결론 유보. 논문 말미의 상투적 표현이다.", "The anomaly warrants further study.", "그 이상 현상은 추가 연구를 필요로 한다."],
+  ["be sympathetic to", "~에 우호적이다", "저자 태도", "완전한 동의는 아니지만 호의적이다.", "He is sympathetic to the alternative view.", "그는 대안적 견해에 우호적이다."],
+  ["there is a consensus that", "~라는 합의가 있다", "저자 태도", "학계의 주류 견해. 뒤에 however가 오면 균열이 드러난다.", "There is a consensus that the climate is warming.", "기후가 온난화되고 있다는 합의가 있다."],
+  ["control for", "~을 통제하다", "연구·실험", "변인을 묶어 둔다. 실험 설계의 신뢰도와 직결된다.", "The study controlled for age and sex.", "그 연구는 나이와 성별을 통제했다."],
+  ["hold constant", "일정하게 유지하다", "연구·실험", "한 변인만 바꾸기 위한 조치이다.", "Temperature was held constant throughout.", "온도는 전 과정에서 일정하게 유지되었다."],
+  ["be correlated with", "~와 상관관계가 있다", "연구·실험", "인과가 아님에 주의하라. 시험의 함정이다.", "Height is correlated with shoe size.", "키는 신발 크기와 상관관계가 있다."],
+  ["statistically significant", "통계적으로 유의한", "연구·실험", "우연으로 보기 어렵다는 뜻. '중요하다'와 다르다.", "The difference was statistically significant.", "그 차이는 통계적으로 유의했다."],
+  ["replicate the findings", "결과를 재현하다", "연구·실험", "독립적 재현은 과학의 핵심 검증이다.", "Two labs failed to replicate the findings.", "두 실험실이 그 결과를 재현하지 못했다."],
+  ["a randomized trial", "무작위 시험", "연구·실험", "편향을 줄이는 설계. 증거 수준이 높다.", "A randomized trial confirmed the effect.", "무작위 시험이 그 효과를 확인했다."],
+  ["sample size", "표본 크기", "연구·실험", "작으면 결론이 약해진다. 한계 서술의 단골이다.", "The sample size was too small to generalize.", "표본 크기가 작아 일반화하기 어려웠다."],
+  ["margin of error", "오차 범위", "연구·실험", "수치 해석의 폭. 차이가 이 안이면 의미가 없다.", "The gap lies within the margin of error.", "그 격차는 오차 범위 안에 있다."],
+  ["rule out", "배제하다", "연구·실험", "다른 설명을 제거한다. 인과 주장의 조건이다.", "We can rule out contamination.", "우리는 오염 가능성을 배제할 수 있다."],
+  ["account for the discrepancy", "불일치를 설명하다", "연구·실험", "예측과 결과의 차이를 해명한다.", "Evaporation accounts for the discrepancy.", "증발이 그 불일치를 설명한다."],
+  ["under controlled conditions", "통제된 조건에서", "연구·실험", "실험실 결과임을 밝힌다. 현실 적용에는 유보가 따른다.", "Under controlled conditions, yields doubled.", "통제된 조건에서 수확량이 두 배가 되었다."],
+  ["yield consistent results", "일관된 결과를 내다", "연구·실험", "신뢰도가 높다는 근거이다.", "All three methods yielded consistent results.", "세 방법 모두 일관된 결과를 냈다."],
+  ["be subject to bias", "편향에 노출되다", "연구·실험", "결과 해석에 주의가 필요하다는 경고이다.", "Self-reported data are subject to bias.", "자기 보고 자료는 편향에 노출된다."],
+  ["calibrate the instrument", "기기를 보정하다", "연구·실험", "계통 오차를 줄이는 절차이다.", "The instrument was calibrated before each run.", "매 실행 전에 기기를 보정했다."],
+  ["a follow-up study", "후속 연구", "연구·실험", "앞 결과를 확인하거나 확장한다.", "A follow-up study used a larger cohort.", "후속 연구는 더 큰 집단을 사용했다."],
+  ["in vitro / in vivo", "시험관 내 / 생체 내", "연구·실험", "실험 환경의 차이. 결론의 적용 범위가 달라진다.", "The drug worked in vitro but not in vivo.", "그 약은 시험관에서는 효과가 있었으나 생체에서는 없었다."],
+  ["baseline", "기준선, 기저 수치", "연구·실험", "비교의 출발점. 변화량 계산의 기준이다.", "Values returned to baseline within an hour.", "값은 한 시간 안에 기준선으로 돌아왔다."],
+  ["double-blind", "이중맹검의", "연구·실험", "실험자·피험자 모두 모르게 한 설계이다.", "A double-blind design removed expectation effects.", "이중맹검 설계가 기대 효과를 제거했다."],
+  ["systematic error", "계통 오차", "연구·실험", "한 방향으로 치우친 오차. 보정으로 줄인다.", "A systematic error shifted every reading.", "계통 오차가 모든 측정값을 치우치게 했다."],
+  ["preliminary findings", "예비 결과", "연구·실험", "확정이 아니다. 결론을 단정하면 안 된다.", "These are preliminary findings only.", "이것들은 예비 결과일 뿐이다."],
+  ["a marked increase", "뚜렷한 증가", "수치·경향", "변화 폭이 크다. 그래프의 급상승 구간이다.", "There was a marked increase after 1980.", "1980년 이후 뚜렷한 증가가 있었다."],
+  ["a steady decline", "꾸준한 감소", "수치·경향", "일정한 속도의 하락. 기울기가 일정하다.", "Populations showed a steady decline.", "개체군은 꾸준한 감소를 보였다."],
+  ["level off", "안정세에 접어들다", "수치·경향", "증가가 멈추고 평평해진다. plateau와 같다.", "Growth leveled off after five hours.", "성장은 다섯 시간 뒤 안정세에 접어들었다."],
+  ["plateau", "정체기에 이르다", "수치·경향", "더 이상 변하지 않는 구간이다.", "The curve plateaus near saturation.", "그 곡선은 포화 근처에서 정체된다."],
+  ["peak at", "~에서 정점을 찍다", "수치·경향", "최댓값의 위치. 문제로 자주 나온다.", "Absorption peaks at 480 nm.", "흡수는 480나노미터에서 정점을 찍는다."],
+  ["fluctuate", "변동하다", "수치·경향", "오르내림이 반복된다. 추세와 구분하라.", "Values fluctuated between 5 and 9.", "값은 5와 9 사이에서 변동했다."],
+  ["taper off", "점차 줄어들다", "수치·경향", "서서히 감소해 사라진다.", "The effect tapers off beyond 10 meters.", "그 효과는 10미터를 넘으면 점차 줄어든다."],
+  ["double / triple", "두 배/세 배가 되다", "수치·경향", "배수 변화. 정확한 배수를 메모하라.", "Output doubled within two years.", "생산량이 2년 만에 두 배가 되었다."],
+  ["fall sharply", "급격히 떨어지다", "수치·경향", "가파른 하락. 원인 설명이 뒤따른다.", "Pressure fell sharply at the valve.", "밸브에서 압력이 급격히 떨어졌다."],
+  ["account for X percent", "X퍼센트를 차지하다", "수치·경향", "비율 서술. 전체가 무엇인지 확인하라.", "Carbon accounts for 18 percent of the mass.", "탄소가 질량의 18퍼센트를 차지한다."],
+  ["on average", "평균적으로", "수치·경향", "개별 사례가 아닌 평균값이다. 예외가 존재한다.", "On average, the reaction took 12 seconds.", "평균적으로 그 반응은 12초가 걸렸다."],
+  ["an order of magnitude", "자릿수 하나(10배)", "수치·경향", "10배 차이를 뜻한다. 단순한 '큰 차이'가 아니다.", "The new sensor is an order of magnitude faster.", "새 센서는 10배 더 빠르다."],
+  ["be proportional to", "~에 비례하다", "수치·경향", "직선 관계. 그래프가 원점을 지나는 직선이다.", "Force is proportional to acceleration.", "힘은 가속도에 비례한다."],
+  ["be inversely proportional to", "~에 반비례하다", "수치·경향", "한쪽이 커지면 다른 쪽이 작아진다.", "Pressure is inversely proportional to volume.", "압력은 부피에 반비례한다."],
+  ["exponential growth", "지수적 증가", "수치·경향", "일정 비율로 곱해지며 폭증한다. 선형과 구분하라.", "Bacteria show exponential growth at first.", "세균은 처음에 지수적 증가를 보인다."],
+  ["negligible change", "무시할 만한 변화", "수치·경향", "사실상 변화가 없다는 뜻이다.", "There was a negligible change in mass.", "질량에는 무시할 만한 변화만 있었다."],
+  ["outlier", "이상치", "수치·경향", "추세에서 벗어난 값. 제외 여부가 쟁점이 된다.", "One outlier distorted the average.", "이상치 하나가 평균을 왜곡했다."],
+  ["range from A to B", "A에서 B까지 분포하다", "수치·경향", "값의 범위. 최솟값과 최댓값을 확인하라.", "Lifespans range from 2 to 40 years.", "수명은 2년에서 40년까지 분포한다."],
+  ["a twofold increase", "두 배 증가", "수치·경향", "배수 표현. twofold = 2배, tenfold = 10배이다.", "We observed a twofold increase in yield.", "수율이 두 배 증가하는 것을 관찰했다."],
+  ["per unit", "단위당", "수치·경향", "기준 단위를 확인하라. 비교의 공정성이 걸려 있다.", "Energy per unit mass is what matters.", "중요한 것은 단위 질량당 에너지이다."],
+  ["in conclusion", "결론적으로", "결론·요약", "마지막 단락의 시작. 요지가 재진술된다.", "In conclusion, the hypothesis is supported.", "결론적으로 그 가설은 뒷받침된다."],
+  ["taken together", "종합하면", "결론·요약", "여러 결과를 묶어 하나의 결론을 낸다.", "Taken together, the data favor model B.", "종합하면 그 자료는 모형 B를 지지한다."],
+  ["overall", "전반적으로", "결론·요약", "부분적 예외를 넘어선 큰 그림이다.", "Overall, accuracy improved by 12 percent.", "전반적으로 정확도가 12퍼센트 향상되었다."],
+  ["on balance", "따져 보면", "결론·요약", "장단점을 저울질한 뒤의 판단이다.", "On balance, the benefits outweigh the risks.", "따져 보면 이득이 위험보다 크다."],
+  ["to sum up", "요약하자면", "결론·요약", "앞 내용을 압축한다. 새 정보는 없다.", "To sum up, three factors matter most.", "요약하자면 세 요인이 가장 중요하다."],
+  ["these findings suggest", "이 결과들은 ~을 시사한다", "결론·요약", "결론이되 단정은 아니다. suggest의 약한 어조에 유의하라.", "These findings suggest a common mechanism.", "이 결과들은 공통된 기제를 시사한다."],
+  ["the implications are", "그 함의는 ~이다", "결론·요약", "결과가 뜻하는 바를 넓게 풀어낸다.", "The implications are far-reaching.", "그 함의는 광범위하다."],
+  ["future work should", "향후 연구는 ~해야 한다", "결론·요약", "남은 과제를 제시한다. 논문의 마지막이다.", "Future work should test larger systems.", "향후 연구는 더 큰 계를 검증해야 한다."],
+  ["open questions remain", "미해결 문제가 남아 있다", "결론·요약", "결론을 열어 둔다. 단정형 선택지는 오답이다.", "Several open questions remain.", "몇 가지 미해결 문제가 남아 있다."],
+  ["thus", "따라서", "결론·요약", "논리적 귀결. 앞이 근거, 뒤가 결론이다.", "Thus, the proof is complete.", "따라서 증명이 완성되었다."],
+  ["hence", "그러므로", "결론·요약", "thus와 같다. 격식 있는 결론 표지이다.", "Hence, the two quantities are equal.", "그러므로 그 두 양은 같다."],
+  ["accordingly", "그에 따라", "결론·요약", "앞 상황에 맞춘 조치나 결론이 온다.", "Accordingly, the model was revised.", "그에 따라 그 모형이 수정되었다."],
+  ["consequently", "결과적으로", "결론·요약", "인과의 결과를 결론으로 삼는다.", "Consequently, the reaction stopped.", "결과적으로 그 반응은 멈췄다."],
+  ["all things considered", "모든 것을 고려할 때", "결론·요약", "종합 판단. 유보 없는 최종 결론이다.", "All things considered, the design works.", "모든 것을 고려할 때 그 설계는 작동한다."],
+  ["the evidence points to", "증거는 ~을 가리킨다", "결론·요약", "증거 기반 결론. 단정보다 한 단계 약하다.", "The evidence points to a single origin.", "증거는 단일 기원을 가리킨다."],
+  ["lend support to", "~을 뒷받침하다", "결론·요약", "증거가 주장을 지지한다.", "The data lend support to the model.", "그 자료는 그 모형을 뒷받침한다."],
+  ["fall short of", "~에 못 미치다", "결론·요약", "기대에 미달했다는 평가이다.", "The results fall short of the prediction.", "그 결과는 예측에 못 미친다."],
+  ["in the final analysis", "결국 따져 보면", "결론·요약", "최종 판단을 내린다.", "In the final analysis, simplicity wins.", "결국 따져 보면 단순함이 이긴다."],
+  ["have implications for", "~에 함의를 지니다", "결론·요약", "적용 분야를 넓힌다. 확장 서술이다.", "This has implications for drug design.", "이는 약물 설계에 함의를 지닌다."],
+  ["call for", "요구하다, 필요로 하다", "결론·요약", "필요한 조치를 제안한다. 제언 단락이다.", "The results call for a revised standard.", "그 결과는 기준의 개정을 요구한다."]
+];
+
+/* === [2] 지문 데이터 ===================================================
+   { title, topic, level, sents:[{en, ko, fn, key}], q, opts, a, exp }
+   key 는 그 문장의 핵심 표현이며 EXPR 과 연결되어 본문에 강조 표시된다.
+   ====================================================================== */
+const PASSAGES = [
+  { title: "Why Leaves Are Green", topic: "광합성과 빛의 파장", level: "생명과학",
+    sents: [
+      { en: "Photosynthesis refers to the process by which plants convert light into chemical energy.",
+        ko: "광합성이란 식물이 빛을 화학 에너지로 전환하는 과정을 가리킨다.",
+        fn: "정의·도입", key: "refer to" },
+      { en: "Chlorophyll, the pigment responsible for this conversion, absorbs red and blue light strongly.",
+        ko: "이 전환을 담당하는 색소인 엽록소는 적색광과 청색광을 강하게 흡수한다.",
+        fn: "인과", key: "be responsible for" },
+      { en: "Green light, by contrast, is largely reflected, which is why leaves appear green to us.",
+        ko: "그에 반해 녹색광은 대부분 반사되며, 그래서 잎이 우리 눈에 초록으로 보인다.",
+        fn: "대조·반전", key: "by contrast" },
+      { en: "This seemingly wasteful arrangement is puzzling, since green light is abundant in sunlight.",
+        ko: "겉보기에 낭비처럼 보이는 이 배치는 의아하다. 햇빛에는 녹색광이 풍부하기 때문이다.",
+        fn: "완화·단정회피", key: "seemingly" },
+      { en: "It is plausible that early photosynthetic bacteria had already claimed green light.",
+        ko: "초기 광합성 세균이 이미 녹색광을 선점했을 법하다.",
+        fn: "완화·단정회피", key: "it is plausible that" },
+      { en: "Taken together, these observations suggest that leaf color reflects evolutionary history rather than optical efficiency.",
+        ko: "종합하면 이러한 관찰은 잎의 색이 광학적 효율보다 진화의 역사를 반영함을 시사한다.",
+        fn: "결론·요약", key: "taken together" }
+    ],
+    q: "이 글의 요지로 가장 알맞은 것은?",
+    opts: ["엽록소는 녹색광을 가장 잘 흡수한다", "잎이 초록인 것은 효율보다 진화의 역사 때문일 수 있다", "녹색광은 햇빛에 거의 포함되어 있지 않다", "광합성은 빛을 운동 에너지로 바꾼다"], a: 1,
+    exp: "마지막 문장의 taken together ~ suggest가 글 전체의 결론을 묶어 준다. 4번째 문장의 seems는 '보이지만 실은 아니다'라는 반전의 신호였다." },
+  { title: "The Limits of Correlation", topic: "상관과 인과", level: "통계·논리",
+    sents: [
+      { en: "It is often said that correlation does not imply causation.",
+        ko: "상관관계가 인과관계를 뜻하지는 않는다고 흔히 말한다.",
+        fn: "정의·도입", key: "imply" },
+      { en: "Ice cream sales and drowning deaths, for instance, rise and fall together.",
+        ko: "예를 들어 아이스크림 판매량과 익사 사고는 함께 오르내린다.",
+        fn: "예시", key: "for instance" },
+      { en: "Yet no one would contend that dessert causes drowning.",
+        ko: "그렇지만 디저트가 익사를 일으킨다고 주장할 사람은 없다.",
+        fn: "대조·반전", key: "contend" },
+      { en: "The association stems from a third variable, namely summer heat.",
+        ko: "그 연관은 제3의 변인, 다름 아닌 여름철 더위에서 비롯된다.",
+        fn: "인과", key: "stem from" },
+      { en: "Researchers therefore control for such variables before claiming a causal link.",
+        ko: "따라서 연구자들은 인과 관계를 주장하기 전에 그러한 변인을 통제한다.",
+        fn: "연구·실험", key: "control for" },
+      { en: "This is not to say that correlation is useless; it often points to where causation might be found.",
+        ko: "그렇다고 상관관계가 쓸모없다는 말은 아니다. 그것은 인과가 있을 만한 곳을 자주 가리켜 준다.",
+        fn: "양보", key: "this is not to say that" }
+    ],
+    q: "본문의 a third variable 이 가리키는 것은?",
+    opts: ["아이스크림 판매량", "익사 사고 건수", "여름철 더위", "연구자의 편향"], a: 2,
+    exp: "바로 뒤 namely가 그 대상을 콕 집어 준다. namely는 '다름 아닌'이라는 뜻으로 앞 명사를 지목하는 신호이다." },
+  { title: "How Antibiotic Resistance Spreads", topic: "항생제 내성", level: "생명과학",
+    sents: [
+      { en: "Antibiotic resistance arises from a simple evolutionary mechanism.",
+        ko: "항생제 내성은 단순한 진화적 기제에서 생긴다.",
+        fn: "인과", key: "arise from" },
+      { en: "When a drug is applied, bacteria die unless they happen to carry a resistance gene.",
+        ko: "약을 투여하면, 내성 유전자를 우연히 지니고 있지 않는 한 세균은 죽는다.",
+        fn: "조건·가정", key: "unless" },
+      { en: "These survivors reproduce, and resistance consequently spreads through the population.",
+        ko: "이 생존자들이 번식하고, 결과적으로 내성이 개체군 전체로 퍼진다.",
+        fn: "결론·요약", key: "consequently" },
+      { en: "Crucially, bacteria can also transfer resistance genes directly to unrelated species.",
+        ko: "결정적으로, 세균은 내성 유전자를 혈연관계가 없는 종에게 직접 전달할 수도 있다.",
+        fn: "강조", key: "crucially" },
+      { en: "Overuse in agriculture, coupled with incomplete courses of treatment, accelerates this process.",
+        ko: "농업에서의 남용에 불완전한 치료 과정이 겹쳐 이 과정을 가속한다.",
+        fn: "추가·열거", key: "coupled with" },
+      { en: "Admittedly, new drugs are still being discovered, but resistance tends to appear within a few years.",
+        ko: "인정하건대 새 약은 여전히 개발되고 있지만, 내성은 몇 년 안에 나타나는 경향이 있다.",
+        fn: "양보", key: "admittedly" }
+    ],
+    q: "이 글의 흐름상 마지막 문장이 하는 역할은?",
+    opts: ["앞의 모든 내용을 부정한다", "희망적 사실을 인정하되 곧 한계를 덧붙인다", "새로운 실험 방법을 제안한다", "용어를 처음으로 정의한다"], a: 1,
+    exp: "Admittedly는 양보의 신호다. '~은 인정한다'로 한발 물러선 뒤 but으로 필자의 입장을 지키는 전형적인 구조이다." },
+  { title: "Why Primes Protect Your Data", topic: "소수와 암호", level: "수학·정보",
+    sents: [
+      { en: "Modern encryption rests on what is known as a one-way function: easy forward, hard backward.",
+        ko: "현대 암호는 이른바 일방향 함수에 기반한다. 순방향은 쉽고 역방향은 어렵다.",
+        fn: "정의·도입", key: "be known as" },
+      { en: "Multiplying two large primes is trivial, whereas recovering them from the product is extraordinarily hard.",
+        ko: "큰 소수 두 개를 곱하는 일은 간단한 반면, 그 곱에서 두 소수를 되찾는 일은 엄청나게 어렵다.",
+        fn: "대조·반전", key: "whereas" },
+      { en: "The difficulty shows exponential growth as the size of the number increases.",
+        ko: "그 어려움은 수의 크기가 커짐에 따라 지수적 증가를 보인다.",
+        fn: "수치·경향", key: "exponential growth" },
+      { en: "Provided that no efficient factoring algorithm exists, the scheme remains secure.",
+        ko: "효율적인 인수분해 알고리즘이 존재하지 않는다는 조건이라면 그 방식은 안전하게 유지된다.",
+        fn: "조건·가정", key: "provided that" },
+      { en: "It should be emphasized that this is an assumption, not a proof.",
+        ko: "이것이 증명이 아니라 가정이라는 점을 강조해야 한다.",
+        fn: "강조", key: "it should be emphasized that" },
+      { en: "Whether quantum computers will overturn it remains to be seen.",
+        ko: "양자 컴퓨터가 이를 뒤집을지는 지켜봐야 한다.",
+        fn: "완화·단정회피", key: "remains to be seen" }
+    ],
+    q: "이 글에 따르면 현대 암호의 안전성은 무엇에 달려 있는가?",
+    opts: ["소수가 무한히 많다는 사실", "효율적인 인수분해 방법이 아직 없다는 가정", "곱셈이 매우 어렵다는 점", "양자 컴퓨터의 성능"], a: 1,
+    exp: "Provided that(조건)과 It should be emphasized that(강조)이 함께 '이것은 증명이 아니라 가정'임을 분명히 한다." },
+  { title: "The Ocean as a Heat Sink", topic: "해양과 기후", level: "지구과학",
+    sents: [
+      { en: "Oceans absorb far more heat than the atmosphere, owing to water's high heat capacity.",
+        ko: "바다는 물의 높은 열용량 덕분에 대기보다 훨씬 많은 열을 흡수한다.",
+        fn: "인과", key: "owing to" },
+      { en: "This absorption has, in effect, slowed the rise in surface air temperature.",
+        ko: "이 흡수는 사실상 지표 기온 상승을 늦춰 왔다.",
+        fn: "부연·환언", key: "in effect" },
+      { en: "The ocean, however, should not be regarded as a limitless buffer.",
+        ko: "그러나 바다를 무한한 완충 장치로 여겨서는 안 된다.",
+        fn: "대조·반전", key: "be regarded as" },
+      { en: "Warmer water holds less dissolved gas, which in turn reduces the ocean's capacity to take up carbon dioxide.",
+        ko: "더 따뜻한 물은 용존 기체를 덜 머금고, 그 결과 바다의 이산화탄소 흡수 능력이 떨어진다.",
+        fn: "인과", key: "in turn" },
+      { en: "The stored heat, moreover, does not disappear; it returns through currents decades later.",
+        ko: "게다가 저장된 열은 사라지지 않는다. 수십 년 뒤 해류를 통해 되돌아온다.",
+        fn: "추가·열거", key: "moreover" },
+      { en: "The implications are that today's emissions commit the climate to change long after they cease.",
+        ko: "그 함의는 오늘의 배출이 배출을 멈춘 뒤로도 오랫동안 기후 변화를 확정 짓는다는 것이다.",
+        fn: "결론·요약", key: "the implications are" }
+    ],
+    q: "글쓴이가 however를 쓴 의도로 가장 알맞은 것은?",
+    opts: ["바다의 흡수 능력을 더 칭찬하려고", "바다가 무한하다는 오해를 차단하려고", "실험 방법을 소개하려고", "앞 문장의 수치를 정정하려고"], a: 1,
+    exp: "however 앞까지는 바다의 긍정적 역할이었다. however는 '그 좋은 이야기가 전부가 아니다'라는 반전의 신호로, 뒤에 한계가 이어진다." },
+  { title: "What Entropy Really Measures", topic: "엔트로피", level: "물리",
+    sents: [
+      { en: "Entropy is often regarded as disorder, but that analogy is misleading.",
+        ko: "엔트로피는 흔히 무질서로 여겨지지만 그 비유는 오해를 낳는다.",
+        fn: "대조·반전", key: "be regarded as" },
+      { en: "More precisely, entropy counts the number of microscopic arrangements consistent with what we observe.",
+        ko: "더 정확히 말하면 엔트로피는 우리가 관찰한 상태와 양립하는 미시적 배열의 수를 센다.",
+        fn: "부연·환언", key: "more precisely" },
+      { en: "A shuffled deck is not messy in itself; that is to say, it is one of enormously many equally likely orders.",
+        ko: "섞인 카드 한 벌은 그 자체로 지저분한 것이 아니다. 즉 똑같이 가능한 엄청나게 많은 배열 중 하나일 뿐이다.",
+        fn: "부연·환언", key: "that is to say" },
+      { en: "It follows that entropy increases not because nature prefers chaos but because disordered states are vastly more numerous.",
+        ko: "따라서 엔트로피가 증가하는 것은 자연이 혼돈을 선호해서가 아니라 무질서한 상태가 압도적으로 많기 때문이다.",
+        fn: "결론·요약", key: "it follows that" },
+      { en: "In no way does this violate the laws of mechanics, which are themselves reversible.",
+        ko: "이것은 역학 법칙을 결코 위배하지 않는다. 역학 법칙 자체는 가역적이다.",
+        fn: "강조", key: "in no way" },
+      { en: "The arrow of time, in essence, is a statement about counting rather than about forces.",
+        ko: "시간의 화살은 본질적으로 힘에 관한 것이 아니라 세는 일에 관한 진술이다.",
+        fn: "부연·환언", key: "in essence" }
+    ],
+    q: "이 글에서 필자가 바로잡으려는 통념은?",
+    opts: ["엔트로피는 계산할 수 없다", "엔트로피는 곧 무질서이다", "역학 법칙은 비가역적이다", "시간은 흐르지 않는다"], a: 1,
+    exp: "첫 문장의 but이 곧바로 통념을 겨눈다. 이어지는 More precisely는 '앞의 느슨한 표현을 엄밀히 고치겠다'는 신호이다." },
+  { title: "Reading a Dose-Response Curve", topic: "용량-반응 곡선", level: "연구 방법",
+    sents: [
+      { en: "A dose-response curve is defined as a plot of the size of an effect against the amount of a substance given.",
+        ko: "용량-반응 곡선은 투여량에 대한 효과 크기의 그래프로 정의된다.",
+        fn: "정의·도입", key: "be defined as" },
+      { en: "At low doses the response rises steeply, but it levels off once receptors are saturated.",
+        ko: "낮은 용량에서 반응은 가파르게 상승하지만, 수용체가 포화되면 안정세에 접어든다.",
+        fn: "수치·경향", key: "level off" },
+      { en: "The curve therefore plateaus rather than continuing upward indefinitely.",
+        ko: "따라서 그 곡선은 끝없이 올라가지 않고 정체기에 이른다.",
+        fn: "수치·경향", key: "plateau" },
+      { en: "Such curves should be read with caution, since a common error is to extend them beyond the measured range.",
+        ko: "이런 곡선은 조심스럽게 읽어야 한다. 측정 범위를 넘어 연장하는 것이 흔한 오류이기 때문이다.",
+        fn: "완화·단정회피", key: "with caution" },
+      { en: "Differences that fall within the margin of error should not be reported as real effects.",
+        ko: "오차 범위 안에 들어가는 차이를 실제 효과로 보고해서는 안 된다.",
+        fn: "연구·실험", key: "margin of error" },
+      { en: "On balance, the shape of the curve matters more than any single data point.",
+        ko: "따져 보면 곡선의 모양이 개별 데이터 한 점보다 더 중요하다.",
+        fn: "결론·요약", key: "on balance" }
+    ],
+    q: "이 글이 경고하는 해석상의 잘못 두 가지는?",
+    opts: ["측정 범위 밖 외삽과, 오차 범위 안의 차이를 실제 효과로 보는 것", "곡선을 그리는 것과 수용체를 세는 것", "저용량 실험과 고용량 실험", "평균을 쓰는 것과 중앙값을 쓰는 것"], a: 0,
+    exp: "A common error is to ~와 should not be reported as ~ 두 문장이 각각 하나씩 경고를 담고 있다." },
+  { title: "Plate Tectonics and Deep Time", topic: "판구조론", level: "지구과학",
+    sents: [
+      { en: "The theory of plate tectonics was regarded as fringe speculation for nearly fifty years.",
+        ko: "판구조론은 거의 50년 동안 변두리 추측으로 여겨졌다.",
+        fn: "저자 태도", key: "be regarded as" },
+      { en: "Wegener pointed out that coastlines and fossil records matched across oceans.",
+        ko: "베게너는 해안선과 화석 기록이 대양을 사이에 두고 일치한다고 지적했다.",
+        fn: "저자 태도", key: "point out" },
+      { en: "Critics dismissed the idea because he could not specify a mechanism.",
+        ko: "비판자들은 그가 기제를 제시하지 못했다는 이유로 그 생각을 일축했다.",
+        fn: "저자 태도", key: "dismiss" },
+      { en: "Only when seafloor spreading was mapped was the objection finally answered.",
+        ko: "해저 확장이 지도로 그려졌을 때에야 비로소 그 반론에 답이 주어졌다.",
+        fn: "강조", key: "only when" },
+      { en: "The episode underscores how a correct hypothesis may be rejected for want of a mechanism.",
+        ko: "이 일화는 올바른 가설도 기제가 없다는 이유로 거부될 수 있음을 잘 보여 준다.",
+        fn: "저자 태도", key: "underscore" },
+      { en: "Granted that skepticism is healthy, the history of science suggests it can also delay recognition.",
+        ko: "회의가 건강한 것임은 인정하지만, 과학사는 그것이 인정을 늦출 수도 있음을 시사한다.",
+        fn: "양보", key: "granted that" }
+    ],
+    q: "본문의 the objection 이 가리키는 것은?",
+    opts: ["화석 기록이 일치하지 않는다는 지적", "대륙 이동의 기제를 설명하지 못한다는 지적", "해저 지도가 부정확하다는 지적", "베게너가 지질학자가 아니라는 지적"], a: 1,
+    exp: "앞 문장의 because he could not specify a mechanism이 반론의 내용이다. 지시어는 거의 항상 바로 앞 문장에서 답을 찾는다." },
+  { title: "Why Models Simplify", topic: "모형화의 원리", level: "과학 방법론",
+    sents: [
+      { en: "Every scientific model is, by definition, a simplification of reality.",
+        ko: "모든 과학 모형은 정의상 현실의 단순화이다.",
+        fn: "정의·도입", key: "by definition" },
+      { en: "Assuming that air resistance is zero, a falling body obeys a clean quadratic law.",
+        ko: "공기 저항이 0이라고 가정하면 낙하하는 물체는 깔끔한 이차 법칙을 따른다.",
+        fn: "조건·가정", key: "assuming that" },
+      { en: "In practice, however, resistance is never truly absent.",
+        ko: "그러나 실제로는 저항이 완전히 없는 경우란 없다.",
+        fn: "조건·가정", key: "in practice" },
+      { en: "What matters is not whether a model is true but whether its errors are negligible for the purpose at hand.",
+        ko: "중요한 것은 모형이 참인가가 아니라, 그 오차가 당면한 목적에 비추어 무시할 만한가이다.",
+        fn: "강조", key: "what matters is" },
+      { en: "As an analogy, a map that reproduced every detail would be as large as the territory and equally useless.",
+        ko: "비유하자면, 모든 세부를 재현한 지도는 그 땅만큼 커져서 똑같이 쓸모없을 것이다.",
+        fn: "예시", key: "as an analogy" },
+      { en: "In short, the value of a model lies precisely in what it leaves out.",
+        ko: "요컨대 모형의 가치는 바로 그것이 빼놓은 것에 있다.",
+        fn: "결론·요약", key: "in short" }
+    ],
+    q: "이 글의 주제로 가장 알맞은 것은?",
+    opts: ["모형은 가능한 한 모든 변인을 포함해야 한다", "모형의 가치는 의도적으로 생략하는 데 있다", "공기 저항은 항상 무시할 수 있다", "지도는 땅과 같은 크기여야 정확하다"], a: 1,
+    exp: "마지막 문장의 In short와 precisely가 결론이자 주제문임을 두 번 표시해 준다." },
+  { title: "The Promise and Limits of AI Diagnosis", topic: "의료 인공지능", level: "기술·윤리",
+    sents: [
+      { en: "Machine learning systems are now on a par with specialists on several image-based diagnostic tasks.",
+        ko: "기계학습 시스템은 이제 여러 영상 기반 진단 과제에서 전문의와 대등하다.",
+        fn: "비교·유사", key: "on a par with" },
+      { en: "These results, however, come largely from retrospective data under controlled conditions.",
+        ko: "그러나 이러한 결과는 대체로 통제된 조건에서 얻은 후향적 자료에서 나온 것이다.",
+        fn: "연구·실험", key: "under controlled conditions" },
+      { en: "Performance tends to drop when a model meets patients unlike those in its training set.",
+        ko: "모형이 학습 자료와 다른 환자를 만나면 성능이 떨어지는 경향이 있다.",
+        fn: "완화·단정회피", key: "tend to" },
+      { en: "Such systems are also subject to bias inherited from historical records.",
+        ko: "그러한 시스템은 과거 기록에서 물려받은 편향에도 노출된다.",
+        fn: "연구·실험", key: "be subject to bias" },
+      { en: "This in no way means the technology should be abandoned.",
+        ko: "이것이 그 기술을 폐기해야 한다는 뜻은 결코 아니다.",
+        fn: "강조", key: "in no way" },
+      { en: "Future work should focus on prospective trials across diverse populations.",
+        ko: "향후 연구는 다양한 인구 집단에 걸친 전향적 임상 시험에 집중해야 한다.",
+        fn: "결론·요약", key: "future work should" }
+    ],
+    q: "필자의 태도로 가장 알맞은 것은?",
+    opts: ["기술을 전면 부정한다", "한계를 지적하되 폐기가 아니라 보완을 제안한다", "현재 성능이 완벽하다고 본다", "임상 시험이 불필요하다고 본다"], a: 1,
+    exp: "This in no way means ~ should be abandoned가 오해를 차단하고, 마지막 Future work should가 보완 방향을 제시한다." }
+];
+
+/* === [2-2] 기출 유형 문제 =============================================
+   지문마다 세 유형이 붙는다. 문제 모드에서는 지문이 아래처럼 바뀐다.
+     blank  {si, span}  → si번 문장의 span 이 ______ 로 가려진다
+     insert {si}        → si번 문장이 본문에서 빠지고 ①~④ 자리가 생긴다
+     conn   {asi,aspan, bsi,bspan} → 두 연결어가 (A) (B) 로 가려진다
+   세 유형이 서로 다른 문장을 쓰도록 데이터에서 보장한다.
+   ====================================================================== */
+const EXAM = [
+  { blank:  { si:5, span:"evolutionary history rather than optical efficiency",
+             q:"빈칸에 들어갈 말로 가장 적절한 것은?",
+             opts:["optical efficiency rather than evolutionary history", "evolutionary history rather than optical efficiency", "the chemical structure of water molecules", "the total amount of sunlight reaching the earth"], a:1,
+             exp:"4번 문장이 '효율로 보면 낭비처럼 보인다'고 의문을 던졌고, 5번 문장이 '초기 세균의 선점'이라는 역사적 설명을 내놓았다. 따라서 결론은 효율이 아니라 진화의 역사를 반영한다는 쪽이어야 한다. 1번은 앞뒤를 뒤집은 함정이다." },
+    insert: { si:3,
+             q:"글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?",
+             opts:["①", "②", "③", "④"], a:2,
+             exp:"주어진 문장은 '낭비처럼 보인다'며 의문을 제기한다. 녹색광이 반사된다는 사실(앞)을 받아야 의문이 성립하고, 그 의문에 대한 답이 바로 뒤의 '초기 세균 선점' 가설이므로 ③이 제자리다." },
+    conn:   { asi:2, aspan:"by contrast", bsi:4, bspan:"It is plausible that",
+             q:"(A)와 (B)에 들어갈 말로 가장 적절한 것은?",
+             opts:["(A) by contrast  (B) It is plausible that", "(A) for example  (B) It is certain that", "(A) in addition  (B) It is false that", "(A) in short     (B) It is well known that"], a:0,
+             exp:"(A) 앞은 '흡수', 뒤는 '반사'이므로 대조의 by contrast가 필요하다. (B)는 아직 확정되지 않은 설명을 조심스럽게 내놓는 자리이므로 It is plausible that이 알맞다. It is certain that이나 It is well known that은 단정이 지나쳐 글의 조심스러운 어조와 어긋난다." } },
+  { blank:  { si:3, span:"a third variable, namely summer heat",
+             q:"빈칸에 들어갈 말로 가장 적절한 것은?",
+             opts:["a direct causal link between the two", "a third variable, namely summer heat", "an error in the way the data were collected", "the seasonal preferences of consumers"], a:1,
+             exp:"앞 문장에서 '디저트가 익사를 일으킨다고 할 사람은 없다'며 직접 인과를 부정했다. 따라서 둘을 동시에 움직이게 한 제3의 요인이 와야 하고, 뒤 문장의 control for such variables가 그 답을 확인해 준다." },
+    insert: { si:1,
+             q:"글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?",
+             opts:["①", "②", "③", "④"], a:0,
+             exp:"주어진 문장은 for instance가 들어간 예시다. '상관이 인과는 아니다'라는 일반 진술 바로 뒤에 와야 하고, 뒤 문장의 Yet ~ dessert causes drowning 이 이 예시를 받으므로 ①이 제자리다." },
+    conn:   { asi:2, aspan:"Yet", bsi:4, bspan:"therefore",
+             q:"(A)와 (B)에 들어갈 말로 가장 적절한 것은?",
+             opts:["(A) Thus      (B) however", "(A) Yet       (B) therefore", "(A) Likewise  (B) nevertheless", "(A) Indeed    (B) instead"], a:1,
+             exp:"(A)는 '함께 움직인다'는 사례와 '그래도 인과는 아니다'를 잇는 자리이므로 역접의 Yet이다. (B)는 제3변인이라는 진단에서 '그래서 변인을 통제한다'는 결론으로 가는 자리이므로 인과의 therefore가 알맞다." } },
+  { blank:  { si:1, span:"unless they happen to carry a resistance gene",
+             q:"빈칸에 들어갈 말로 가장 적절한 것은?",
+             opts:["because they cannot reproduce quickly enough", "unless they happen to carry a resistance gene", "even if the dose is far below the usual level", "whenever the treatment is completed properly"], a:1,
+             exp:"다음 문장이 These survivors reproduce로 시작하므로, 빈칸에는 '살아남는 소수'가 생기는 조건이 와야 한다. 내성 유전자를 지닌 경우만 살아남는다는 unless 절이 그 조건이다." },
+    insert: { si:3,
+             q:"글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?",
+             opts:["①", "②", "③", "④"], a:2,
+             exp:"주어진 문장은 Crucially로 시작하며 '혈연이 없는 종에게도 전달된다'는 추가 경로를 말한다. 세대를 통한 확산(앞)과 인간 활동에 의한 가속(뒤) 사이에 놓여야 흐름이 자연스러우므로 ③이다." },
+    conn:   { asi:2, aspan:"consequently", bsi:5, bspan:"Admittedly",
+             q:"(A)와 (B)에 들어갈 말로 가장 적절한 것은?",
+             opts:["(A) consequently  (B) Admittedly", "(A) nevertheless  (B) Moreover", "(A) otherwise     (B) Similarly", "(A) in contrast   (B) In short"], a:0,
+             exp:"(A)는 생존자의 번식이라는 원인에서 확산이라는 결과로 가는 자리이므로 consequently다. (B)는 '새 약이 나오긴 한다'며 한발 물러선 뒤 but으로 한계를 말하는 양보의 자리이므로 Admittedly가 알맞다." } },
+  { blank:  { si:3, span:"no efficient factoring algorithm exists",
+             q:"빈칸에 들어갈 말로 가장 적절한 것은?",
+             opts:["every large number can be factored quickly", "no efficient factoring algorithm exists", "multiplication becomes as hard as factoring", "the primes are chosen to be as small as possible"], a:1,
+             exp:"암호의 안전성은 '되돌리기가 어렵다'는 데 기대고 있다. 따라서 안전이 유지되는 조건은 효율적인 인수분해 방법이 없다는 것이다. 다음 문장이 this is an assumption이라며 그것이 가정임을 확인해 준다." },
+    insert: { si:2,
+             q:"글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?",
+             opts:["①", "②", "③", "④"], a:1,
+             exp:"주어진 문장은 그 어려움(The difficulty)이 수의 크기에 따라 어떻게 커지는지를 말한다. '되돌리기가 매우 어렵다'는 앞 문장을 수량적으로 확장하는 자리, 즉 ②가 제자리다." },
+    conn:   { asi:1, aspan:"whereas", bsi:4, bspan:"It should be emphasized that",
+             q:"(A)와 (B)에 들어갈 말로 가장 적절한 것은?",
+             opts:["(A) whereas   (B) It should be emphasized that", "(A) because   (B) It is well known that", "(A) so that   (B) It is doubtful whether", "(A) although  (B) It goes without saying that"], a:0,
+             exp:"(A)는 '곱하기는 쉽다'와 '되돌리기는 어렵다'를 한 문장에서 맞세우므로 대조의 whereas다. (B)는 앞의 조건절을 받아 '이것은 증명이 아니라 가정'임을 못 박는 강조의 자리다. It is well known that이나 It goes without saying that은 오히려 당연시하는 표현이라 글의 의도와 반대다." } },
+  { blank:  { si:3, span:"reduces the ocean's capacity to take up carbon dioxide",
+             q:"빈칸에 들어갈 말로 가장 적절한 것은?",
+             opts:["increases the amount of heat stored in the deep sea", "reduces the ocean's capacity to take up carbon dioxide", "accelerates the formation of surface ice", "has no measurable effect on the carbon cycle"], a:1,
+             exp:"앞 절이 '따뜻한 물은 용존 기체를 덜 머금는다'이므로, in turn으로 이어지는 결과는 이산화탄소 흡수 능력의 감소여야 한다. 4번은 앞 절과 모순되고, 1번은 인과의 방향이 어긋난다." },
+    insert: { si:1,
+             q:"글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?",
+             opts:["①", "②", "③", "④"], a:0,
+             exp:"주어진 문장의 This absorption은 앞 문장의 '바다가 열을 흡수한다'를 그대로 받는다. 또한 이 긍정적 진술이 있어야 뒤 문장의 however가 뒤집을 대상이 생기므로 ①이 제자리다." },
+    conn:   { asi:2, aspan:"however", bsi:4, bspan:"moreover",
+             q:"(A)와 (B)에 들어갈 말로 가장 적절한 것은?",
+             opts:["(A) therefore  (B) likewise", "(A) however    (B) moreover", "(A) in short   (B) by contrast", "(A) indeed     (B) otherwise"], a:1,
+             exp:"(A)는 바다의 긍정적 역할에서 한계로 방향을 바꾸므로 역접의 however다. (B)는 흡수 능력 저하에 '저장된 열이 되돌아온다'는 또 하나의 문제를 보태므로 추가의 moreover가 알맞다." } },
+  { blank:  { si:3, span:"because disordered states are vastly more numerous",
+             q:"빈칸에 들어갈 말로 가장 적절한 것은?",
+             opts:["because nature has a preference for chaos", "because disordered states are vastly more numerous", "because mechanical laws are irreversible", "because observers cannot measure microscopic states"], a:1,
+             exp:"2번 문장에서 엔트로피는 '배열의 수를 센다'고 했고, 3번 문장에서 섞인 카드가 '수많은 배열 중 하나'라고 했다. 따라서 증가의 이유는 선호가 아니라 경우의 수이다. 1번은 바로 앞 not because ~ 로 부정된 내용이라 오답이다." },
+    insert: { si:2,
+             q:"글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?",
+             opts:["①", "②", "③", "④"], a:1,
+             exp:"주어진 문장은 섞인 카드라는 구체적 비유로, 바로 앞의 추상적 정의(배열의 수를 센다)를 쉽게 풀어 준다. that is to say가 앞 문장의 환언임을 알려 주므로 ②가 제자리다." },
+    conn:   { asi:1, aspan:"More precisely", bsi:4, bspan:"In no way",
+             q:"(A)와 (B)에 들어갈 말로 가장 적절한 것은?",
+             opts:["(A) More precisely  (B) In no way", "(A) For example     (B) In particular", "(A) Nevertheless    (B) In other words", "(A) In short        (B) In addition"], a:0,
+             exp:"(A)는 '무질서'라는 느슨한 통념을 엄밀한 정의로 고치는 자리이므로 More precisely다. (B)는 '역학 법칙을 위배하지 않는다'며 독자의 오해를 강하게 차단하는 자리이므로 In no way가 알맞다. In other words나 In addition으로는 이 부정의 강세가 살지 않는다." } },
+  { blank:  { si:1, span:"levels off once receptors are saturated",
+             q:"빈칸에 들어갈 말로 가장 적절한 것은?",
+             opts:["continues to rise at the same rate", "levels off once receptors are saturated", "drops back to the starting value", "becomes impossible to measure"], a:1,
+             exp:"다음 문장이 The curve therefore plateaus라고 했으므로 빈칸에는 '평평해진다'는 내용이 와야 한다. 1번은 뒤 문장의 rather than continuing upward와 정면으로 충돌한다." },
+    insert: { si:3,
+             q:"글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?",
+             opts:["①", "②", "③", "④"], a:2,
+             exp:"주어진 문장은 해석상의 주의를 처음 꺼내는 자리다. 곡선의 모양 설명(앞)이 끝나고 오차 범위 주의(뒤)로 넘어가는 길목, 즉 ③이 알맞다." },
+    conn:   { asi:2, aspan:"therefore", bsi:5, bspan:"On balance",
+             q:"(A)와 (B)에 들어갈 말로 가장 적절한 것은?",
+             opts:["(A) however    (B) For instance", "(A) therefore  (B) On balance", "(A) instead    (B) In contrast", "(A) meanwhile  (B) Admittedly"], a:1,
+             exp:"(A)는 포화라는 원인에서 정체라는 결과로 이어지므로 therefore다. (B)는 앞의 주의 사항들을 저울질한 뒤 최종 판단을 내리는 자리이므로 On balance가 알맞다." } },
+  { blank:  { si:2, span:"he could not specify a mechanism",
+             q:"빈칸에 들어갈 말로 가장 적절한 것은?",
+             opts:["the fossil evidence was clearly forged", "he could not specify a mechanism", "the coastlines did not match at all", "he refused to publish his measurements"], a:1,
+             exp:"다음 문장에서 해저 확장이 밝혀지고 나서야 '그 반론에 답이 주어졌다'고 했다. 해저 확장은 대륙을 움직이는 기제이므로, 비판의 내용은 기제를 제시하지 못했다는 것이어야 한다. 5번 문장의 for want of a mechanism이 이를 확인해 준다." },
+    insert: { si:4,
+             q:"글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?",
+             opts:["①", "②", "③", "④"], a:3,
+             exp:"주어진 문장은 The episode라며 앞의 일화 전체를 받아 교훈을 끌어낸다. 반론이 해소되는 장면(앞)이 끝나야 '일화'가 완성되고, 그 교훈을 받아 마지막 양보 문장이 이어지므로 ④가 제자리다." },
+    conn:   { asi:3, aspan:"Only when", bsi:5, bspan:"Granted that",
+             q:"(A)와 (B)에 들어갈 말로 가장 적절한 것은?",
+             opts:["(A) Only when   (B) Granted that", "(A) Even when   (B) Provided that", "(A) As soon as  (B) In order that", "(A) Ever since  (B) Now that"], a:0,
+             exp:"(A)는 '~했을 때에야 비로소'라는 뜻으로 뒤에 도치가 오는 강조 구문이므로 Only when이다. (B)는 '회의가 건강하다는 점은 인정하지만'이라며 한발 물러섰다가 한계를 지적하는 양보의 자리이므로 Granted that이 알맞다." } },
+  { blank:  { si:5, span:"precisely in what it leaves out",
+             q:"빈칸에 들어갈 말로 가장 적절한 것은?",
+             opts:["in how many variables it can include", "precisely in what it leaves out", "in the accuracy of its measuring instruments", "in how closely it resembles a photograph"], a:1,
+             exp:"5번 문장의 지도 비유가 '모든 세부를 재현하면 쓸모없다'고 했으므로, 모형의 가치는 생략에 있다. 1번과 4번은 그 비유가 부정한 내용을 그대로 고른 함정이다." },
+    insert: { si:3,
+             q:"글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?",
+             opts:["①", "②", "③", "④"], a:2,
+             exp:"주어진 문장은 이상(가정)과 현실(저항)의 대비를 받아 '그렇다면 무엇을 기준으로 볼 것인가'라는 판단 기준을 세운다. 그 기준이 있어야 뒤의 지도 비유가 설명력을 가지므로 ③이 제자리다." },
+    conn:   { asi:2, aspan:"In practice", bsi:4, bspan:"As an analogy",
+             q:"(A)와 (B)에 들어갈 말로 가장 적절한 것은?",
+             opts:["(A) In principle  (B) For instance", "(A) In practice   (B) As an analogy", "(A) Likewise      (B) By contrast", "(A) Above all     (B) Nonetheless"], a:1,
+             exp:"(A)는 이론적 가정(저항 0)과 현실을 맞세우는 자리이므로 In practice다. in principle은 이론 쪽이라 방향이 반대다. (B)는 지도라는 익숙한 대상에 빗대어 설명하는 자리이므로 As an analogy가 알맞다." } },
+  { blank:  { si:2, span:"unlike those in its training set",
+             q:"빈칸에 들어갈 말로 가장 적절한 것은?",
+             opts:["identical to those in its training set", "unlike those in its training set", "who have already been diagnosed twice", "whose records have been carefully verified"], a:1,
+             exp:"앞 문장이 '통제된 조건의 후향적 자료'라는 한계를 지적했으므로, 성능이 떨어지는 상황은 학습 자료와 '다른' 환자를 만날 때여야 한다. 1번은 뜻을 정반대로 뒤집은 함정이다." },
+    insert: { si:3,
+             q:"글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?",
+             opts:["①", "②", "③", "④"], a:2,
+             exp:"주어진 문장은 also로 시작하며 성능 저하에 이어 '편향'이라는 또 하나의 한계를 더한다. 한계 나열이 끝나고 This in no way means ~ 로 태도를 밝히기 직전, 즉 ③이 제자리다." },
+    conn:   { asi:1, aspan:"however", bsi:4, bspan:"in no way",
+             q:"(A)와 (B)에 들어갈 말로 가장 적절한 것은?",
+             opts:["(A) therefore  (B) above all", "(A) however    (B) in no way", "(A) similarly  (B) for instance", "(A) in fact    (B) at least"], a:1,
+             exp:"(A)는 '전문의와 대등하다'는 성과에서 한계로 방향을 바꾸므로 however다. (B)는 '폐기해야 한다는 뜻은 결코 아니다'라며 독자의 과잉 해석을 차단하는 강한 부정이므로 in no way가 알맞다." } }
+];
+
+/* === [3] 저장소 ====================================================== */
+const KEY = 'sy-acad-reading-v1';
+const store = {
+  d: { stars: [], wrong: [], readDone: [], rate: 0.9 },
+  load(){ try{ const r=localStorage.getItem(KEY); if(r) Object.assign(this.d, JSON.parse(r)); }
+          catch(e){ console.warn('기록 불러오기 실패', e); } },
+  save(){ try{ localStorage.setItem(KEY, JSON.stringify(this.d)); }
+          catch(e){ console.warn('저장 실패', e); } }
+};
+store.load();
+
+/* === [4] 유틸 ======================================================== */
+function el(t,c,x){ const n=document.createElement(t); if(c) n.className=c;
+                    if(x!==undefined&&x!==null) n.textContent=x; return n; }
+const $ = s => document.querySelector(s);
+let tt=null;
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.remove('hidden');
+                   clearTimeout(tt); tt=setTimeout(()=>t.classList.add('hidden'),2400); }
+function shuffle(a){ const b=a.slice();
+  for(let i=b.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [b[i],b[j]]=[b[j],b[i]]; }
+  return b; }
+const FUNCS = [...new Set(EXPR.map(e=>e[2]))];
+
+/* === [5] TTS ========================================================= */
+const TTS = { voices:[],
+  init(){ const L=()=>{ this.voices=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang)); };
+          L(); if(typeof speechSynthesis.onvoiceschanged!=='undefined') speechSynthesis.onvoiceschanged=L; },
+  speak(text){
+    if(!('speechSynthesis' in window)){ toast('이 브라우저는 음성 읽기를 지원하지 않아.'); return; }
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang='en-US'; u.rate=store.d.rate;
+    const v=this.voices.find(x=>/en-US/i.test(x.lang))||this.voices[0];
+    if(v) u.voice=v;
+    speechSynthesis.speak(u);
+  },
+  stop(){ try{ speechSynthesis.cancel(); }catch(e){} }
+};
+
+/* === [6] 화면 전환 ==================================================== */
+let mode='book';
+function setMode(m){
+  mode=m; TTS.stop();
+  ['book','read','quiz'].forEach(k=>$('#m-'+k).classList.toggle('hidden', k!==m));
+  $('#m-star').classList.add('hidden');
+  document.querySelectorAll('.mtab').forEach(b=>{
+    const on=b.dataset.m===m;
+    b.className='mtab tap rounded-lg text-[12px] font-bold '+(on?'tab-on':'tab-off');
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('.mtab').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.m)));
+
+/* === [7] 표현집 ======================================================= */
+let fFilter='전체', kw='';
+function isStar(e){ return store.d.stars.includes(e); }
+function toggleStar(e){
+  const i=store.d.stars.indexOf(e);
+  if(i>=0) store.d.stars.splice(i,1); else store.d.stars.push(e);
+  store.save();
+}
+function renderChips(){
+  const box=$('#chips'); box.replaceChildren();
+  ['전체',...FUNCS].forEach(c=>{
+    const on=c===fFilter;
+    const b=el('button','tap shrink-0 px-3.5 rounded-full text-xs font-bold border transition '+
+      (on?'bg-teal-600 text-ivory border-teal-600':'bg-card text-ink/65 border-line'), c);
+    b.addEventListener('click',()=>{ fFilter=c; renderChips(); renderList(); });
+    box.appendChild(b);
+  });
+}
+function matches(e){
+  if(fFilter!=='전체' && e[2]!==fFilter) return false;
+  if(!kw) return true;
+  const k=kw.toLowerCase();
+  return (e[0]+e[1]+e[2]+e[3]+e[4]+e[5]).toLowerCase().includes(k);
+}
+function exprCard(e){
+  const c=el('article','pop bg-card rounded-2xl shadow-soft p-3.5');
+  const top=el('div','flex items-start gap-2');
+  const t=el('div','min-w-0 flex-1');
+  t.appendChild(el('p','font-en font-extrabold text-[17px] leading-snug break-words', e[0]));
+  t.appendChild(el('p','text-sm font-bold text-teal-400 mt-0.5', e[1]));
+  top.appendChild(t);
+  const sp=el('button','tap shrink-0 w-10 rounded-xl bg-line/50 text-base','🔊');
+  sp.setAttribute('aria-label', e[0]+' 발음 듣기');
+  sp.addEventListener('click',()=>TTS.speak(e[4]));
+  top.appendChild(sp);
+  const st=el('button','tap shrink-0 w-10 rounded-xl text-base '+(isStar(e[0])?'bg-sun-400 text-ivory':'bg-line/50'), isStar(e[0])?'★':'☆');
+  st.setAttribute('aria-label','즐겨찾기');
+  st.addEventListener('click',()=>{ toggleStar(e[0]); renderList(); });
+  top.appendChild(st);
+  c.appendChild(top);
+
+  c.appendChild(el('span','inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-50 text-teal-400', e[2]));
+
+  const sig=el('div','mt-2 rounded-lg px-2.5 py-2 bg-sun-50 border-l-2 border-sun-400');
+  sig.appendChild(el('p','text-[11px] text-sun-400 font-bold mb-0.5','📡 독해 신호'));
+  sig.appendChild(el('p','text-[12px] text-ink/75 leading-relaxed', e[3]));
+  c.appendChild(sig);
+
+  const ex=el('div','mt-2 pt-2 border-t border-line/60');
+  ex.appendChild(el('p','font-en text-[13px] leading-snug', e[4]));
+  ex.appendChild(el('p','text-[12px] text-ink/55 mt-0.5', e[5]));
+  c.appendChild(ex);
+  return c;
+}
+function renderList(){
+  const box=$('#list'); box.replaceChildren();
+  const list=EXPR.filter(matches);
+  $('#empty').classList.toggle('hidden', list.length>0);
+  $('#count').textContent = list.length+'개 표현'+(fFilter!=='전체'?' · '+fFilter:'');
+  list.forEach(e=>box.appendChild(exprCard(e)));
+}
+
+/* === [8] 지문 독해 ==================================================== */
+let cur=null;
+function renderPassageList(){
+  const box=$('#p-list'); box.replaceChildren();
+  PASSAGES.forEach((p,i)=>{
+    const done=store.d.readDone.includes(i);
+    const b=el('button','pop text-left bg-card rounded-2xl shadow-soft p-4 border-2 transition '+
+      (done?'border-teal-400':'border-transparent'));
+    const h=el('div','flex items-center gap-2 mb-1');
+    h.appendChild(el('span','text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-50 text-teal-400', p.level));
+    if(done) h.appendChild(el('span','text-[10px] text-teal-400 font-bold','✓ 완료'));
+    b.appendChild(h);
+    b.appendChild(el('p','font-en font-bold text-[15px]', p.title));
+    b.appendChild(el('p','text-xs text-ink/60 mt-0.5', p.topic));
+    b.appendChild(el('p','text-[11px] text-ink/50 mt-1.5', p.sents.length+'문장 · 기출 유형 4문항'));
+    b.addEventListener('click',()=>openPassage(i));
+    box.appendChild(b);
+  });
+}
+/* 핵심 표현을 본문에서 찾아 <mark> 로 감싼다.
+   영어는 어형이 변하므로 refer to ↔ refers to, be regarded as ↔ was regarded as 처럼
+   굴절된 형태도 찾아낸다. */
+const BE = '(?:be|is|are|was|were|been|being|am)';
+function keyRegex(key){
+  const esc = w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const words = key.trim().split(/\s+/);
+  const parts = words.map((w, i) => {
+    // be 는 생략될 수도 있고(the pigment responsible for ~),
+    // 뒤에 부사가 낄 수도 있다(are also subject to ~)
+    if (w.toLowerCase() === 'be') return '(?:' + BE + '\\s+(?:\\w+ly\\s+|also\\s+|often\\s+)?)?';
+    let p = esc(w);
+    if (i === 0) p += '(?:s|es|ed|d|ing)?';                      // 동사 어미 변화
+    return p + (i < words.length - 1 ? '\\s+' : '');
+  });
+  try { return new RegExp(parts.join(''), 'i'); } catch(e){ return null; }
+}
+function markKey(line, key){
+  const wrap=el('p','font-en text-[15px] leading-relaxed');
+  if(!key){ wrap.textContent=line; return wrap; }
+  let i = line.toLowerCase().indexOf(key.toLowerCase()), len = key.length;
+  if(i < 0){
+    const re = keyRegex(key);
+    const m = re ? re.exec(line) : null;
+    if(m){ i = m.index; len = m[0].length; }
+  }
+  if(i < 0){ wrap.textContent=line; return wrap; }
+  wrap.appendChild(document.createTextNode(line.slice(0,i)));
+  wrap.appendChild(el('mark','', line.slice(i,i+len)));
+  wrap.appendChild(document.createTextNode(line.slice(i+len)));
+  return wrap;
+}
+let pMode='study';                 // 'study' | 'exam'
+function openPassage(i){
+  cur=i;
+  const p=PASSAGES[i];
+  $('#p-picker').classList.add('hidden');
+  $('#p-stage').classList.remove('hidden');
+  $('#p-title').textContent=p.title;
+  $('#p-topic').textContent=p.topic+' · '+p.level;
+  setPMode(pMode);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function setPMode(m){
+  pMode=m; TTS.stop();
+  ['study','exam'].forEach(k=>{
+    const b=$('#p-mode-'+k);
+    b.className='ptab tap rounded-xl text-[12px] font-bold '+(k===m?'tab-on':'tab-off');
+  });
+  $('#p-tools').classList.toggle('hidden', m!=='study');
+  $('#p-guide').classList.toggle('hidden', m!=='exam');
+  if(m==='exam'){
+    $('#p-guide').textContent='실제 시험처럼 해석을 숨겼어. 빈칸 ______ 와 (A) (B), 그리고 ①~④ 자리를 보고 아래 네 문제를 풀어 보자.';
+  }
+  if(cur===null) return;
+  if(m==='study'){ renderStudyBody(); renderPQuiz(PASSAGES[cur]); }
+  else { startExam(); }
+}
+/* ── 학습 모드: 전문 + 문장 클릭 시 해석 ── */
+function renderStudyBody(){
+  const p=PASSAGES[cur];
+  const body=$('#p-body'); body.replaceChildren();
+  $('#p-score').classList.add('hidden');
+  p.sents.forEach((s,n)=>{
+    const row=el('div','sent rounded-lg px-3 py-2.5');
+    row.dataset.n=n;
+    const top=el('div','flex items-start gap-2');
+    top.appendChild(el('span','shrink-0 text-[10px] text-ink/40 font-en mt-1', String(n+1)));
+    top.appendChild(markKey(s.en, s.key));
+    row.appendChild(top);
+
+    const det=el('div','hidden mt-2 pl-5');
+    det.appendChild(el('p','text-[13px] text-ink/80 leading-relaxed', s.ko));
+    const tag=el('div','flex flex-wrap items-center gap-1.5 mt-1.5');
+    tag.appendChild(el('span','text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-50 text-teal-400','기능 · '+s.fn));
+    if(s.key){
+      const kb=el('button','text-[10px] font-bold px-2 py-0.5 rounded-md bg-sun-50 text-sun-400','표현 · '+s.key);
+      kb.addEventListener('click',ev=>{ ev.stopPropagation(); showSignal(s.key); });
+      tag.appendChild(kb);
+    }
+    det.appendChild(tag);
+    row.appendChild(det);
+    row.addEventListener('click',()=>{
+      const open=det.classList.toggle('hidden');
+      row.classList.toggle('open', !open);
+    });
+    body.appendChild(row);
+  });
+}
+function showSignal(key){
+  const e=EXPR.find(x=>x[0].toLowerCase()===key.toLowerCase());
+  if(!e){ toast('표현집에 없는 표현이야.'); return; }
+  toast('📡 '+e[0]+' — '+e[3]);
+}
+function setAllDetails(open){
+  document.querySelectorAll('#p-body .sent').forEach(r=>{
+    const det=r.querySelector('div.mt-2.pl-5') || r.children[1];
+    if(!det) return;
+    det.classList.toggle('hidden', !open);
+    r.classList.toggle('open', open);
+  });
+}
+/* 학습 모드의 이해 확인 1문항 */
+function renderPQuiz(p){
+  const box=$('#p-quiz'); box.replaceChildren();
+  const card=el('div','bg-card rounded-2xl shadow-soft p-4');
+  card.appendChild(el('p','text-sm font-bold mb-2','🧩 이해 확인'));
+  card.appendChild(el('p','text-[13px] leading-relaxed mb-3', p.q));
+  const opts=el('div','flex flex-col gap-2');
+  p.opts.forEach((o,k)=>{
+    const b=el('button','tap w-full text-left px-3 py-2.5 rounded-xl border-2 border-line text-[13px] flex items-start gap-2');
+    b.appendChild(el('span','shrink-0 w-6 h-6 rounded-md bg-line/50 grid place-items-center text-[11px] font-bold', String(k+1)));
+    b.appendChild(el('span','flex-1', o));
+    b.addEventListener('click',()=>pickP(k));
+    opts.appendChild(b);
+  });
+  card.appendChild(opts);
+  const fb=el('div','hidden mt-3'); fb.id='p-fb';
+  card.appendChild(fb);
+  box.appendChild(card);
+}
+function pickP(k){
+  const p=PASSAGES[cur];
+  const btns=$('#p-quiz').querySelectorAll('button');
+  btns.forEach((b,i)=>{
+    b.disabled=true;
+    b.className='tap w-full text-left px-3 py-2.5 rounded-xl border-2 text-[13px] flex items-start gap-2 '+
+      (i===p.a ? 'border-teal-500 bg-teal-50 font-bold'
+       : i===k ? 'border-rose-400 bg-rose-50' : 'border-line/60 text-ink/40');
+  });
+  const ok=k===p.a;
+  const fb=$('#p-fb'); fb.replaceChildren(); fb.classList.remove('hidden');
+  const box=el('div','rounded-xl px-3 py-2.5 border-l-4 '+(ok?'bg-teal-50 border-teal-500':'bg-sun-50 border-sun-400'));
+  box.appendChild(el('p','text-xs font-bold', ok?'⭕ 정답이야!':'❌ 정답은 '+(p.a+1)+'번'));
+  box.appendChild(el('p','text-[12px] text-ink/75 mt-1 leading-relaxed', p.exp));
+  fb.appendChild(box);
+  markRead();
+  fb.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function markRead(){
+  if(!store.d.readDone.includes(cur)){ store.d.readDone.push(cur); store.save(); renderPassageList(); }
+}
+
+/* ======================================================================
+   문제 모드 — 빈칸 추론 / 문장 삽입 / 연결어 추론 / 요지
+   ====================================================================== */
+const Ex={ items:[], done:0, score:0 };
+
+/* 한 문장을 문제용으로 가공한다: 빈칸 ______ , 연결어 (A)/(B) */
+function examSentence(p, x, n){
+  let line = p.sents[n].en;
+  const cuts = [];
+  if(x.blank.si === n) cuts.push({ span:x.blank.span, rep:'______________' });
+  if(x.conn.asi  === n) cuts.push({ span:x.conn.aspan,  rep:'(A)' });
+  if(x.conn.bsi  === n) cuts.push({ span:x.conn.bspan,  rep:'(B)' });
+  // 뒤쪽부터 바꿔야 앞의 인덱스가 밀리지 않는다
+  cuts.map(c=>({...c, at: line.indexOf(c.span)}))
+      .filter(c=>c.at>=0)
+      .sort((a,b)=>b.at-a.at)
+      .forEach(c=>{ line = line.slice(0,c.at) + c.rep + line.slice(c.at + c.span.length); });
+  return line;
+}
+function startExam(){
+  const p=PASSAGES[cur], x=EXAM[cur];
+  Ex.done=0; Ex.score=0;
+  Ex.items=[
+    { kind:'요지',      q:p.q,          opts:p.opts,          a:p.a,          exp:p.exp },
+    { kind:'빈칸 추론', q:x.blank.q,    opts:x.blank.opts,    a:x.blank.a,    exp:x.blank.exp },
+    { kind:'문장 삽입', q:x.insert.q,   opts:x.insert.opts,   a:x.insert.a,   exp:x.insert.exp,
+      given:p.sents[x.insert.si].en, givenKo:p.sents[x.insert.si].ko },
+    { kind:'연결어 추론', q:x.conn.q,   opts:x.conn.opts,     a:x.conn.a,     exp:x.conn.exp }
+  ].map(it=>({...it, picked:undefined}));
+  renderExamBody();
+  renderExamQs();
+  $('#p-score').classList.add('hidden');
+}
+/* 문제용 지문: 삽입 대상 문장을 빼고 ①~④ 자리를 끼워 넣는다 */
+function renderExamBody(){
+  const p=PASSAGES[cur], x=EXAM[cur];
+  const body=$('#p-body'); body.replaceChildren();
+  const shown=[];                                   // 화면에 보일 문장 인덱스
+  p.sents.forEach((s,n)=>{ if(n!==x.insert.si) shown.push(n); });
+  const MARKS=['①','②','③','④'];
+  shown.forEach((n,pos)=>{
+    const row=el('div','rounded-lg px-3 py-2');
+    const top=el('div','flex items-start gap-2');
+    top.appendChild(el('span','shrink-0 text-[10px] text-ink/40 font-en mt-1', String(pos+1)));
+    top.appendChild(el('p','font-en text-[15px] leading-relaxed', examSentence(p,x,n)));
+    row.appendChild(top);
+    body.appendChild(row);
+    // 1~4번 문장 뒤에 삽입 자리 표시
+    if(pos+1 <= MARKS.length){
+      const g=el('div','flex items-center gap-2 px-3 py-1');
+      g.appendChild(el('span','text-[13px] font-bold text-sun-400', MARKS[pos]));
+      g.appendChild(el('span','flex-1 border-t border-dashed border-sun-400/40',''));
+      body.appendChild(g);
+    }
+  });
+}
+function renderExamQs(){
+  const box=$('#p-quiz'); box.replaceChildren();
+  Ex.items.forEach((it,i)=>{
+    const c=el('article','pop bg-card rounded-2xl shadow-soft p-4');
+    const h=el('div','flex items-center gap-2 mb-2');
+    h.appendChild(el('span','text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-50 text-teal-400', it.kind));
+    h.appendChild(el('span','text-[11px] text-ink/45','Q'+(i+1)+' / '+Ex.items.length));
+    c.appendChild(h);
+    if(it.given){
+      const g=el('div','mb-2 rounded-xl px-3 py-2.5 bg-sun-50 border-l-4 border-sun-400');
+      g.appendChild(el('p','text-[11px] font-bold text-sun-400 mb-1','주어진 문장'));
+      g.appendChild(el('p','font-en text-[14px] leading-relaxed', it.given));
+      c.appendChild(g);
+    }
+    c.appendChild(el('p','text-[13px] leading-relaxed mb-3', it.q));
+    const opts=el('div','flex flex-col gap-2');
+    it.opts.forEach((o,k)=>{
+      const picked=it.picked!==undefined;
+      let cls='tap w-full text-left px-3 py-2.5 rounded-xl border-2 text-[13px] flex items-start gap-2 ';
+      if(!picked) cls+='border-line';
+      else if(k===it.a) cls+='border-teal-500 bg-teal-50 font-bold';
+      else if(k===it.picked) cls+='border-rose-400 bg-rose-50';
+      else cls+='border-line/60 text-ink/40';
+      const b=el('button',cls);
+      // 문장 삽입은 보기 자체가 ①~④ 이므로 숫자 뱃지를 중복해 붙이지 않는다
+      if(it.kind!=='문장 삽입')
+        b.appendChild(el('span','shrink-0 w-6 h-6 rounded-md bg-line/50 grid place-items-center text-[11px] font-bold', String(k+1)));
+      b.appendChild(el('span','flex-1 font-en'+(it.kind==='문장 삽입'?' text-[17px] font-bold text-sun-400':''), o));
+      if(!picked) b.addEventListener('click',()=>pickExam(i,k));
+      opts.appendChild(b);
+    });
+    c.appendChild(opts);
+    if(it.picked!==undefined){
+      const ok=it.picked===it.a;
+      const fb=el('div','mt-3 rounded-xl px-3 py-2.5 border-l-4 '+(ok?'bg-teal-50 border-teal-500':'bg-sun-50 border-sun-400'));
+      fb.appendChild(el('p','text-xs font-bold', ok?'⭕ 정답이야!':'❌ 정답은 '+(it.a+1)+'번'));
+      fb.appendChild(el('p','text-[12px] text-ink/75 mt-1 leading-relaxed', it.exp));
+      if(it.givenKo) fb.appendChild(el('p','text-[12px] text-ink/55 mt-1','주어진 문장 해석 : '+it.givenKo));
+      c.appendChild(fb);
+    }
+    box.appendChild(c);
+  });
+}
+function pickExam(i,k){
+  const it=Ex.items[i];
+  if(it.picked!==undefined) return;
+  it.picked=k; Ex.done++;
+  if(k===it.a) Ex.score++;
+  renderExamQs();
+  if(Ex.done===Ex.items.length) finishExam();
+}
+function finishExam(){
+  markRead();
+  const n=Ex.items.length;
+  const r=$('#p-score'); r.replaceChildren(); r.classList.remove('hidden');
+  const c=el('div','pop bg-card rounded-2xl shadow-soft p-4 border-2 border-teal-400 text-center');
+  c.appendChild(el('p','text-3xl', Ex.score===n?'🏆':Ex.score>=3?'🥈':'🌱'));
+  c.appendChild(el('p','font-en font-extrabold text-2xl mt-1', Ex.score+' / '+n));
+  c.appendChild(el('p','text-xs text-ink/60 mt-1',
+    Ex.score===n ? '완벽해! 이제 학습 모드에서 해석을 확인해 보자.'
+    : Ex.score>=3 ? '좋아! 틀린 문항의 해설을 읽고 학습 모드로 넘어가자.'
+    : '괜찮아. 학습 모드에서 문장별 해석과 기능을 보고 다시 도전해 보자.'));
+  const row=el('div','flex gap-2 mt-3');
+  const again=el('button','tap flex-1 rounded-xl bg-line/50 text-xs font-bold','🔁 다시 풀기');
+  again.addEventListener('click',startExam);
+  const study=el('button','tap flex-1 rounded-xl bg-teal-600 text-ivory text-xs font-bold','📖 학습 모드로');
+  study.addEventListener('click',()=>setPMode('study'));
+  row.append(again,study);
+  c.appendChild(row);
+  r.appendChild(c);
+  r.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function backToList(){
+  TTS.stop();
+  $('#p-stage').classList.add('hidden');
+  $('#p-picker').classList.remove('hidden');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* === [9] 기능 훈련 ==================================================== */
+const Q={ items:[], idx:0, score:0, on:false };
+function renderScope(){
+  const s=$('#q-scope'); s.replaceChildren();
+  const all=el('option','', '전체 기능 ('+EXPR.length+'개 표현)'); all.value='전체'; s.appendChild(all);
+  FUNCS.forEach(f=>{ const o=el('option','', f+' ('+EXPR.filter(e=>e[2]===f).length+')'); o.value=f; s.appendChild(o); });
+  const st=el('option','', '⭐ 즐겨찾기한 표현'); st.value='__star'; s.appendChild(st);
+  const wr=el('option','', '❌ 틀렸던 표현'); wr.value='__wrong'; s.appendChild(wr);
+}
+function startQuiz(){
+  const v=$('#q-scope').value;
+  let pool = v==='전체' ? EXPR
+           : v==='__star'  ? EXPR.filter(e=>store.d.stars.includes(e[0]))
+           : v==='__wrong' ? EXPR.filter(e=>store.d.wrong.includes(e[0]))
+           : EXPR.filter(e=>e[2]===v);
+  if(pool.length<4){ toast('표현이 4개 이상 있어야 문제를 만들 수 있어.'); return; }
+  Q.items=shuffle(pool).slice(0,10).map(e=>{
+    const wrongs=shuffle(FUNCS.filter(f=>f!==e[2])).slice(0,3);
+    const opts=shuffle([e[2],...wrongs]);
+    return { e, opts, a:opts.indexOf(e[2]), picked:undefined };
+  });
+  Q.idx=0; Q.score=0; Q.on=true;
+  $('#q-result').classList.add('hidden');
+  renderQuiz();
+}
+function renderQuiz(){
+  const box=$('#q-body'); box.replaceChildren();
+  Q.items.forEach((it,i)=>{
+    if(i>Q.idx) return;
+    const c=el('article','pop bg-card rounded-2xl shadow-soft p-4');
+    c.appendChild(el('p','text-[11px] text-ink/50 mb-1','Q'+(i+1)+' / '+Q.items.length));
+    c.appendChild(el('p','font-en font-extrabold text-[18px] leading-snug break-words', it.e[0]));
+    c.appendChild(el('p','text-[12px] text-ink/60 mt-1','이 표현은 글에서 어떤 역할을 할까?'));
+    const opts=el('div','grid grid-cols-2 gap-2 mt-3');
+    it.opts.forEach((o,k)=>{
+      const picked=it.picked!==undefined;
+      let cls='tap w-full px-2 py-2.5 rounded-xl border-2 text-[12px] font-bold transition ';
+      if(!picked) cls+='border-line bg-card';
+      else if(k===it.a) cls+='border-teal-500 bg-teal-50';
+      else if(k===it.picked) cls+='border-rose-400 bg-rose-50';
+      else cls+='border-line/60 text-ink/35';
+      const b=el('button',cls,o);
+      if(!picked) b.addEventListener('click',()=>pickQ(i,k));
+      opts.appendChild(b);
+    });
+    c.appendChild(opts);
+    if(it.picked!==undefined){
+      const ok=it.picked===it.a;
+      const fb=el('div','mt-3 rounded-xl px-3 py-2.5 border-l-4 '+(ok?'bg-teal-50 border-teal-500':'bg-sun-50 border-sun-400'));
+      fb.appendChild(el('p','text-xs font-bold', ok?'⭕ 맞았어!':'❌ 정답은 '+it.e[2]));
+      fb.appendChild(el('p','text-[12px] text-ink/75 mt-1 leading-relaxed','뜻 : '+it.e[1]));
+      fb.appendChild(el('p','text-[12px] text-sun-400 mt-1 leading-relaxed','📡 '+it.e[3]));
+      fb.appendChild(el('p','text-[11px] text-ink/55 mt-1 font-en', it.e[4]));
+      c.appendChild(fb);
+    }
+    box.appendChild(c);
+  });
+  if(Q.idx>=Q.items.length && Q.on) finishQuiz();
+}
+function pickQ(i,k){
+  const it=Q.items[i];
+  if(it.picked!==undefined) return;
+  it.picked=k;
+  if(k===it.a) Q.score++;
+  else if(!store.d.wrong.includes(it.e[0])){ store.d.wrong.push(it.e[0]); store.save(); }
+  Q.idx=i+1;
+  renderQuiz();
+  setTimeout(()=>{ const cs=$('#q-body').children;
+    const t=cs[Math.min(i+1,cs.length-1)]; if(t) t.scrollIntoView({behavior:'smooth',block:'center'}); },120);
+}
+function finishQuiz(){
+  Q.on=false;
+  const r=$('#q-result'); r.replaceChildren(); r.classList.remove('hidden');
+  const n=Q.items.length;
+  const c=el('div','pop bg-card rounded-2xl shadow-soft p-4 border-2 border-teal-400 text-center');
+  c.appendChild(el('p','text-3xl', Q.score===n?'🏆':Q.score>=n*0.7?'🥈':'🌱'));
+  c.appendChild(el('p','font-en font-extrabold text-2xl mt-1', Q.score+' / '+n));
+  c.appendChild(el('p','text-xs text-ink/60 mt-1',
+    Q.score===n ? '완벽해! 기능 감각이 잡혔어.'
+    : Q.score>=n*0.7 ? '좋아! 틀린 표현만 다시 보면 돼.'
+    : '괜찮아. 기능은 외우는 게 아니라 익숙해지는 거야.'));
+  const row=el('div','flex gap-2 mt-3');
+  const again=el('button','tap flex-1 rounded-xl bg-teal-600 text-ivory text-xs font-bold','🔁 다시');
+  again.addEventListener('click',startQuiz);
+  const star=el('button','tap flex-1 rounded-xl bg-line/50 text-xs font-bold','⭐ 오답 보기');
+  star.addEventListener('click',openStar);
+  row.append(again,star);
+  c.appendChild(row);
+  r.appendChild(c);
+  r.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+/* === [10] 즐겨찾기 · 오답 ============================================= */
+function openStar(){
+  ['book','read','quiz'].forEach(k=>$('#m-'+k).classList.add('hidden'));
+  $('#m-star').classList.remove('hidden');
+  const box=$('#star-list'); box.replaceChildren();
+  const stars=EXPR.filter(e=>store.d.stars.includes(e[0]));
+  const wrong=EXPR.filter(e=>store.d.wrong.includes(e[0]) && !store.d.stars.includes(e[0]));
+  $('#star-count').textContent='즐겨찾기 '+stars.length+'개 · 틀린 표현 '+wrong.length+'개';
+  if(!stars.length && !wrong.length){
+    box.appendChild(el('p','text-center text-sm text-ink/50 py-14','아직 담아 둔 표현이 없어. ☆를 눌러 모아 보자!'));
+  }
+  if(stars.length){ box.appendChild(el('p','text-xs font-bold text-teal-400 mt-1','⭐ 즐겨찾기')); stars.forEach(e=>box.appendChild(exprCard(e))); }
+  if(wrong.length){ box.appendChild(el('p','text-xs font-bold text-sun-400 mt-3','❌ 틀렸던 표현')); wrong.forEach(e=>box.appendChild(exprCard(e))); }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* === [11] 이벤트 ===================================================== */
+$('#search').addEventListener('input',e=>{ kw=e.target.value.trim(); renderList(); });
+$('#btn-star').addEventListener('click',openStar);
+$('#star-close').addEventListener('click',()=>setMode(mode));
+$('#p-back').addEventListener('click',backToList);
+$('#p-mode-study').addEventListener('click',()=>setPMode('study'));
+$('#p-mode-exam').addEventListener('click',()=>setPMode('exam'));
+$('#p-all').addEventListener('click',()=>setAllDetails(true));
+$('#p-reset').addEventListener('click',()=>setAllDetails(false));
+$('#p-listen').addEventListener('click',()=>{
+  if(cur===null) return;
+  TTS.speak(PASSAGES[cur].sents.map(s=>s.en).join(' '));
+});
+$('#q-start').addEventListener('click',startQuiz);
+
+/* === [12] 시작 ======================================================= */
+(function init(){
+  TTS.init();
+  renderChips(); renderList();
+  renderPassageList();
+  renderScope();
+  setMode('book');
+})();
+</script>
+</body>
+</html>
