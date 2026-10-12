@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이산수학 2단계 발전 주제 25~28 확인 평가 20문항</title><style>
+:root{--ink:#172033;--sub:#52607a;--pale:#8d99ad;--line:#d3dae6;--soft:#f3f5f9;--desk:#e3e7ee;
+  --ac:#1f3a93;--tint:#e9edf9;--warn:#a3324f;--warnt:#fbeef2;--tip:#0e7a6f;--tipt:#e8f4f2}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{background:var(--desk);color:var(--ink);font-family:'Pretendard','Noto Sans KR','Noto Sans CJK KR','Malgun Gothic',sans-serif;
+  font-size:13.2px;line-height:1.72;padding:62px 12px 24px;word-break:keep-all}
+.bar{position:fixed;top:0;left:0;right:0;z-index:10;background:var(--ink);color:#e6ebf3;display:flex;align-items:center;gap:14px;padding:9px 18px;font-size:13px}
+.bar button{margin-left:auto;background:#fff;color:var(--ink);border:0;border-radius:4px;padding:6px 14px;font:inherit;font-weight:700;cursor:pointer}
+.bar button:focus-visible{outline:3px solid #8fb3ff;outline-offset:2px}
+.bar .hint{font-size:12px;color:#a9b5c7}
+.page{width:210mm;height:297mm;margin:0 auto 14px;background:#fff;position:relative;padding:17mm 15mm 16mm;overflow:hidden;box-shadow:0 1px 3px rgba(23,32,51,.2)}
+.rh{position:absolute;top:7mm;left:15mm;right:15mm;display:flex;font-size:10.5px;color:var(--pale);border-bottom:1px solid var(--line);padding-bottom:3px}
+.rh b{color:var(--ac);font-weight:700;margin-right:6px}
+.rh .r{margin-left:auto}
+.foot{position:absolute;bottom:6mm;left:15mm;right:15mm;display:flex;font-size:10.5px;color:var(--pale)}
+.foot .r{margin-left:auto;font-variant-numeric:tabular-nums}
+.blk{margin-bottom:10px}
+h2.sec{font-size:16.5px;font-weight:800;margin:2px 0 8px;display:flex;align-items:baseline;gap:8px;border-bottom:2px solid var(--ink);padding-bottom:4px}
+h2.sec .mk{color:var(--ac);font-size:18px}
+h2.sec .sub{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--sub)}
+h3{font-size:14.2px;font-weight:800;margin:10px 0 5px;color:var(--ink)}
+h3::before{content:'';display:inline-block;width:7px;height:7px;background:var(--ac);margin-right:7px;vertical-align:2px}
+p{margin:4px 0}
+p.small{font-size:12px;color:var(--sub)}
+ul{margin:4px 0 4px 20px}
+li{margin:1px 0}
+code{font-family:'D2Coding','Consolas','DejaVu Sans Mono',monospace;font-size:12px;background:var(--soft);padding:0 3px;border-radius:2px}
+.mx{font-family:'Cambria Math','DejaVu Sans','Noto Sans CJK KR',sans-serif;white-space:nowrap}
+table{border-collapse:collapse;margin:6px 0;font-size:12.4px;line-height:1.55;width:100%}
+th,td{border:1px solid var(--line);padding:4px 7px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:700}
+table.tt{width:auto;margin:6px 0;font-family:'DejaVu Sans','Noto Sans CJK KR',sans-serif}
+table.tt th,table.tt td{text-align:center;padding:2px 12px;min-width:34px;vertical-align:middle}
+table.tt th.v{background:#e6ebf3}
+table.tt th.mk{background:var(--ac);color:#fff}
+table.tt td.t{color:var(--ac);font-weight:700;background:var(--tint)}
+table.tt td.f{color:#9aa4b5}
+table.tt td.mk{border-left:2px solid var(--ac);border-right:2px solid var(--ac)}
+table.tt td.t.mk{background:var(--ac);color:#fff}
+table.tt td.bl{background:#fff;min-width:54px}
+.box{border:1px solid var(--line);border-left:4px solid var(--ac);margin:7px 0;background:#fff}
+.box .bt{font-size:12px;font-weight:800;padding:3px 10px 0;color:var(--ac)}
+.box .bb{padding:1px 10px 6px}
+.box.def{background:var(--tint)}
+.box.prop{border-left-color:var(--ink)} .box.prop .bt{color:var(--ink)}
+.box.warn{border-left-color:var(--warn);background:var(--warnt)} .box.warn .bt{color:var(--warn)}
+.box.tip{border-left-color:var(--tip);background:var(--tipt)} .box.tip .bt{color:var(--tip)}
+.box.q{border-left-color:var(--ink);background:var(--soft)} .box.q .bt{color:var(--sub)}
+.ex{border:1px solid var(--ac);margin:6px 0}
+.exh{background:var(--ac);color:#fff;padding:3px 10px;font-weight:800;font-size:12.6px}
+.exq{padding:6px 10px;border-bottom:1px dashed var(--line);font-weight:600}
+.sol{padding:5px 10px 7px}
+.sol .sl{display:inline-block;font-size:11px;font-weight:800;color:var(--ac);border:1px solid var(--ac);border-radius:2px;padding:0 5px;margin-right:6px;line-height:17px}
+.pr{display:flex;gap:9px;margin:7px 0;padding-bottom:5px;border-bottom:1px dotted var(--line)}
+.pn{flex:none;min-width:26px;height:22px;padding:0 6px;border-radius:3px;background:var(--ink);color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;white-space:nowrap}
+.pt{flex:1}
+.ans{border-bottom:1px solid #b9c3d3;margin-top:4px;position:relative}
+.ans.sp1{height:26px}.ans.sp2{height:56px}.ans.sp3{height:96px}.ans.sp4{height:140px}
+.lnlab{position:absolute;left:0;top:2px;font-size:11px;color:var(--pale);font-weight:700}
+.code{border:1px solid var(--line);margin:6px 0}
+.cht{font-size:12px;font-weight:800;padding:3px 10px;background:var(--soft);border-bottom:1px solid var(--line)}
+.code .cols{display:grid;grid-template-columns:1fr 1fr}
+.code .cols>div+div{border-left:1px solid var(--line)}
+.code .cols.stack{grid-template-columns:1fr}.code .cols.stack>div+div{border-left:0;border-top:1px solid var(--line)}
+.cl{display:block;font-size:10.5px;font-weight:800;color:var(--ac);padding:3px 9px 0}
+pre{font-family:'D2Coding','Consolas','DejaVu Sans Mono','Noto Sans CJK KR',monospace;font-size:11.2px;line-height:1.45;padding:2px 9px 7px;white-space:pre-wrap;word-break:break-all}
+.out{border-top:1px solid var(--line);background:#fbfcfe}
+.out pre{columns:2;column-gap:20px}
+.out pre.wide{columns:1}
+.opener{display:flex;gap:18px;align-items:flex-end;padding:8px 0 12px;border-bottom:3px solid var(--ink);margin-bottom:10px}
+.onum{font-size:88px;line-height:.82;font-weight:900;color:var(--ac);letter-spacing:-4px;font-variant-numeric:tabular-nums}
+.oarea{font-size:12px;color:var(--sub);font-weight:700}
+.opener h1{font-size:30px;font-weight:900;letter-spacing:-1px;line-height:1.2}
+.goal{font-size:13.6px;margin-top:4px}
+.omet{font-size:11.5px;color:var(--sub);margin-top:2px}
+.flow{background:var(--soft);padding:8px 12px 9px;margin-bottom:12px}
+.flow .ft{font-size:12px;font-weight:800;color:var(--sub);margin-bottom:2px}
+.flow ol{margin:0 0 0 20px;columns:2;column-gap:22px;font-size:12.4px}
+.flow li b{margin-right:6px}
+.tools{margin-top:5px;font-size:12px}
+.tools .tl{color:var(--sub);font-weight:700;margin-right:6px}
+.tool{display:inline-block;border:1px solid var(--ac);color:var(--ac);border-radius:10px;padding:0 8px;margin-right:5px;font-weight:700;font-size:11.5px}
+.o{color:#2451b8;font-weight:900}.x{color:#a3324f;font-weight:700}
+table.grid{width:auto}table.grid th,table.grid td{text-align:center;min-width:58px;padding:3px 10px}
+.kn{font-weight:800;padding:0 3px;border-radius:2px}.kn.k{color:#2451b8;background:#edf2fc}.kn.n{color:#a3324f;background:#fbeef2}
+table.wt{width:auto;font-size:11.8px}table.wt th,table.wt td{text-align:center;padding:2px 9px}
+table.wt.blank td{height:24px;min-width:64px}
+table.bits{width:auto;font-family:'DejaVu Sans Mono','Noto Sans CJK KR',monospace;margin:6px 0}
+table.bits caption{caption-side:top;text-align:left;font-family:'Noto Sans CJK KR',sans-serif;font-size:12px;font-weight:700;color:var(--sub);padding-bottom:2px}
+table.bits th{font-size:10px;color:var(--pale);background:#fff;text-align:center;padding:1px 6px;font-weight:600}
+table.bits td{text-align:center;padding:2px 8px;min-width:26px}
+table.bits td.lab{font-family:'Noto Sans CJK KR',sans-serif;font-weight:700;text-align:left;background:var(--soft);min-width:70px}
+table.bits td.one{color:var(--ac);font-weight:800;background:var(--tint)}
+table.bits td.zero{color:#9aa4b5}
+table.bits td.dec{font-weight:700;min-width:44px}
+table.bits tr.res td{border-top:2px solid var(--ink)}
+table.bits tr.res td.one{background:var(--ac);color:#fff}
+table.hexref{font-size:11px}table.hexref th,table.hexref td{text-align:center;padding:2px 3px;font-family:'DejaVu Sans Mono','Noto Sans CJK KR',monospace}
+.bitrow{display:flex;flex-wrap:wrap;gap:4px 18px;align-items:flex-start}
+.bitrow table{margin:4px 0}
+table.dg td:first-child{background:var(--soft)}
+table.sieve{width:auto;margin:6px 0}
+table.sieve td{width:36px;height:24px;text-align:center;vertical-align:middle;padding:0;font-size:12px;font-variant-numeric:tabular-nums}
+table.sieve td.sp{background:var(--ac);color:#fff;font-weight:800}
+table.sieve td.sc{color:#8d99ad}
+table.sieve td.s1{color:#c3cad6}
+table.sieve td.f2{background:#f3f5f9}table.sieve td.f3{background:#fcf1e6}table.sieve td.f5{background:#f2edfc}table.sieve td.f7{background:#fcecf0}
+.legend{font-size:11.5px;color:var(--sub)}.legend i{display:inline-block;width:12px;height:12px;vertical-align:-1px;margin:0 3px 0 10px;border:1px solid var(--line)}
+table.lat{width:auto;font-variant-numeric:tabular-nums}
+table.lat td{text-align:center;min-width:40px;height:28px;padding:0;font-weight:700}
+table.lat td.z{color:#c3cad6;font-weight:400}
+table.lat td.bk{background:#3a4352;color:#fff}
+table.lat td.hl{background:var(--ac);color:#fff}
+table.lat td.ax{border:0;background:#fff;color:var(--pale);font-size:10.5px;font-weight:600;min-width:22px}
+table.pas{width:auto;font-variant-numeric:tabular-nums;border-collapse:separate;border-spacing:2px}
+table.pas td{border:1px solid var(--line);text-align:center;min-width:34px;padding:2px 4px;font-weight:700}
+table.pas td.e{border:0;background:#fff;min-width:17px;padding:0}
+table.pas td.m1{background:var(--tint);color:var(--ac)}
+table.pas td.m2{background:var(--ac);color:#fff}
+table.pas td.lab{border:0;background:#fff;color:var(--pale);font-size:10.5px;font-weight:600;text-align:right;padding-right:4px}
+.capt{font-size:12px;font-weight:700;color:var(--sub);margin:4px 0 1px}
+table.lat td.hl{background:var(--ac);color:#fff}
+table.seq{width:auto;font-variant-numeric:tabular-nums}
+table.seq th,table.seq td{text-align:center;padding:3px 10px;min-width:40px}
+table.seq td.lab,table.seq th.lab{text-align:left;background:var(--soft);font-weight:700;min-width:78px}
+table.seq td.d{color:var(--ac);font-weight:700;background:var(--tint)}
+table.seq td.hl{background:var(--ac);color:#fff;font-weight:800}
+.diffrow{font-family:'DejaVu Sans Mono',monospace;font-size:12.5px;letter-spacing:.5px}
+.sg{font-family:'DejaVu Sans','Noto Sans CJK KR',sans-serif;font-size:15px;font-weight:700;line-height:1}
+table.adj{width:auto;font-variant-numeric:tabular-nums;font-family:'DejaVu Sans Mono','Noto Sans CJK KR',monospace}
+table.adj th,table.adj td{text-align:center;padding:2px 9px;min-width:26px}
+table.adj th{background:var(--soft);font-weight:700}
+table.adj td.one{background:var(--tint);color:var(--ac);font-weight:800}
+table.adj td.zero{color:#b8c0cc}
+table.adj td.dg{background:var(--ac);color:#fff;font-weight:800}
+.gfig{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:flex-start}
+.gcap{font-size:12px;font-weight:700;color:var(--sub);margin:3px 0 1px}
+table.tr th,table.tr td{text-align:center;padding:2px 9px;font-variant-numeric:tabular-nums}
+table.tr td.k{background:var(--soft);font-weight:700;text-align:left}
+table.tr td.hl{background:var(--ac);color:#fff;font-weight:800}
+table.tr td.sw{background:var(--tint);color:var(--ac);font-weight:800}
+.stk{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:5px 0}
+.stk .col{text-align:center;font-size:11px;color:var(--sub)}
+.stk .bx{display:flex;flex-direction:column-reverse;border:1.5px solid var(--ink);border-top:0;min-width:34px;min-height:22px}
+.stk .bx span{border-top:1px solid var(--line);font-size:12px;font-weight:700;padding:1px 0;background:var(--tint);color:var(--ac)}
+.qd2{display:flex;gap:0;border:1.5px solid var(--ink);min-height:24px;min-width:40px}
+.qd2 span{border-right:1px solid var(--line);padding:2px 8px;font-size:12px;font-weight:700;background:var(--tint);color:var(--ac)}
+table.gate th,table.gate td{text-align:center;padding:2px 10px;font-variant-numeric:tabular-nums}
+table.gate td.o{background:var(--tint);color:var(--ac);font-weight:800}
+table.gate td.z{color:#9aa4b5}
+table.gate td.lab{background:var(--soft);font-weight:700;text-align:left}
+.board{border-collapse:collapse;margin:5px 0}
+.board td{width:26px;height:26px;border:1px solid var(--line);text-align:center;font-size:11px;padding:0}
+.board td.b{background:#3a4352;color:#fff}
+.board td.w{background:#fff}
+.board td.x{background:var(--warnt);color:var(--warn);font-weight:800}
+h2.ah{font-size:16px;font-weight:800;border-bottom:2px solid var(--ac);color:var(--ac);padding-bottom:3px;margin:2px 0 6px}
+table.at td:first-child{white-space:nowrap;font-weight:700;text-align:center}
+table.at td:nth-child(2){font-weight:700;color:var(--ac)}
+table.at{font-size:12px}
+.asol{border:1px solid var(--line);padding:6px 10px;margin:6px 0}
+.cover{height:100%;display:flex;flex-direction:column}
+.cv-top{border-top:8px solid var(--ac);padding-top:14px}
+.cv-series{font-size:13px;color:var(--sub);font-weight:700}
+.cv-title{font-size:40px;font-weight:900;letter-spacing:-1.5px;line-height:1.2;margin-top:6px}
+.cv-sub{font-size:17px;color:var(--sub);font-weight:600;margin-top:4px}
+.toc{margin-top:22px;border-top:2px solid var(--ink)}
+.toc .row{display:flex;align-items:baseline;gap:14px;padding:10px 0;border-bottom:1px solid var(--line)}
+.toc .n{font-size:34px;font-weight:900;color:var(--ac);width:62px;line-height:1;font-variant-numeric:tabular-nums}
+.toc .t{font-size:17px;font-weight:800}
+.toc .g{font-size:12.2px;color:var(--sub)}
+.toc .pg{margin-left:auto;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.use{margin-top:16px}
+.cv-foot{margin-top:auto;display:flex;align-items:flex-end;border-top:1px solid var(--line);padding-top:8px;font-size:12px;color:var(--sub)}
+.cv-foot b{color:var(--ink);font-size:14px}
+@page{size:A4;margin:0}
+@media print{body{background:#fff;padding:0}.bar{display:none}.page{margin:0;box-shadow:none;break-after:page}.page:last-child{break-after:auto}}
+@media screen and (max-width:820px){
+  body{padding:56px 0 0}
+  .page{width:auto;height:auto;overflow:visible;padding:40px 14px 44px;margin:0 0 10px}
+  .rh,.foot{left:14px;right:14px}
+  .code .cols{grid-template-columns:1fr}.code .cols>div+div{border-left:0;border-top:1px solid var(--line)}
+  table{display:block;overflow-x:auto}.out pre,.flow ol{columns:1}
+  svg{max-width:100%;height:auto}
+  .onum{font-size:60px}.opener h1{font-size:24px}.bar .hint{display:none}
+}
+
+.q{border:1px solid var(--line);margin:0 0 10px;break-inside:avoid}
+.qh{display:flex;align-items:center;gap:8px;padding:4px 10px;background:var(--soft);border-bottom:1px solid var(--line)}
+.qn{min-width:28px;height:24px;border-radius:3px;background:var(--ink);color:#fff;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+.qk{font-size:12px;font-weight:700;color:var(--sub)}
+.qd{font-size:11.5px;font-weight:800;border-radius:9px;padding:0 8px;border:1px solid}
+.d-기본{color:#0e7a6f;border-color:#0e7a6f}.d-발전{color:#2451b8;border-color:#2451b8}.d-도전{color:#a3324f;border-color:#a3324f;background:#fbeef2}
+.qs{margin-left:auto;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
+.qb{padding:7px 12px 4px;font-size:13.6px;line-height:1.8}
+.opts{display:flex;flex-wrap:wrap;gap:4px 22px;margin-top:4px}
+.opts.col{flex-direction:column;gap:0}
+table.gate th,table.gate td{text-align:center;padding:2px 10px;font-variant-numeric:tabular-nums}
+table.gate td.o{background:var(--tint);color:var(--ac);font-weight:800}
+table.gate td.z{color:#9aa4b5}
+table.gate td.lab{background:var(--soft);font-weight:700;text-align:left}
+table.mini{width:auto;margin:5px 0;font-size:12.4px}table.mini th,table.mini td{text-align:center;padding:2px 10px}
+.work{margin:0 12px;border:1px dashed #c9d2df;border-radius:3px;background:repeating-linear-gradient(#fff 0 25px,#eef1f6 25px 26px)}
+.work.w1{height:66px}.work.w2{height:104px}.work.w3{height:170px}.work.w4{height:270px}
+.aline{display:flex;justify-content:flex-end;padding:6px 12px 8px}
+.aline span{display:inline-block;width:52%;border-bottom:1.5px solid var(--ink);font-size:12px;font-weight:800;color:var(--sub);padding-left:2px}
+.band{display:flex;align-items:baseline;gap:10px;border-bottom:3px solid var(--ac);padding:2px 0 4px;margin:0 0 9px}
+.band .bn{font-size:22px;font-weight:900;color:var(--ac)}
+.band b{font-size:17px;font-weight:900}
+.band .br{margin-left:auto;font-size:12px;color:var(--sub);font-weight:700}
+.exam{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;border-top:8px solid var(--ac);padding-top:12px;margin-bottom:12px}
+.exam .t1{font-size:13px;color:var(--sub);font-weight:700}
+.exam .t2{font-size:30px;font-weight:900;letter-spacing:-1px;line-height:1.2;margin-top:4px}
+.exam .t3{font-size:15px;color:var(--sub);font-weight:600}
+.namebox{border:1.5px solid var(--ink);display:grid;grid-template-columns:auto 1fr;font-size:13px}
+.namebox div{padding:6px 10px;border-bottom:1px solid var(--line)}
+.namebox div:nth-child(odd){background:var(--soft);font-weight:700;border-right:1px solid var(--line)}
+.rules{font-size:12.4px;margin-bottom:10px}
+.a{border:1px solid var(--line);margin:0 0 9px;break-inside:avoid}
+.ahd{display:flex;align-items:center;gap:10px;padding:4px 10px;border-bottom:1px solid var(--line);background:var(--tint)}
+.an{min-width:28px;height:24px;border-radius:3px;background:var(--ac);color:#fff;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center}
+.aa{font-weight:800;color:var(--ac);font-size:13.6px}
+.ab{padding:6px 12px 8px;font-size:12.8px;line-height:1.75}
+.trap{margin-top:5px;padding:3px 9px;border-left:3px solid var(--warn);background:var(--warnt);font-size:12.2px}
+.trap b{color:var(--warn);margin-right:4px}
+.rub{margin-top:5px;padding:3px 9px;border-left:3px solid var(--tip);background:var(--tipt);font-size:12.2px}
+.rub b{color:var(--tip);margin-right:4px}
+table.key{font-size:12.4px}table.key td,table.key th{text-align:center;vertical-align:middle}
+table.key td.n{font-weight:900;background:var(--soft);width:38px}
+table.key td.v{font-weight:700;color:var(--ac)}
+.part{font-size:11px;font-weight:800;color:#fff;background:var(--ink);padding:1px 7px;border-radius:2px;margin-right:6px}
+.part.ans{background:var(--ac)}
+@media print{body.only-q .pg-a{display:none}body.only-a .pg-q{display:none}}
+</style></head><body>
+<div class="bar"><b>주제 25~28 확인 평가 20문항</b><span class="hint">A4 · 여백 없음 · 배경 그래픽 켜기</span>
+<span style="margin-left:auto;display:flex;gap:6px"><button type="button" data-mode="only-q">문제지 인쇄</button><button type="button" data-mode="only-a">정답과 해설 인쇄</button><button type="button" data-mode="">전체 인쇄</button></span></div>
+<div class="page pg-q"><div class="rh"><span><span class="part">문제지</span>주제 25~28 확인 평가</span><span class="r">세영코딩연구소 이산수학 2단계 발전</span></div><div class="blk"><div class="exam"><div><div class="t1">중등 정보올림피아드 대비 이산수학 · 2단계 발전</div>
+<div class="t2">논리와 증명 확인 평가</div><div class="t3">주제 25~28 · 20문항 · 100점 · 60분</div></div>
+<div class="namebox"><div>이름</div><div></div><div>반</div><div></div><div>날짜</div><div></div><div>점수</div><div style="text-align:right;font-weight:800">/ 100</div></div></div>
+<div class="rules"><table class=""><tr><th style="width:12%">구분</th><th style="width:32%">문항</th><th style="width:10%">배점</th><th>안내</th></tr><tr><td>기본</td><td>각 주제 1~3번째 (12문항)</td><td>4점</td><td>정답만 채점</td></tr><tr><td>발전</td><td>각 주제 4번째 (4문항)</td><td>6점</td><td>과정의 핵심이 맞으면 부분 점수</td></tr><tr><td>도전</td><td>각 주제 5번째 (4문항)</td><td>7점</td><td>풀이 과정과 이유를 채점 기준에 따라 부분 점수</td></tr></table>
+<p class="small">계산기는 쓰지 않습니다. 풀이 공간에 반례를 찾은 과정, 불변량, 가능한 세계 목록, 진리표를 남기세요. 지우지 않은 풀이도 채점에 반영합니다.</p></div><div class="band"><span class="bn">주제 25</span><b>반례와 귀류법</b><span class="br">1~5번</span></div><div class="q"><div class="qh"><span class="qn">1</span><span class="qk">단답형</span><span class="qd d-기본">기본</span><span class="qs">4점</span></div><div class="qb">“n² + n + 17은 모든 자연수 n에 대해 소수이다”의 <b>가장 작은 반례</b>를 구하시오. 그 값도 함께 쓰시오.</div><div class="work w3" style="height:201px"></div><div class="aline"><span>답</span></div></div></div><div class="blk"><div class="q"><div class="qh"><span class="qn">2</span><span class="qk">단답형</span><span class="qd d-기본">기본</span><span class="qs">4점</span></div><div class="qb">“2ⁿ + 1은 모든 자연수 n에 대해 소수이다”의 가장 작은 반례를 구하시오.</div><div class="work w2" style="height:135px"></div><div class="aline"><span>답</span></div></div></div><div class="foot"><span>세영코딩연구소 / Ph.D KIM</span><span class="r">문제지 1 / 9</span></div></div>
+<div class="page pg-q"><div class="rh"><span><span class="part">문제지</span>주제 25~28 확인 평가</span><span class="r">세영코딩연구소 이산수학 2단계 발전</span></div><div class="blk"><div class="q"><div class="qh"><span class="qn">3</span><span class="qk">객관식</span><span class="qd d-기본">기본</span><span class="qs">4점</span></div><div class="qb">다음 중 <b>거짓</b>인 주장을 모두 고르시오.<div class="opts col"><span>① 모든 소수는 홀수이다.</span><span>② 연속한 세 자연수의 곱은 항상 6의 배수이다.</span><span>③ n!(n 계승) + 1은 항상 소수이다.</span><span>④ 6k + 1 꼴의 수는 항상 소수이다.</span><span>⑤ 두 홀수의 곱은 항상 홀수이다.</span></div></div><div class="work w2" style="height:248px"></div><div class="aline"><span>답</span></div></div></div><div class="blk"><div class="q"><div class="qh"><span class="qn">4</span><span class="qk">서술형</span><span class="qd d-발전">발전</span><span class="qs">6점</span></div><div class="qb">“어떤 자연수 n에 대해 n² − 79n + 1601은 소수가 아니다”가 참임을 보이려고 한다.<br>(1) n = 1, 2, 3일 때의 값을 구하고 소수인지 판정하시오.<br>(2) 반례를 하나 찾아 이 주장이 참임을 보이시오. (힌트: 식이 인수분해되는 n을 노리시오.)</div><div class="work w3" style="height:314px"></div><div class="aline"><span>답</span></div></div></div><div class="foot"><span>세영코딩연구소 / Ph.D KIM</span><span class="r">문제지 2 / 9</span></div></div>
+<div class="page pg-q"><div class="rh"><span><span class="part">문제지</span>주제 25~28 확인 평가</span><span class="r">세영코딩연구소 이산수학 2단계 발전</span></div><div class="blk"><div class="q"><div class="qh"><span class="qn">5</span><span class="qk">서술형</span><span class="qd d-도전">도전</span><span class="qs">7점</span></div><div class="qb">√3이 유리수가 아님을 <b>귀류법</b>으로 증명하시오. 증명 중에 “n²이 3의 배수이면 n도 3의 배수이다”를 쓰게 되는데, 이 사실도 함께 보이시오.</div><div class="work w4" style="height:750px"></div><div class="aline"><span>답</span></div></div></div><div class="foot"><span>세영코딩연구소 / Ph.D KIM</span><span class="r">문제지 3 / 9</span></div></div>
+<div class="page pg-q"><div class="rh"><span><span class="part">문제지</span>주제 25~28 확인 평가</span><span class="r">세영코딩연구소 이산수학 2단계 발전</span></div><div class="blk"><div class="band"><span class="bn">주제 26</span><b>불변량과 홀짝</b><span class="br">6~10번</span></div><div class="q"><div class="qh"><span class="qn">6</span><span class="qk">단답형</span><span class="qd d-기본">기본</span><span class="qs">4점</span></div><div class="qb">칠판에 1부터 30까지 적혀 있다. 두 수 a, b를 지우고 |a − b|를 적는 조작을 한 수만 남을 때까지 반복하면 남는 수는 홀수인가 짝수인가?</div><div class="work w2" style="height:150px"></div><div class="aline"><span>답</span></div></div></div><div class="blk"><div class="q"><div class="qh"><span class="qn">7</span><span class="qk">단답형</span><span class="qd d-기본">기본</span><span class="qs">4점</span></div><div class="qb">컵 7개가 모두 바로 놓여 있다. 한 번에 <b>정확히 2개씩</b> 뒤집을 때 모든 컵을 거꾸로 만들 수 있는가?</div><div class="work w2" style="height:150px"></div><div class="aline"><span>답</span></div></div></div><div class="blk"><div class="q"><div class="qh"><span class="qn">8</span><span class="qk">단답형</span><span class="qd d-기본">기본</span><span class="qs">4점</span></div><div class="qb">컵 7개가 모두 바로 놓여 있다. 한 번에 <b>정확히 3개씩</b> 뒤집을 때 모든 컵을 거꾸로 만들 수 있는가? 가능하다면 최소 몇 번인가?</div><div class="work w3" style="height:216px"></div><div class="aline"><span>답</span></div></div></div><div class="foot"><span>세영코딩연구소 / Ph.D KIM</span><span class="r">문제지 4 / 9</span></div></div>
+<div class="page pg-q"><div class="rh"><span><span class="part">문제지</span>주제 25~28 확인 평가</span><span class="r">세영코딩연구소 이산수학 2단계 발전</span></div><div class="blk"><div class="q"><div class="qh"><span class="qn">9</span><span class="qk">단답·서술</span><span class="qd d-발전">발전</span><span class="qs">6점</span></div><div class="qb">6 × 6 판에서 <b>대각선 방향의 두 모서리</b> 칸을 잘라 냈다.<br>(1) 남은 34칸을 1 × 2 도미노 17개로 덮을 수 있는가?<br>(2) 이유를 색칠로 설명하시오.</div><div class="work w3" style="height:258px"></div><div class="aline"><span>답</span></div></div></div><div class="blk"><div class="q"><div class="qh"><span class="qn">10</span><span class="qk">서술형</span><span class="qd d-도전">도전</span><span class="qs">7점</span></div><div class="qb">[1, 2, 3, 4, 5]를 이웃한 두 수만 바꾸어 [5, 4, 3, 2, 1]로 만들려고 한다.<br>(1) 최소 몇 번 필요한가?<br>(2) 11번으로 만들 수 있는가? 12번은 어떤가? 이유를 홀짝으로 설명하시오.<br>(3) k번 만에 만들 수 있는 k의 조건을 쓰시오.</div><div class="work w4" style="height:358px"></div><div class="aline"><span>답</span></div></div></div><div class="foot"><span>세영코딩연구소 / Ph.D KIM</span><span class="r">문제지 5 / 9</span></div></div>
+<div class="page pg-q"><div class="rh"><span><span class="part">문제지</span>주제 25~28 확인 평가</span><span class="r">세영코딩연구소 이산수학 2단계 발전</span></div><div class="blk"><div class="band"><span class="bn">주제 27</span><b>지식 추론 퍼즐</b><span class="br">11~15번</span></div><div class="q"><div class="qh"><span class="qn">11</span><span class="qk">단답형</span><span class="qd d-기본">기본</span><span class="qs">4점</span></div><div class="qb">빨간 모자 3개, 흰 모자 2개 중 3개를 A, B, C가 쓴다. C는 A·B를, B는 A를 보고 A는 아무도 못 본다. C가 <b>“안다”</b>고 했다면 A와 B의 모자 색은 무엇인가?</div><div class="work w2" style="height:158px"></div><div class="aline"><span>답</span></div></div></div><div class="blk"><div class="q"><div class="qh"><span class="qn">12</span><span class="qk">단답형</span><span class="qd d-기본">기본</span><span class="qs">4점</span></div><div class="qb">같은 상황에서 C가 “모른다”, B가 <b>“안다”</b>고 했다면 A의 모자 색은 무엇인가? 이유도 쓰시오.</div><div class="work w3" style="height:224px"></div><div class="aline"><span>답</span></div></div></div><div class="blk"><div class="q"><div class="qh"><span class="qn">13</span><span class="qk">단답형</span><span class="qd d-기본">기본</span><span class="qs">4점</span></div><div class="qb">지식 추론 퍼즐에서 “모른다”는 대답이 정보가 되는 이유를 한 문장으로 쓰시오.</div><div class="work w2" style="height:158px"></div><div class="aline"><span>답</span></div></div></div><div class="foot"><span>세영코딩연구소 / Ph.D KIM</span><span class="r">문제지 6 / 9</span></div></div>
+<div class="page pg-q"><div class="rh"><span><span class="part">문제지</span>주제 25~28 확인 평가</span><span class="r">세영코딩연구소 이산수학 2단계 발전</span></div><div class="blk"><div class="q"><div class="qh"><span class="qn">14</span><span class="qk">단답·서술</span><span class="qd d-발전">발전</span><span class="qs">6점</span></div><div class="qb">빨간 모자 <b>2개</b>, 흰 모자 <b>2개</b> 중 3개를 A, B, C가 쓴다(시선은 같다).<br>(1) 가능한 세계를 모두 쓰시오.<br>(2) C가 “모른다”고 했을 때 남는 세계를 쓰고, 무엇을 알 수 있는지 쓰시오.<br>(3) 이어서 B는 자기 색을 알 수 있는가?</div><div class="work w4" style="height:295px"></div><div class="aline"><span>답</span></div></div></div><div class="blk"><div class="q"><div class="qh"><span class="qn">15</span><span class="qk">서술형</span><span class="qd d-도전">도전</span><span class="qs">7점</span></div><div class="qb">가와 나가 <b>연속한 두 자연수</b>를 하나씩 받고 자기 수만 본다. 두 수가 연속한다는 사실은 둘 다 안다.<br>가 “모르겠다” → 나 “모르겠다” → 가 “모르겠다” → 나 “모르겠다” → 가 “이제 알겠다”<br>(1) 대답마다 좁혀지는 범위를 차례로 쓰시오.<br>(2) 두 사람이 받은 수로 가능한 경우를 모두 구하시오.</div><div class="work w4" style="height:295px"></div><div class="aline"><span>답</span></div></div></div><div class="foot"><span>세영코딩연구소 / Ph.D KIM</span><span class="r">문제지 7 / 9</span></div></div>
+<div class="page pg-q"><div class="rh"><span><span class="part">문제지</span>주제 25~28 확인 평가</span><span class="r">세영코딩연구소 이산수학 2단계 발전</span></div><div class="blk"><div class="band"><span class="bn">주제 28</span><b>논리 회로와 불 대수</b><span class="br">16~20번</span></div><div class="q"><div class="qh"><span class="qn">16</span><span class="qk">단답형</span><span class="qd d-기본">기본</span><span class="qs">4점</span></div><div class="qb">A = 1, B = 1일 때 NAND, NOR, XOR, XNOR의 값을 각각 구하시오.</div><div class="work w2" style="height:158px"></div><div class="aline"><span>답</span></div></div></div><div class="blk"><div class="q"><div class="qh"><span class="qn">17</span><span class="qk">단답형</span><span class="qd d-기본">기본</span><span class="qs">4점</span></div><div class="qb">전가산기에서 A = 1, B = 1, Cin = 1일 때 합 S와 올림 Cout를 구하시오.</div><div class="work w2" style="height:158px"></div><div class="aline"><span>답</span></div></div></div><div class="blk"><div class="q"><div class="qh"><span class="qn">18</span><span class="qk">단답형</span><span class="qd d-기본">기본</span><span class="qs">4점</span></div><div class="qb">불 대수로 다음을 간단히 하시오.<br>(1) A + A′·B　(2) (A + B)·(A + C)</div><div class="work w3" style="height:224px"></div><div class="aline"><span>답</span></div></div></div><div class="foot"><span>세영코딩연구소 / Ph.D KIM</span><span class="r">문제지 8 / 9</span></div></div>
+<div class="page pg-q"><div class="rh"><span><span class="part">문제지</span>주제 25~28 확인 평가</span><span class="r">세영코딩연구소 이산수학 2단계 발전</span></div><div class="blk"><div class="q"><div class="qh"><span class="qn">19</span><span class="qk">단답·서술</span><span class="qd d-발전">발전</span><span class="qs">6점</span></div><div class="qb">NOR 게이트만으로 회로를 만들려고 한다.<br>(1) NOT을 만들려면 NOR가 몇 개 필요한가? 식을 쓰시오.<br>(2) OR는 몇 개인가?<br>(3) AND는 몇 개인가? 드모르간 법칙으로 설명하시오.</div><div class="work w4" style="height:283px"></div><div class="aline"><span>답</span></div></div></div><div class="blk"><div class="q"><div class="qh"><span class="qn">20</span><span class="qk">서술형</span><span class="qd d-도전">도전</span><span class="qs">7점</span></div><div class="qb">세 입력 A, B, C에 대해 출력이 다음과 같은 함수 f가 있다.<br><b>1인 입력이 정확히 한 개일 때만 1</b>, 나머지는 0<br>(1) 진리표를 적고 <b>곱의 합</b>으로 나타내시오.<br>(2) 이 함수가 A ⊕ B ⊕ C와 같은지 판정하시오.<br>(3) f를 A ⊕ B ⊕ C와 다수결 함수를 써서 나타내시오.</div><div class="work w4" style="height:283px"></div><div class="aline"><span>답</span></div></div></div><div class="foot"><span>세영코딩연구소 / Ph.D KIM</span><span class="r">문제지 9 / 9</span></div></div>
+<div class="page pg-a"><div class="rh"><span><span class="part ans">정답과 해설</span>주제 25~28 확인 평가</span><span class="r">교사용</span></div><div class="blk"><div class="band"><span class="bn">정답</span><b>빠른 정답표</b><span class="br">기본 4점 · 발전 6점 · 도전 7점</span></div><table class="key"><tr><th colspan="2">주제 25 (1~5번)</th><th colspan="2">주제 26 (6~10번)</th><th colspan="2">주제 27 (11~15번)</th><th colspan="2">주제 28 (16~20번)</th></tr><tr><td class="n">1</td><td class="v">n = 16 (289 = 17²)</td><td class="n">6</td><td class="v">홀수</td><td class="n">11</td><td class="v">A와 B 모두 흰색</td><td class="n">16</td><td class="v">NAND 0, NOR 0, XOR 0, XNOR 1</td></tr><tr><td class="n">2</td><td class="v">n = 3 (9 = 3²)</td><td class="n">7</td><td class="v">불가능</td><td class="n">12</td><td class="v">흰색</td><td class="n">17</td><td class="v">S 1, Cout 1</td></tr><tr><td class="n">3</td><td class="v">①, ③, ④</td><td class="n">8</td><td class="v">가능, 최소 3번</td><td class="n">13</td><td class="v">설명</td><td class="n">18</td><td class="v">(1) A + B (2) A + B·C</td></tr><tr><td class="n">4</td><td class="v">(2) n = 80</td><td class="n">9</td><td class="v">(1) 불가능</td><td class="n">14</td><td class="v">(3) 반드시 안다</td><td class="n">19</td><td class="v">(1) 1개 (2) 2개 (3) 3개</td></tr><tr><td class="n">5</td><td class="v">증명</td><td class="n">10</td><td class="v">(1) 10번</td><td class="n">15</td><td class="v">(가 4, 나 5), (가 5, 나 6)</td><td class="n">20</td><td class="v">(2) 다르다</td></tr></table>
+<p class="small">부분 점수는 각 해설의 채점 기준을 따릅니다. 모든 정답은 Python 전수 조사로 확인했습니다.</p></div><div class="blk"><div class="band"><span class="bn">주제 25</span><b>반례와 귀류법</b><span class="br">1~5번</span></div><div class="a"><div class="ahd"><span class="an">1</span><span class="aa">정답 n = 16, 값 289 = 17²</span></div><div class="ab">식에 17이 들어 있으므로 <b>17로 묶이는 n</b>을 노린다. n = 16이면<br>16² + 16 + 17 = 16 × (16 + 1) + 17 = 16 × 17 + 17 = <b>17 × 17 = 289</b><br>n = 1부터 15까지는 19, 23, 29, 37, 47, 59, 73, 89, 107, 127, 149, 173, 199, 227, 257로 모두 소수이므로 가장 작은 반례는 <b>16</b>이다.<div class="trap"><b>자주 하는 오답</b> n = 17을 답하는 경우. 17² + 17 + 17 = 17 × 19도 합성수지만 16이 더 작다. <b>n + 1 = 17</b>이 되는 자리가 먼저 온다.</div></div></div></div><div class="blk"><div class="a"><div class="ahd"><span class="an">2</span><span class="aa">정답 n = 3, 값 9</span></div><div class="ab">2¹ + 1 = 3, 2² + 1 = 5는 소수이지만 2³ + 1 = <b>9 = 3 × 3</b>으로 합성수다.<div class="trap"><b>자주 하는 오답</b> n = 5(33)를 답하는 경우. n = 3에서 이미 깨진다. 참고로 n이 홀수이면 2ⁿ + 1은 항상 3의 배수다.</div></div></div></div><div class="blk"><div class="a"><div class="ahd"><span class="an">3</span><span class="aa">정답 ①, ③, ④</span></div><div class="ab">① <b>거짓</b>. 반례 2.<br>② <b>참</b>. 연속한 세 수에는 2의 배수와 3의 배수가 반드시 들어 있다.<br>③ <b>거짓</b>. 반례 n = 4: 4! + 1 = 25 = 5².<br>④ <b>거짓</b>. 반례 k = 4: 25 = 5².<br>⑤ <b>참</b>. (2m+1)(2n+1) = 2(2mn + m + n) + 1로 홀수다.<div class="trap"><b>자주 하는 오답</b> ③에서 1! + 1 = 2, 2! + 1 = 3, 3! + 1 = 7이 모두 소수라 참으로 넘기는 경우. <b>몇 개가 맞는 것은 증명이 아니다</b>.</div></div></div></div><div class="foot"><span>세영코딩연구소 / Ph.D KIM</span><span class="r">정답과 해설 1 / 7</span></div></div>
+<div class="page pg-a"><div class="rh"><span><span class="part ans">정답과 해설</span>주제 25~28 확인 평가</span><span class="r">교사용</span></div><div class="blk"><div class="a"><div class="ahd"><span class="an">4</span><span class="aa">정답 (1) 1523, 1447, 1373 모두 소수　(2) n = 80</span></div><div class="ab">(1) n = 1이면 1 − 79 + 1601 = 1523, n = 2이면 4 − 158 + 1601 = 1447, n = 3이면 9 − 237 + 1601 = 1373이고 모두 소수다. (실제로 n = 1부터 79까지 모두 소수라서 매우 속기 쉽다.)<br>(2) <b>n = 80</b>을 넣으면<br>80² − 79 × 80 + 1601 = 80 × (80 − 79) + 1601 = 80 + 1601 = 1681 = <b>41²</b><br>따라서 소수가 아니다. 반례가 하나 있으므로 “어떤 n에 대해 소수가 아니다”는 <b>참</b>이다.<br><b>노리는 법</b> n² − 79n = n(n − 79)이므로 n = 80에서 이 부분이 80이 되어 1601과 더해 1681 = 41²이 된다.<div class="trap"><b>자주 하는 오답</b> (2)에서 작은 n부터 하나씩 넣어 보다 포기하는 경우. 79개가 모두 소수이므로 <b>식의 구조를 보고 겨냥</b>해야 한다.</div><div class="rub"><b>채점 기준</b> (1) 세 값과 판정 2점. (2) 반례 n = 80과 계산 3점, “어떤 n”이므로 반례 하나로 참이 된다는 결론 1점.</div></div></div></div><div class="blk"><div class="a"><div class="ahd"><span class="an">5</span><span class="aa">정답 증명</span></div><div class="ab"><b>① 보조 사실.</b> “n²이 3의 배수이면 n도 3의 배수이다”를 <b>대우</b>로 보인다.<br>대우: n이 3의 배수가 아니면 n²도 3의 배수가 아니다.<table class="mini"><tr><th>n</th><th>n²</th><th>3으로 나눈 나머지</th></tr><tr><td>3k + 1</td><td>9k² + 6k + 1 = 3(3k² + 2k) + 1</td><td>1</td></tr><tr><td>3k + 2</td><td>9k² + 12k + 4 = 3(3k² + 4k + 1) + 1</td><td>1</td></tr></table>두 경우 모두 나머지가 1이므로 n²은 3의 배수가 아니다. 대우가 참이므로 보조 사실도 참이다.<br><b>② 본 증명 (귀류법).</b> √3이 유리수라고 가정하자. 그러면 √3 = <sup>a</sup>⁄<sub>b</sub>(a, b는 자연수, <b>기약분수</b>)로 쓸 수 있다.<br>양변을 제곱하면 3 = <sup>a²</sup>⁄<sub>b²</sub>, 곧 <b>a² = 3b²</b>이다.<br>a²이 3의 배수이므로 ①에 의해 a도 3의 배수다. a = 3m으로 두면 9m² = 3b², 곧 <b>b² = 3m²</b>이다.<br>b²도 3의 배수이므로 ①에 의해 b도 3의 배수다.<br><b>③ 모순.</b> a와 b가 둘 다 3의 배수이므로 3으로 약분된다. <b>기약분수라는 가정에 어긋난다</b>.<br><b>④ 결론.</b> 따라서 √3은 유리수가 아니다.<div class="trap"><b>자주 하는 오답</b> ①을 빠뜨리고 “a²이 3의 배수니까 a도 3의 배수”라고 그냥 쓰는 경우. 2의 배수와 달리 <b>근거가 필요한 부분</b>이다. 또 기약분수 조건을 처음에 밝히지 않으면 모순을 만들 수 없다.</div><div class="rub"><b>채점 기준</b> ① 대우로 보조 사실을 증명 3점. ② 기약분수 가정과 a² = 3b² 유도 2점. ③ a, b가 모두 3의 배수임을 보이고 모순 지적 2점.</div></div></div></div><div class="blk"><div class="band"><span class="bn">주제 26</span><b>불변량과 홀짝</b><span class="br">6~10번</span></div><div class="a"><div class="ahd"><span class="an">6</span><span class="aa">정답 홀수</span></div><div class="ab">조작으로 합이 (a + b) − |a − b| = 2 × min(a, b)만큼 줄어드는데 이는 <b>짝수</b>이므로 합의 홀짝은 변하지 않는다.<br>1 + 2 + … + 30 = <sup>30 × 31</sup>⁄<sub>2</sub> = <b>465</b>로 홀수이므로 마지막에 남는 수도 <b>홀수</b>다.<div class="trap"><b>자주 하는 오답</b> 수의 개수 30이 짝수라서 결과도 짝수라고 답하는 경우. 불변량은 개수가 아니라 <b>합의 홀짝</b>이다.</div></div></div></div><div class="foot"><span>세영코딩연구소 / Ph.D KIM</span><span class="r">정답과 해설 2 / 7</span></div></div>
+<div class="page pg-a"><div class="rh"><span><span class="part ans">정답과 해설</span>주제 25~28 확인 평가</span><span class="r">교사용</span></div><div class="blk"><div class="a"><div class="ahd"><span class="an">7</span><span class="aa">정답 불가능</span></div><div class="ab">거꾸로 놓인 컵의 수는 한 번에 2 늘거나 2 줄거나 그대로이므로 <b>홀짝이 보존</b>된다. 시작은 0개(짝수), 목표는 7개(홀수)로 홀짝이 다르므로 불가능하다.<div class="trap"><b>자주 하는 오답</b> “여러 번 해 보니 안 되더라”로 끝내는 경우. 홀짝이 <b>모든 방법을 한꺼번에 막는</b> 이유다.</div></div></div></div><div class="blk"><div class="a"><div class="ahd"><span class="an">8</span><span class="aa">정답 가능, 최소 3번</span></div><div class="ab">3개씩 뒤집으면 거꾸로 놓인 컵의 수가 <b>홀수만큼</b> 변하므로 홀짝이 매번 바뀐다. 0(짝수)에서 7(홀수)로 가려면 조작 횟수가 <b>홀수</b>여야 한다.<br>한 번에 3개씩 뒤집으므로 k번이면 뒤집은 횟수의 합이 3k다. 컵 7개가 모두 홀수 번 뒤집혀야 하므로 3k ≥ 7, 곧 k ≥ 3이다. k = 3은 홀수이므로 홀짝 조건도 만족한다.<br>실제로 <b>3번</b>이면 된다. (1,2,3) → (1,4,5) → (1,6,7)을 뒤집으면 1번 컵은 3번, 나머지 여섯 컵은 1번씩 뒤집혀 모두 홀수 번이 된다. 따라서 일곱 컵이 모두 거꾸로가 된다.<div class="trap"><b>자주 하는 오답</b> 홀짝만 보고 끝내거나, 컵마다 정확히 한 번씩만 뒤집어야 한다고 생각해 불가능하다고 답하는 경우. <b>같은 컵을 여러 번 뒤집어도 되고, 홀수 번이면 거꾸로가 된다</b>.</div></div></div></div><div class="blk"><div class="a"><div class="ahd"><span class="an">9</span><span class="aa">정답 (1) 불가능</span></div><div class="ab">(2) 6 × 6 판을 체스판처럼 칠하면 흰 18칸, 검은 18칸이다. 도미노 하나는 이웃한 두 칸을 덮는데 <b>이웃한 칸은 색이 다르므로</b> 항상 흰 1칸과 검은 1칸을 덮는다.<br>따라서 도미노 17개는 흰 17칸과 검은 17칸을 덮는다.<br><b>대각선 방향의 두 모서리는 같은 색</b>이므로 잘라 내면 한 색 16칸, 다른 색 18칸이 남는다. 개수가 달라 17개로 덮을 수 없다. 따라서 <b>불가능</b>하다.<div class="trap"><b>자주 하는 오답</b> “34 = 2 × 17이니 가능하다”고 답하는 경우. 개수가 맞는 것과 실제로 덮이는 것은 다르다.</div><div class="rub"><b>채점 기준</b> (1) 판정 2점. (2) 도미노가 두 색을 하나씩 덮음 2점, 두 모서리가 같은 색이라 16 대 18이 됨 2점.</div></div></div></div><div class="blk"><div class="a"><div class="ahd"><span class="an">10</span><span class="aa">정답 (1) 10번　(2) 11번 불가능, 12번 가능　(3) k ≥ 10이고 k가 짝수</span></div><div class="ab">(1) [1,2,3,4,5]의 역순쌍은 0개, [5,4,3,2,1]은 5C2 = <b>10개</b>다. 인접 교환 한 번이 역순쌍을 정확히 1 바꾸므로 최소 <b>10번</b>이다.<br>(2) 교환할 때마다 역순쌍이 1 늘거나 1 줄므로 <b>홀짝이 매번 바뀐다</b>. 0에서 10(짝수)으로 가려면 교환 횟수도 짝수여야 한다. 따라서 <b>11번(홀수)은 불가능</b>하고 <b>12번은 가능</b>하다. 10번 만에 만든 뒤 아무 이웃이나 두 번 왕복하면 12번이 된다.<br>(3) <b>k ≥ 10이고 k와 10의 홀짝이 같아야</b> 하므로 k는 10 이상의 짝수다.<div class="trap"><b>자주 하는 오답</b> (2)에서 “11번은 10번보다 많으니 가능하다”고 답하는 경우. 횟수가 많다고 되는 것이 아니라 <b>홀짝이 맞아야</b> 한다.</div><div class="rub"><b>채점 기준</b> (1) 역순쌍으로 최소 횟수를 구함 3점. (2) 홀짝이 매번 바뀜을 설명하고 두 경우 판정 3점. (3) 1점.</div></div></div></div><div class="foot"><span>세영코딩연구소 / Ph.D KIM</span><span class="r">정답과 해설 3 / 7</span></div></div>
+<div class="page pg-a"><div class="rh"><span><span class="part ans">정답과 해설</span>주제 25~28 확인 평가</span><span class="r">교사용</span></div><div class="blk"><div class="band"><span class="bn">주제 27</span><b>지식 추론 퍼즐</b><span class="br">11~15번</span></div><div class="a"><div class="ahd"><span class="an">11</span><span class="aa">정답 A와 B 모두 흰색</span></div><div class="ab">C가 알 수 있는 경우는 A와 B가 <b>둘 다 흰색</b>일 때뿐이다. 흰 모자는 2개뿐이므로 앞의 두 사람이 다 쓰면 C는 반드시 빨강이기 때문이다. 다른 경우에는 C의 색이 빨강일 수도 흰색일 수도 있어 알 수 없다.<div class="trap"><b>자주 하는 오답</b> “C가 빨강이다”만 답하는 경우. 문제는 <b>A와 B의 색</b>을 묻는다.</div></div></div></div><div class="blk"><div class="a"><div class="ahd"><span class="an">12</span><span class="aa">정답 흰색</span></div><div class="ab">C의 “모른다”로 <b>A와 B가 둘 다 흰색인 경우</b>가 지워진다. 곧 “A와 B가 둘 다 흰색은 아니다”를 모두가 알게 된다.<br>B는 A를 본다. A = W라면 B 자신은 흰색일 수 없으므로(둘 다 흰색이 되어 C가 알았을 것) <b>자기가 빨강임을 확정</b>할 수 있다. A = R이라면 B는 빨강도 흰색도 가능해 알 수 없다.<br>B가 안다고 했으므로 <b>A는 흰색</b>이다.<div class="trap"><b>자주 하는 오답</b> B가 안다고 했으니 B의 색을 답하는 경우. 문제는 A의 색을 묻는다. (참고로 이때 B는 빨강이다.)</div></div></div></div><div class="blk"><div class="a"><div class="ahd"><span class="an">13</span><span class="aa">정답 “모른다”는 “내가 알 수 있었을 상황이 아니다”라는 뜻이므로, 그 사람이 알 수 있었을 세계를 지울 수 있기 때문</span></div><div class="ab">정보가 없다는 뜻이 아니라 <b>가능한 세계를 줄여 주는</b> 정보다. 지우고 남은 세계에서 다음 사람이 추론한다.</div></div></div><div class="blk"><div class="a"><div class="ahd"><span class="an">14</span><span class="aa">정답 (1) 6가지　(2) 4가지, A와 B의 색이 다르다　(3) 반드시 안다</span></div><div class="ab">(1) 빨강 2개, 흰색 2개이므로 <b>R이 3개이거나 W가 3개인 세계는 없다</b>. (A, B, C)로 적으면<table class="mini"><tr><th>번호</th><th>①</th><th>②</th><th>③</th><th>④</th><th>⑤</th><th>⑥</th></tr><tr><td>(A, B, C)</td><td>RRW</td><td>RWR</td><td>RWW</td><td>WRR</td><td>WRW</td><td>WWR</td></tr></table>모두 <b>6가지</b>다.<br>(2) C는 A와 B를 본다. A, B가 <b>둘 다 R</b>이면 남은 모자가 W뿐이라 C는 안다(① RRW). <b>둘 다 W</b>여도 C는 R로 확정된다(⑥ WWR). C가 모른다고 했으므로 이 둘이 지워지고 <b>②, ③, ④, ⑤의 4가지</b>가 남는다.<table class="mini"><tr><th>남은 세계</th><th>RWR</th><th>RWW</th><th>WRR</th><th>WRW</th></tr><tr><td>A와 B</td><td>R, W</td><td>R, W</td><td>W, R</td><td>W, R</td></tr></table>네 세계 모두 <b>A와 B의 색이 서로 다르다</b>. 이것이 C의 대답에서 얻는 정보다.<br>(3) B는 A를 본다. (2)에서 A와 B의 색이 다름을 알았으므로, A가 R이면 B는 W, A가 W이면 B는 R로 <b>반드시 정해진다</b>. 따라서 B는 <b>항상 안다</b>.<div class="trap"><b>자주 하는 오답</b> (1)에서 RRR이나 WWW를 넣는 경우. 각 색이 2개뿐이므로 세 개를 같은 색으로 쓸 수 없다.</div><div class="rub"><b>채점 기준</b> (1) 6가지 2점, (2) 남는 4가지와 “색이 다르다” 3점, (3) 1점.</div></div></div></div><div class="foot"><span>세영코딩연구소 / Ph.D KIM</span><span class="r">정답과 해설 4 / 7</span></div></div>
+<div class="page pg-a"><div class="rh"><span><span class="part ans">정답과 해설</span>주제 25~28 확인 평가</span><span class="r">교사용</span></div><div class="blk"><div class="a"><div class="ahd"><span class="an">15</span><span class="aa">정답 (가 4, 나 5), (가 5, 나 6)</span></div><div class="ab">(1) 대답마다 범위가 한 칸씩 올라간다.<table class="mini"><tr><th>대답</th><th>알아내는 것</th><th>누적 조건</th></tr><tr><td>가 “모르겠다”</td><td>가가 1이면 나는 2로 확정</td><td><b>가 ≥ 2</b></td></tr><tr><td>나 “모르겠다”</td><td>나가 1이면 가는 2, 나가 2이면 가는 3으로 확정(가 ≥ 2이므로)</td><td><b>나 ≥ 3</b></td></tr><tr><td>가 “모르겠다”</td><td>가가 2이면 나는 3, 가가 3이면 나는 4로 확정(나 ≥ 3이므로)</td><td><b>가 ≥ 4</b></td></tr><tr><td>나 “모르겠다”</td><td>나가 3이면 가는 4, 나가 4이면 가는 5로 확정(가 ≥ 4이므로)</td><td><b>나 ≥ 5</b></td></tr><tr><td>가 “알겠다”</td><td>가가 4이면 나는 3 또는 5인데 나 ≥ 5이므로 5로 확정<br>가가 5이면 나는 4 또는 6인데 나 ≥ 5이므로 6으로 확정<br>가가 6 이상이면 두 후보가 모두 5 이상이라 정할 수 없다</td><td><b>가 = 4 또는 5</b></td></tr></table>(2) 가능한 경우는 <b>(가 4, 나 5)</b>와 <b>(가 5, 나 6)</b>이다.<br><b>규칙</b> “모르겠다”가 한 번 늘 때마다 조건이 1씩 올라가고, “알겠다”가 나오는 순간 <b>딱 두 가지</b>로 정해진다.<div class="trap"><b>자주 하는 오답</b> 범위를 “가 ≥ 2 → 나 ≥ 2”처럼 같은 값으로 두는 경우. 상대의 조건을 쓰면 <b>한 칸씩 올라간다</b>는 점을 놓치기 쉽다.</div><div class="rub"><b>채점 기준</b> (1) 다섯 대답의 조건을 차례로 바르게 씀 5점(한 줄 틀릴 때마다 1점 감점), (2) 두 경우 2점.</div></div></div></div><div class="blk"><div class="band"><span class="bn">주제 28</span><b>논리 회로와 불 대수</b><span class="br">16~20번</span></div><div class="a"><div class="ahd"><span class="an">16</span><span class="aa">정답 NAND 0, NOR 0, XOR 0, XNOR 1</span></div><div class="ab">A·B = 1이므로 NAND = 0. A + B = 1이므로 NOR = 0. 두 값이 같으므로 XOR = 0, XNOR = 1.<table class="gate"><tr><th>A</th><th>B</th><th>AND</th><th>OR</th><th>NAND</th><th>NOR</th><th>XOR</th><th>XNOR</th></tr><tr><td class="o">1</td><td class="o">1</td><td class="o">1</td><td class="o">1</td><td class="z">0</td><td class="z">0</td><td class="z">0</td><td class="o">1</td></tr></table><div class="trap"><b>자주 하는 오답</b> NAND를 “NOT A AND B”로 읽는 경우. NAND는 <b>AND의 결과를 뒤집는</b> 것이다.</div></div></div></div><div class="blk"><div class="a"><div class="ahd"><span class="an">17</span><span class="aa">정답 합 1, 올림 1</span></div><div class="ab">S = A ⊕ B ⊕ Cin = 1 ⊕ 1 ⊕ 1 = <b>1</b> (1인 입력이 3개로 홀수).<br>Cout는 셋 중 두 개 이상이 1이면 1이므로 <b>1</b>이다. 확인: 1 + 1 + 1 = 3 = 11₍₂₎이므로 1의 자리 1, 2의 자리 1.<div class="trap"><b>자주 하는 오답</b> S를 0으로 답하는 경우. XOR를 이어 쓰면 1의 개수가 <b>홀수</b>일 때 1이다.</div></div></div></div><div class="foot"><span>세영코딩연구소 / Ph.D KIM</span><span class="r">정답과 해설 5 / 7</span></div></div>
+<div class="page pg-a"><div class="rh"><span><span class="part ans">정답과 해설</span>주제 25~28 확인 평가</span><span class="r">교사용</span></div><div class="blk"><div class="a"><div class="ahd"><span class="an">18</span><span class="aa">정답 (1) A + B　(2) A + B·C</span></div><div class="ab">(1) A + A′·B에서 경우를 나눈다. A = 1이면 전체가 1이고, A = 0이면 A′·B = B가 된다. 곧 결과는 <b>A + B</b>와 같다.<table class="gate"><tr><th>A</th><th>B</th><th>A′·B</th><th>A + A′·B</th><th>A + B</th></tr><tr><td class="z">0</td><td class="z">0</td><td class="z">0</td><td class="z">0</td><td class="z">0</td></tr><tr><td class="z">0</td><td class="o">1</td><td class="o">1</td><td class="o">1</td><td class="o">1</td></tr><tr><td class="o">1</td><td class="z">0</td><td class="z">0</td><td class="o">1</td><td class="o">1</td></tr><tr><td class="o">1</td><td class="o">1</td><td class="z">0</td><td class="o">1</td><td class="o">1</td></tr></table>(2) 분배법칙을 거꾸로 쓰면 (A + B)·(A + C) = A + B·C다. 전개해도 확인된다.<br>A·A + A·C + B·A + B·C = A + A·C + A·B + B·C = A(1 + C + B) + B·C = <b>A + B·C</b><div class="trap"><b>자주 하는 오답</b> (1)을 A·B로 답하는 경우. A′·B는 A가 0일 때만 살아나므로 A와 <b>합쳐지면</b> A + B가 된다.</div></div></div></div><div class="blk"><div class="a"><div class="ahd"><span class="an">19</span><span class="aa">정답 (1) 1개　(2) 2개　(3) 3개</span></div><div class="ab">NOR(X, Y) = (X + Y)′ 이다.<br>(1) <b>NOT A = NOR(A, A)</b> = (A + A)′ = A′ 이므로 <b>1개</b>.<br>(2) NOR(A, B) = (A + B)′ 이므로 이것을 <b>한 번 더 뒤집으면</b> A + B가 된다. 뒤집기에 NOR 하나가 더 들어가 <b>2개</b>다.<br>A + B = NOR(NOR(A, B), NOR(A, B))<br>(3) 드모르간 법칙 (A′ + B′)′ = A·B를 쓴다. 곧 <b>A·B = NOR(A′, B′)</b>이고, A′과 B′을 만드는 데 NOR 1개씩, 마지막 NOR 1개로 모두 <b>3개</b>다.<table class="gate"><tr><th>A</th><th>B</th><th>A′</th><th>B′</th><th>NOR(A′, B′)</th><th>A·B</th></tr><tr><td class="z">0</td><td class="z">0</td><td class="o">1</td><td class="o">1</td><td class="z">0</td><td class="z">0</td></tr><tr><td class="z">0</td><td class="o">1</td><td class="o">1</td><td class="z">0</td><td class="z">0</td><td class="z">0</td></tr><tr><td class="o">1</td><td class="z">0</td><td class="z">0</td><td class="o">1</td><td class="z">0</td><td class="z">0</td></tr><tr><td class="o">1</td><td class="o">1</td><td class="z">0</td><td class="z">0</td><td class="o">1</td><td class="o">1</td></tr></table>마지막 두 열이 네 행 모두 같으므로 맞다.<br><b>NAND와의 비교</b> NAND는 NOT 1개, AND 2개, OR 3개였다. NOR는 정확히 <b>AND와 OR가 뒤바뀐</b> 모양이다.<div class="trap"><b>자주 하는 오답</b> (3)에서 NOR한 뒤 뒤집으면 AND가 된다고 답하는 경우. 뒤집으면 OR가 되고, AND를 얻으려면 <b>입력을 먼저 뒤집어야</b> 한다.</div><div class="rub"><b>채점 기준</b> (1) 1점, (2) 2점, (3) 드모르간 근거와 개수 3점.</div></div></div></div><div class="foot"><span>세영코딩연구소 / Ph.D KIM</span><span class="r">정답과 해설 6 / 7</span></div></div>
+<div class="page pg-a"><div class="rh"><span><span class="part ans">정답과 해설</span>주제 25~28 확인 평가</span><span class="r">교사용</span></div><div class="blk"><div class="a"><div class="ahd"><span class="an">20</span><span class="aa">정답 (1) 곱의 합 참고　(2) 다르다　(3) f = (A ⊕ B ⊕ C) · (다수결)′</span></div><div class="ab">(1) 1인 입력이 정확히 한 개인 행은 (0,0,1), (0,1,0), (1,0,0)이다.<table class="gate"><tr><th>A</th><th>B</th><th>C</th><th>f</th><th>항</th></tr><tr><td class="z">0</td><td class="z">0</td><td class="z">0</td><td class="z">0</td><td class="lab">—</td></tr><tr><td class="z">0</td><td class="z">0</td><td class="o">1</td><td class="o">1</td><td class="lab">A′·B′·C</td></tr><tr><td class="z">0</td><td class="o">1</td><td class="z">0</td><td class="o">1</td><td class="lab">A′·B·C′</td></tr><tr><td class="z">0</td><td class="o">1</td><td class="o">1</td><td class="z">0</td><td class="lab">—</td></tr><tr><td class="o">1</td><td class="z">0</td><td class="z">0</td><td class="o">1</td><td class="lab">A·B′·C′</td></tr><tr><td class="o">1</td><td class="z">0</td><td class="o">1</td><td class="z">0</td><td class="lab">—</td></tr><tr><td class="o">1</td><td class="o">1</td><td class="z">0</td><td class="z">0</td><td class="lab">—</td></tr><tr><td class="o">1</td><td class="o">1</td><td class="o">1</td><td class="z">0</td><td class="lab">—</td></tr></table>f = A′·B′·C + A′·B·C′ + A·B′·C′<br>(2) <b>다르다.</b> A ⊕ B ⊕ C는 1인 입력이 <b>홀수 개</b>일 때 1이므로 1개일 때뿐 아니라 <b>3개일 때도 1</b>이다. 곧 (1,1,1)에서 XOR는 1이지만 f는 0이다. 나머지 일곱 행은 같다.<br>(3) 다수결 M = A·B + B·C + C·A는 1인 입력이 <b>두 개 이상</b>일 때 1이다. (1,1,1)에서만 XOR와 f가 다르고 그때 M = 1이므로<table class="gate"><tr><th>A</th><th>B</th><th>C</th><th>XOR</th><th>M</th><th>M′</th><th>XOR · M′</th><th>f</th></tr><tr><td class="z">0</td><td class="z">0</td><td class="z">0</td><td class="z">0</td><td class="z">0</td><td class="o">1</td><td class="z">0</td><td class="z">0</td></tr><tr><td class="z">0</td><td class="z">0</td><td class="o">1</td><td class="o">1</td><td class="z">0</td><td class="o">1</td><td class="o">1</td><td class="o">1</td></tr><tr><td class="z">0</td><td class="o">1</td><td class="z">0</td><td class="o">1</td><td class="z">0</td><td class="o">1</td><td class="o">1</td><td class="o">1</td></tr><tr><td class="z">0</td><td class="o">1</td><td class="o">1</td><td class="z">0</td><td class="o">1</td><td class="z">0</td><td class="z">0</td><td class="z">0</td></tr><tr><td class="o">1</td><td class="z">0</td><td class="z">0</td><td class="o">1</td><td class="z">0</td><td class="o">1</td><td class="o">1</td><td class="o">1</td></tr><tr><td class="o">1</td><td class="z">0</td><td class="o">1</td><td class="z">0</td><td class="o">1</td><td class="z">0</td><td class="z">0</td><td class="z">0</td></tr><tr><td class="o">1</td><td class="o">1</td><td class="z">0</td><td class="z">0</td><td class="o">1</td><td class="z">0</td><td class="z">0</td><td class="z">0</td></tr><tr><td class="o">1</td><td class="o">1</td><td class="o">1</td><td class="o">1</td><td class="o">1</td><td class="z">0</td><td class="z">0</td><td class="z">0</td></tr></table>마지막 두 열이 여덟 행 모두 같으므로 <b>f = (A ⊕ B ⊕ C) · M′</b>이다.<div class="trap"><b>자주 하는 오답</b> (2)에서 진리표 여덟 행을 다 비교하지 않고 몇 행만 보고 “같다”고 답하는 경우. <b>(1,1,1) 한 행이 갈림길</b>이다.</div><div class="rub"><b>채점 기준</b> (1) 진리표와 곱의 합 3점, (2) (1,1,1)에서 다름을 지적 2점, (3) 식과 진리표 확인 2점.</div></div></div></div><div class="foot"><span>세영코딩연구소 / Ph.D KIM</span><span class="r">정답과 해설 7 / 7</span></div></div>
+<script>
+document.querySelectorAll('.bar button').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.body.classList.remove('only-q','only-a');
+    if(b.dataset.mode) document.body.classList.add(b.dataset.mode);
+    window.print();
+  });
+});
+window.addEventListener('afterprint',function(){document.body.classList.remove('only-q','only-a');});
+</script></body></html>
