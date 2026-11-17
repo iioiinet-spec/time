@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>12 이분 탐색 — 중등정보올림피아드 자료구조</title>
+<style>
+  :root{
+    --navy:#0f2a4a; --navy-2:#1b3f6b; --teal:#0d7c74; --teal-2:#0fa39a;
+    --ink:#1c2430; --muted:#5b6876; --line:#d7dee6; --soft:#f4f7fa;
+    --soft-2:#eef4f3; --accent:#b4531a; --warm:#fff6ec; --red:#9d2f3f;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:"Noto Sans CJK KR","Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+    color:var(--ink); font-size:10pt; line-height:1.64; background:#e9edf1;}
+  .page{width:210mm;min-height:297mm;padding:16mm 16mm 18mm 16mm;margin:0 auto 8mm auto;background:#fff;position:relative;}
+
+  .cover{display:flex;flex-direction:column;justify-content:space-between;
+    background:linear-gradient(160deg,#143a2e 0%,#12503f 45%,#0f2a4a 100%);color:#fff;}
+  .cover .eyebrow{font-size:9.5pt;letter-spacing:.3em;color:#9fe3c4;font-weight:600;}
+  .cover-rule{height:3px;width:52mm;background:#3fcf9a;margin:6mm 0 8mm 0;}
+  .cover .chno{font-size:46pt;font-weight:800;color:#9fe3c4;line-height:1;}
+  .cover h1{font-size:25pt;line-height:1.3;margin:3mm 0 0 0;font-weight:800;}
+  .cover .sub{margin-top:7mm;font-size:11pt;color:#cfe3f2;line-height:1.85;}
+  .cover-goal{margin-top:9mm;background:rgba(255,255,255,.1);border-left:4px solid #3fcf9a;padding:5mm 6mm;}
+  .cover-goal h3{margin:0 0 2.5mm 0;font-size:10.5pt;color:#9fe3c4;}
+  .cover-goal ul{margin:0;padding-left:5mm;font-size:10pt;color:#eaf3fa;}
+  .cover-goal li{margin-bottom:1.5mm;}
+  .cover-bottom{font-size:9.6pt;color:#cfe3f2;}
+  .cover-bottom .brand{font-size:11.5pt;color:#fff;font-weight:700;}
+
+  h2.sec{font-size:14pt;color:var(--navy);margin:0 0 4mm 0;padding-bottom:2.2mm;
+    border-bottom:2.5px solid var(--navy);font-weight:800;}
+  h2.sec .num{display:inline-block;background:var(--teal);color:#fff;font-size:10pt;
+    padding:.6mm 2.6mm;border-radius:1mm;margin-right:3mm;vertical-align:2px;}
+  h3.sub{font-size:11.2pt;color:var(--navy-2);margin:4.6mm 0 2.3mm 0;font-weight:700;
+    padding-left:3mm;border-left:4px solid var(--teal-2);}
+  h3.sub:first-of-type{margin-top:1mm;}
+  h4.mini{font-size:10.2pt;color:var(--navy);margin:3.6mm 0 1.8mm 0;font-weight:700;}
+  p{margin:0 0 2.7mm 0;}
+  ul,ol{margin:0 0 2.8mm 0;padding-left:5.5mm;}
+  li{margin-bottom:1.2mm;}
+  .lead{font-size:10.4pt;color:var(--muted);margin-bottom:4.2mm;}
+  strong{color:var(--navy);}
+  em.hl{font-style:normal;background:#ffe9a8;color:var(--navy);font-weight:700;
+    padding:.2mm .8mm;border-radius:1mm;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+
+  table{width:100%;border-collapse:collapse;font-size:8.8pt;margin:0 0 3.2mm 0;}
+  th,td{border:1px solid var(--line);padding:1.8mm 2.1mm;vertical-align:top;}
+  thead th{background:var(--navy);color:#fff;font-weight:700;text-align:center;font-size:8.7pt;}
+  tbody tr:nth-child(even){background:#fafcfd;}
+  td.c,th.c{text-align:center;}
+  td.k{background:var(--soft-2);font-weight:700;color:var(--navy);white-space:nowrap;}
+  td.tt{font-weight:700;color:var(--navy);}
+  td.m{font-family:"D2Coding","Consolas","DejaVu Sans Mono",monospace;}
+  .ok{color:var(--teal);font-weight:800;}
+  .no{color:var(--red);font-weight:800;}
+  .mid{color:var(--accent);font-weight:800;}
+
+  .box{border:1px solid var(--line);background:var(--soft);padding:3.4mm 3.8mm;margin:0 0 3.4mm 0;border-radius:1.5mm;}
+  .box h4{margin:0 0 2mm 0;font-size:9.8pt;color:var(--navy);font-weight:800;}
+  .box.teal{background:var(--soft-2);border-color:#b9d9d5;}
+  .box.warm{background:var(--warm);border-color:#f0d6b4;}
+  .box.warm h4{color:var(--accent);}
+  .box p:last-child,.box ul:last-child{margin-bottom:0;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:4mm;}
+  .qa{border-left:4px solid var(--teal);background:var(--soft-2);padding:3mm 4mm;margin:0 0 3.4mm 0;}
+  .qa .q{font-weight:800;color:var(--navy);margin-bottom:1.4mm;}
+
+  .ex{border:1px solid var(--line);margin:0 0 3.6mm 0;border-radius:1.5mm;overflow:hidden;}
+  .ex-h{background:var(--navy);color:#fff;padding:1.7mm 3.4mm;font-weight:700;font-size:9.4pt;}
+  .ex-h .tag{background:var(--teal-2);color:#06302d;border-radius:1mm;padding:.3mm 2mm;font-size:8pt;margin-left:2.5mm;}
+  .ex-b{padding:3mm 3.8mm;}
+  .ex-b .sol{margin-top:2.4mm;padding-top:2.4mm;border-top:1px dashed var(--line);}
+  .ex-b .sol b{color:var(--teal);}
+  .ex-b p:last-child,.ex-b table:last-child,.ex-b ul:last-child,.ex-b pre:last-child{margin-bottom:0;}
+  .prob{border:1px solid var(--line);padding:2.5mm 3.3mm;margin-bottom:2.5mm;border-radius:1.5mm;background:#fff;}
+  .prob .pn{display:inline-block;background:var(--soft-2);color:var(--navy);font-weight:800;
+    border-radius:1mm;padding:.2mm 2mm;margin-right:2mm;font-size:8.6pt;}
+
+  pre{background:#0f2a4a;color:#e6eef6;padding:3mm 3.8mm;border-radius:1.5mm;
+    font-family:"D2Coding","Consolas","DejaVu Sans Mono",monospace;font-size:7.7pt;line-height:1.48;margin:0 0 3mm 0;}
+  pre .cm{color:#86b8a5;} pre .kw{color:#8fd6ff;} pre .fn{color:#ffd79a;} pre .st{color:#ffb4a2;}
+  pre.out{background:#f4f7fa;color:#1c2430;border:1px solid var(--line);}
+  pre.out .lbl{color:var(--teal);font-weight:700;}
+  pre.out .bad{color:var(--red);font-weight:700;}
+  code.inl{background:var(--soft-2);color:var(--navy);padding:.2mm 1.2mm;border-radius:1mm;
+    font-family:"D2Coding","Consolas","DejaVu Sans Mono",monospace;font-size:8.6pt;}
+
+  figure{margin:0 0 3.6mm 0;text-align:center;}
+  figure svg{max-width:100%;height:auto;}
+  figcaption{font-size:8.4pt;color:var(--muted);margin-top:1.4mm;}
+  .chk{list-style:none;padding-left:0;}
+  .chk li{padding-left:6mm;position:relative;margin-bottom:1.5mm;}
+  .chk li:before{content:"□";position:absolute;left:0;color:var(--teal);font-size:11pt;line-height:1.2;}
+
+  .foot{position:absolute;left:16mm;right:16mm;bottom:8mm;border-top:1px solid var(--line);
+    padding-top:2mm;font-size:8pt;color:var(--muted);display:flex;justify-content:space-between;}
+  .foot b{color:var(--navy);font-weight:700;}
+
+  @media print{
+    body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .page{margin:0;width:auto;height:auto;min-height:0;padding:0;break-after:page;overflow:visible;}
+    .page:last-child{break-after:auto;}
+    .cover{height:266mm;padding:16mm 14mm;}
+    .foot{display:none;}
+    tr,.box,.qa,.ex,.prob,pre,figure,.grid2{break-inside:avoid;}
+    thead{display:table-header-group;}
+    h2.sec,h3.sub,h4.mini{break-after:avoid;}
+  }
+  @page{size:A4;}
+
+/* === 추가: 화면 인쇄 도구 === */
+.print-toolbar{position:sticky;top:0;z-index:90;display:flex;justify-content:center;gap:10px;
+  background:#fff;border-bottom:1px solid #c8d2dd;padding:10px 14px;color:#111;}
+.print-toolbar button{font:700 14px "Malgun Gothic",sans-serif;background:#135d54;color:#fff;
+  border:0;border-radius:7px;padding:10px 20px;cursor:pointer;}
+.print-toolbar span{align-self:center;font-size:13px;color:#333;}
+@media print{
+ @page{size:A4;margin:0;}
+ html,body{background:#fff!important;overflow:visible!important;}
+ .print-toolbar{display:none!important;}
+ body{font-size:10pt;line-height:1.53;color:#111!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+ .page,.cover{box-sizing:border-box!important;width:210mm!important;height:297mm!important;
+   min-height:297mm!important;padding:15mm 15mm 18mm 15mm!important;margin:0!important;
+   break-after:page!important;page-break-after:always!important;overflow:visible!important;}
+ .page:last-of-type{break-after:auto!important;page-break-after:auto!important;}
+ body :is(div,section,p,pre,table,th,td,tr,span,em,strong,b,code,li,ul,ol,figure,figcaption,h1,h2,h3,h4){
+    background-color:transparent!important;background-image:none!important;
+    box-shadow:none!important;text-shadow:none!important;color:#111!important;}
+ .page,.cover,thead th,.cover-goal,.box,.qa,.ex-h,.prob,.ex-h,.ex-h .tag,
+  pre,pre.out,td.k,em.hl,code.inl,h2.sec .num{background:#fff!important;
+  color:#111!important;}
+ pre,pre.out{border:1px solid #bbb!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;
+  font-size:7.7pt!important;line-height:1.46!important;}
+ table{font-size:8.7pt!important;}
+ th,td{border-color:#b5b5b5!important;padding:1.6mm 1.9mm!important;}
+ thead th{border-bottom:1.2px solid #333!important;}
+ .ex-h,.q-h{border-bottom:1px solid #555!important;}
+ h2.sec{border-color:#333!important;}
+ h3.sub{border-color:#555!important;}
+ .foot{display:none!important;}
+ svg text, svg tspan {fill:#111!important;stroke:none!important;}
+ svg rect{fill:#fff!important;stroke:#555!important;}
+ svg line,svg path{stroke:#333!important;}
+ svg circle{stroke:#222!important;fill:#fff!important;}
+ svg marker path{fill:#222!important;}
+ svg{filter:grayscale(1)!important;}
+ figure{break-inside:avoid!important;}
+ .box,.qa,.ex,.prob,pre,figure,table,.grid2 {break-inside:avoid!important;}
+}
+</style>
+</head>
+<body>
+<div class="print-toolbar"><button type="button" onclick="window.print()">A4 잉크 절약 인쇄 / PDF 저장</button><span>인쇄 시 표지·코드·표·그림의 배경색을 제거합니다.</span></div>
+
+<!-- ============ 표지 ============ -->
+<section class="page cover">
+  <div>
+    <div class="eyebrow">PART 2 · 정렬·탐색 기반 기법</div>
+    <div class="cover-rule"></div>
+    <div class="chno">12</div>
+    <h1>이분 탐색</h1>
+    <div class="sub">
+      정렬 전제 ‖ 반열린 구간 ‖ lower_bound · upper_bound ‖ off-by-one의 발생 원리<br>
+      난이도 ★★★☆☆ · 12주차 · 100분 2차시 · <strong>이후 전 단원의 전제</strong>
+    </div>
+    <div class="cover-goal">
+      <h3>이 장을 마치면 할 수 있는 것</h3>
+      <ul>
+        <li><code>lower_bound</code>와 <code>upper_bound</code>를 백지에서 틀리지 않고 쓸 수 있다</li>
+        <li>두 함수의 차이가 <strong>부등호 하나</strong>임을 설명할 수 있다</li>
+        <li>개수 세기를 <code>upper − lower</code>로 구할 수 있다</li>
+        <li>무한 루프와 off-by-one이 <strong>어디서 생기는지</strong> 지목할 수 있다</li>
+        <li>자기 코드를 <strong>전수 검증</strong>으로 확인할 수 있다</li>
+      </ul>
+    </div>
+  </div>
+  <div class="cover-bottom">
+    <div class="brand">세영코딩연구소</div>
+    저자 : 컴퓨터공학박사 KIM<br>
+    DS-C 시리즈 · 중등정보올림피아드 자료구조 교재
+  </div>
+</section>
+
+<!-- ============ 1 ============ -->
+<section class="page">
+  <h2 class="sec"><span class="num">1</span>왜 필요한가</h2>
+  <p class="lead">11장에서 정렬을 손에 넣었다. 이 장은 <strong>정렬되어 있다는 사실을 무기로 쓰는 첫 기법</strong>이다. 그리고 설계서가 적었듯 <em class="hl">“이분 탐색의 경계 처리는 이후 전 단원의 전제”</em>가 된다.</p>
+
+  <h3 class="sub">1.1 질의가 많으면 선형 탐색은 무너진다</h3>
+  <p>정렬된 배열에서 “이 값이 어디 있는가”를 <strong>Q번</strong> 묻는다고 하자. 찾는 위치가 고르게 분포한다면 선형 탐색은 성공 질의당 평균 약 N/2개를 검사한다. 존재하지 않는 값을 찾을 때는 N개를 모두 볼 수도 있다.</p>
+<pre class="out"><span class="lbl">$ ./bench2      질의 Q = 20,000회 고정</span>
+        n     선형(ms)         선형 비교     이분(ms)       이분 비교      배수
+   100000        386.4     1,006,173,628          2.0        333,849     약 193배
+   300000       1013.5     2,997,879,376          2.5        365,105     약 405배
+  1000000       <span class="bad">3498.5</span>    <span class="bad">10,007,499,563</span>          <span class="lbl">2.9</span>        <span class="lbl">399,029</span>    <span class="bad">약 1,206배</span></pre>
+  <div class="box">
+    <h4>두 숫자를 나눠 보면 이론과 정확히 맞는다</h4>
+    <p style="margin-bottom:0;">n = 100만에서 비교 횟수의 비는 <code class="inl">10,007,499,563 ÷ 399,029 ≈ <strong>25,079</strong></code>배다. 이론값은 <code class="inl">(n/2) ÷ log₂n = 500,000 ÷ 20 = 25,000</code> — <em class="hl">거의 그대로다.</em><br>
+    그런데 <strong>표에 표시된 실행 시간의 비는 약 1,206배</strong>로 훨씬 작다. 선형 탐색은 메모리를 <em class="hl">순서대로</em> 읽어 한 걸음이 매우 싸고, 이분 탐색은 <em class="hl">멀리 건너뛰므로</em> 한 걸음이 비싸기 때문이다 — 10장 3.4절에서 본 것과 같은 현상이다. <strong>실측값은 컴퓨터, 컴파일 옵션, 데이터와 측정 방식에 따라 달라진다.</strong></p>
+  </div>
+
+  <h3 class="sub">1.2 이 장이 어려운 이유</h3>
+  <p>이분 탐색의 코드는 <strong>다섯 줄</strong>이다. 그런데 PART 2에서 가장 많이 틀린다. 이유는 하나다 — <em class="hl">조금씩 다른 변종이 너무 많고, 틀린 변종도 대부분의 입력에서는 맞는 답을 낸다.</em></p>
+  <p>그래서 이 장은 <strong>변종들을 전부 돌려 보는 것</strong>으로 시작한다. 길이 1~6, 값 0~4인 <strong>모든 비내림 수열</strong>과 모든 질의값, 질의값 0~5를 포함해 총 <strong>2,766가지</strong>를 하나도 빠뜨리지 않고 검사했다. (연습 07은 질의값을 −1~5로 늘려 <strong>3,227가지</strong>를 검사한다.)</p>
+<pre class="out"><span class="lbl">길이 1~6, 값 0~4, 질의 0~5: 총 2,766건의 경계 검사</span>
+변종                                      오답    반복 상한 초과   배열 범위 밖
+(1) 표준 반열린 구간                       0           0           0
+(2) hi = mid - 1                         639           0           0
+(3) lo = mid                               0        1,980           0
+(4) while (lo &lt;= hi)                      0        1,980         786
+(5) 닫힌 구간 [lo,hi] + ans 기억            0           0           0
+(6) a[mid] &lt;= key 를 LB와 비교           1,260          0           0
+
+※ (4)의 786건은 C에서 실제 접근하면 정의되지 않은 동작이다.
+※ (6)은 upper_bound로 판정하면 모두 옳다.</pre>
+  <div class="box warm">
+    <h4>이 표를 읽는 법</h4>
+    <ul style="margin-bottom:0;">
+      <li><strong>lower_bound를 구하는 변종으로는 (1)과 (5)가 옳다.</strong> 둘은 서로 다른 스타일이고 <em class="hl">둘 다 쓸 수 있다</em>. 이 교재는 (1)을 표준으로 삼는다</li>
+      <li><strong>(2)는 조용히 틀린다.</strong> 2,766 중 639번 — <em class="hl">4번에 3번은 맞는 답을 낸다.</em> 그래서 테스트를 통과해 버린다</li>
+      <li><strong>(3)은 일부 입력에서 멈추지 않는다.</strong> (4)는 멈추지 않거나 <strong>배열 밖을 읽을 수도 있다.</strong> C에서는 경고 없이 오동작할 수 있다</li>
+      <li><strong>(6)은 틀린 게 아니다.</strong> 2.4절에서 밝힌다 — 그것은 <em class="hl">다른 함수</em>다</li>
+    </ul>
+  </div>
+
+  <div class="foot"><span>12 이분 탐색</span><span><b>세영코딩연구소</b> 저자 : 컴퓨터공학박사 KIM</span></div>
+</section>
+
+<!-- ============ 2.1~2.2 ============ -->
+<section class="page">
+  <h2 class="sec"><span class="num">2</span>개념</h2>
+
+  <h3 class="sub">2.1 반열린 구간 [lo, hi) — 이 교재의 표준</h3>
+  <p>이분 탐색이 헷갈리는 가장 큰 원인은 <strong>“지금 보고 있는 범위가 어디까지인가”</strong>가 코드마다 다르기 때문이다. 이 교재는 하나로 고정한다.</p>
+  <div class="box teal">
+    <h4>약속</h4>
+    <p style="margin-bottom:0;"><strong>다음에 비교할 배열 원소의 인덱스 범위는 <code class="inl">[lo, hi)</code>이다.</strong> <code class="inl">hi</code>는 <em class="hl">후보에 포함되지 않는다.</em><br>
+    처음에는 <code class="inl">lo = 0</code>, <code class="inl">hi = n</code>이다. 배열 원소는 0~n−1번을 검사하지만, <strong>정답인 경계 위치는 <code class="inl">lo ≤ 답 ≤ hi</code></strong>를 만족한다. <code class="inl">n</code>도 유효한 반환값으로, 모든 원소가 key보다 작아 배열 끝에 삽입해야 하는 경우다.</p>
+  </div>
+  <figure>
+    <svg viewBox="0 0 660 96" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="반열린 구간">
+      <g font-size="10" text-anchor="middle">
+        <rect x="70" y="30" width="60" height="28" fill="#eef4f3" stroke="#0d7c74"/><text x="100" y="49">0</text>
+        <rect x="130" y="30" width="60" height="28" fill="#eef4f3" stroke="#0d7c74"/><text x="160" y="49">1</text>
+        <rect x="190" y="30" width="60" height="28" fill="#eef4f3" stroke="#0d7c74"/><text x="220" y="49">2</text>
+        <rect x="250" y="30" width="60" height="28" fill="#eef4f3" stroke="#0d7c74"/><text x="280" y="49">3</text>
+        <rect x="310" y="30" width="60" height="28" fill="#eef4f3" stroke="#0d7c74"/><text x="340" y="49">4</text>
+        <rect x="370" y="30" width="60" height="28" fill="#eef4f3" stroke="#0d7c74"/><text x="400" y="49">5</text>
+        <rect x="430" y="30" width="60" height="28" fill="#f4f7fa" stroke="#9d2f3f" stroke-dasharray="4 3"/><text x="460" y="49" fill="#9d2f3f">n=6</text>
+      </g>
+      <path d="M70 70 L430 70" stroke="#0d7c74" stroke-width="2"/>
+      <path d="M70 66 L70 74" stroke="#0d7c74" stroke-width="2"/>
+      <circle cx="430" cy="70" r="3.5" fill="#fff" stroke="#9d2f3f" stroke-width="2"/>
+      <text x="250" y="86" font-size="9.3" fill="#0d7c74" text-anchor="middle" font-weight="700">검사할 원소 [0, 6) — 삽입 위치 6은 가능</text>
+      <text x="556" y="49" font-size="9.3" fill="#9d2f3f" text-anchor="middle">끝에 삽입할 위치</text>
+    </svg>
+    <figcaption>그림 12-1. [lo, hi)에 남은 비교 대상 원소의 수는 <code>hi − lo</code>개다. 경계 답은 hi일 수도 있다</figcaption>
+  </figure>
+  <div class="box">
+    <h4>반열린 구간을 쓰면 좋은 세 가지</h4>
+    <ul style="margin-bottom:0;">
+      <li><strong>남은 개수가 <code class="inl">hi − lo</code></strong>다. 빈 구간은 <code class="inl">lo == hi</code> — <code class="inl">hi = lo-1</code> 같은 이상한 상태가 없다</li>
+      <li><strong>끝났을 때 <code class="inl">lo</code>가 곧 답</strong>이다. 따로 기억해 둘 변수가 없다</li>
+      <li><strong>모든 원소가 key보다 작으면 결과가 <code class="inl">n</code></strong>으로 나온다. 단, 그 밖의 위치도 <strong>key가 실제로 존재하지 않을 수 있으므로</strong> 존재 여부는 추가로 검사한다</li>
+    </ul>
+  </div>
+
+  <h3 class="sub">2.2 다섯 줄과 그 뜻</h3>
+<pre><span class="kw">int</span> lo = 0, hi = n;                 <span class="cm">/* 비교할 원소의 범위는 [0, n) */</span>
+<span class="kw">while</span> (lo &lt; hi) {                   <span class="cm">/* 후보가 남아 있는 동안 */</span>
+    <span class="kw">int</span> mid = lo + (hi - lo) / 2;   <span class="cm">/* 가운데 (lo 이상 hi 미만) */</span>
+    <span class="kw">if</span> (a[mid] &lt; key) lo = mid + 1; <span class="cm">/* 경계 답은 mid보다 오른쪽 */</span>
+    <span class="kw">else</span>              hi = mid;     <span class="cm">/* 경계 답은 mid 이하 (hi=mid) */</span>
+}
+<span class="cm">/* 여기서 lo == hi 이고, 그 값이 답 */</span></pre>
+  <div class="box teal">
+    <h4>두 줄의 비대칭이 핵심이다</h4>
+    <p style="margin-bottom:0;"><code class="inl">lo = mid + 1</code>에는 <strong>+1이 있고</strong> <code class="inl">hi = mid</code>에는 <strong>없다.</strong> 이상해 보이지만 당연하다 —<br>
+    <code class="inl">a[mid] &lt; key</code>이면 mid는 <em class="hl">확실히 답이 아니므로 버린다</em>(그래서 +1).<br>
+    아니면 mid는 <em class="hl">답일 수도 있으므로 후보에 남긴다.</em> 다만 <strong><code class="inl">hi = mid</code>로 바꾸면 <code class="inl">mid</code> 원소는 더 이상 [lo, hi)에서 검사하지 않는다.</strong> 대신 가능한 <strong>정답 경계가 mid일 수 있다는 사실</strong>을 보존한다. 항상 <code class="inl">lo ≤ 정답 ≤ hi</code>가 유지된다.</p>
+  </div>
+
+  <div class="foot"><span>12 이분 탐색</span><span><b>세영코딩연구소</b> 저자 : 컴퓨터공학박사 KIM</span></div>
+</section>
+
+<!-- ============ 2.3~2.4 ============ -->
+<section class="page">
+  <h2 class="sec"><span class="num">2</span>개념 <span style="font-size:10pt;color:var(--muted);font-weight:400;">(이어서)</span></h2>
+
+  <h3 class="sub">2.3 왜 멈추는가 — 무한 루프의 정체</h3>
+  <p>1.2절에서 변종 (3)은 <strong>1,980건에서 반복 상한을 초과</strong>했다. 변종 (4)는 같은 1,980건에서 반복이 진행되지 않았으며, <strong>나머지 786건에서는 배열 밖 접근</strong>이 발생할 수 있다. 왜 그런지 알면 이분 탐색을 반쯤 이해한 것이다.</p>
+  <div class="box teal">
+    <h4>멈추려면 한 가지만 지키면 된다</h4>
+    <p style="margin-bottom:0;"><strong>반복할 때마다 <code class="inl">hi − lo</code>가 반드시 줄어들어야 한다.</strong></p>
+  </div>
+  <table>
+    <thead><tr><th style="width:18%">상황</th><th class="c" style="width:16%">mid</th><th style="width:28%">표준 (1)</th><th>변종 (3) <code class="inl">lo = mid</code></th></tr></thead>
+    <tbody>
+      <tr><td class="k">lo=3, hi=4<br><span style="font-weight:400;font-size:8.2pt;">(후보 1개)</span></td><td class="c m">3</td><td class="ok"><code class="inl">lo=4</code> 또는 <code class="inl">hi=3</code> → <strong>구간이 빈다</strong></td><td class="no"><code class="inl">lo=3</code> → <em class="hl">아무것도 안 바뀐다</em></td></tr>
+      <tr><td class="k">lo=3, hi=5<br><span style="font-weight:400;font-size:8.2pt;">(후보 2개)</span></td><td class="c m">4</td><td class="ok"><code class="inl">lo=5</code> 또는 <code class="inl">hi=4</code> → 1개로</td><td class="mid"><code class="inl">lo=4</code> → 1개로 (여기선 괜찮다)</td></tr>
+    </tbody>
+  </table>
+  <p><code class="inl">mid = lo + (hi-lo)/2</code>는 <strong>버림</strong>이므로 후보가 1개뿐일 때 <code class="inl">mid == lo</code>가 된다. 이때 <code class="inl">lo = mid</code>는 <em class="hl">전진이 없다</em> — 영원히 같은 자리를 맴돈다.</p>
+  <div class="box warm">
+    <h4>변종 (4) <code class="inl">while (lo &lt;= hi)</code>는 배열 밖 접근도 가능</h4>
+    <p style="margin-bottom:0;"><code class="inl">lo == hi &lt; n</code>이면 그 안에서 <code class="inl">hi = mid</code>가 그대로여서 반복이 멈출 수 있다. <strong><code class="inl">lo == hi == n</code>이면 <code class="inl">a[n]</code>을 읽으므로 범위 밖 접근</strong>이 된다. <strong>닫힌 구간 스타일을 쓰려면 반드시 <code class="inl">hi = mid - 1</code></strong>이어야 하고(변종 5), 그러면 <em class="hl">답을 따로 기억할 변수가 필요</em>해진다. <strong>섞어 쓰면 반드시 사고가 난다.</strong></p>
+  </div>
+
+  <h3 class="sub">2.4 <code class="inl">upper_bound</code> — 부등호 하나 차이</h3>
+  <p>변종 (6) <code class="inl">a[mid] &lt;= key</code>는 <strong>틀린 코드가 아니었다.</strong> 전수 검증으로 확인했다.</p>
+<pre class="out"><span class="lbl">$ ./main</span>
+'a[mid] &lt;= key' 버전이 upper_bound 와 다른 경우 : <span class="lbl">0</span>   (2,766가지 전수)</pre>
+  <table>
+    <thead><tr><th style="width:24%">함수</th><th class="c" style="width:26%">조건</th><th>돌려주는 자리</th></tr></thead>
+    <tbody>
+      <tr><td class="k tt">lower_bound</td><td class="c m">a[mid] &lt; key</td><td><strong>key 이상</strong>이 처음 나오는 자리 — <em class="hl">key가 들어갈 가장 왼쪽</em></td></tr>
+      <tr><td class="k tt">upper_bound</td><td class="c m">a[mid] &lt;= key</td><td><strong>key 초과</strong>가 처음 나오는 자리 — <em class="hl">key가 들어갈 가장 오른쪽</em></td></tr>
+    </tbody>
+  </table>
+  <div class="box">
+    <h4>그래서 개수 세기가 공짜로 따라온다</h4>
+    <p style="margin-bottom:0;"><code class="inl">key</code>인 원소들은 <strong><code class="inl">lower_bound</code>부터 <code class="inl">upper_bound</code> 직전까지</strong> 연속해 모여 있다(정렬되어 있으므로). 따라서<br>
+    <span style="font-size:11pt;"><strong>key의 개수 = <code class="inl">upper_bound(key) − lower_bound(key)</code></strong></span><br>
+    <em class="hl">세는 코드를 따로 짤 필요가 없다.</em> 두 함수의 차이가 부등호 하나뿐이라는 사실이 여기서 값을 한다.</p>
+  </div>
+
+  <div class="foot"><span>12 이분 탐색</span><span><b>세영코딩연구소</b> 저자 : 컴퓨터공학박사 KIM</span></div>
+</section>
+
+<!-- ============ 3.1~3.2 ============ -->
+<section class="page">
+  <h2 class="sec"><span class="num">3</span>구현</h2>
+
+  <h3 class="sub">3.1 필수 구현 세 가지</h3>
+<pre><span class="cm">/* key 이상이 처음 나오는 자리. 없으면 n */</span>
+<span class="kw">static</span> <span class="kw">int</span> <span class="fn">lower_bound</span>(<span class="kw">const</span> <span class="kw">int</span> *a, <span class="kw">int</span> n, <span class="kw">int</span> key){
+    <span class="kw">int</span> lo = 0, hi = n;
+    <span class="kw">while</span> (lo &lt; hi) {
+        <span class="kw">int</span> mid = lo + (hi - lo) / 2;
+        <span class="kw">if</span> (a[mid] &lt; key) lo = mid + 1; <span class="kw">else</span> hi = mid;
+    }
+    <span class="kw">return</span> lo;
+}
+<span class="cm">/* key 초과가 처음 나오는 자리. 부등호에 '=' 하나만 더 붙는다 */</span>
+<span class="kw">static</span> <span class="kw">int</span> <span class="fn">upper_bound</span>(<span class="kw">const</span> <span class="kw">int</span> *a, <span class="kw">int</span> n, <span class="kw">int</span> key){
+    <span class="kw">int</span> lo = 0, hi = n;
+    <span class="kw">while</span> (lo &lt; hi) {
+        <span class="kw">int</span> mid = lo + (hi - lo) / 2;
+        <span class="kw">if</span> (a[mid] &lt;= key) lo = mid + 1; <span class="kw">else</span> hi = mid;
+    }
+    <span class="kw">return</span> lo;
+}
+<span class="cm">/* 개수 세기 (정렬된 배열만) */</span>
+<span class="kw">static</span> <span class="kw">int</span> <span class="fn">count_key</span>(<span class="kw">const</span> <span class="kw">int</span> *a, <span class="kw">int</span> n, <span class="kw">int</span> key){
+    <span class="kw">return</span> <span class="fn">upper_bound</span>(a, n, key) - <span class="fn">lower_bound</span>(a, n, key);
+}
+<span class="cm">/* '있는가' 판정 — 함수로 만들면 바로 재사용 가능 */</span>
+<span class="kw">int</span> <span class="fn">contains_key</span>(<span class="kw">const</span> <span class="kw">int</span> *a, <span class="kw">int</span> n, <span class="kw">int</span> key){
+    <span class="kw">int</span> p = <span class="fn">lower_bound</span>(a, n, key);
+    <span class="kw">return</span> p &lt; n &amp;&amp; a[p] == key;      <span class="cm">/* 단락 평가로 a[n] 접근 방지 */</span>
+}</pre>
+  <div class="box warm">
+    <h4><code class="inl">p &lt; n</code>을 먼저 쓰는 이유</h4>
+    <p style="margin-bottom:0;">key가 모든 원소보다 크면 <code class="inl">p == n</code>이 된다. <code class="inl">a[p]</code>를 먼저 읽으면 <em class="hl">배열 밖 접근</em>이다. C의 <code class="inl">&amp;&amp;</code>는 <strong>왼쪽이 거짓이면 오른쪽을 아예 보지 않으므로</strong>, 순서만 지키면 안전하다. <strong>순서를 바꾸면 C에서 정의되지 않은 동작이며, 실행 결과를 예측할 수 없다.</strong></p>
+  </div>
+
+  <h3 class="sub">3.2 손으로 확인하기</h3>
+<pre class="out">A = 1 3 3 3 5 7 7 9 9        (인덱스 0..8, n = 9)
+
+   key    lower_bound    upper_bound       개수
+     0              0              0          0      <span class="lbl">모두보다 작다 -&gt; 맨 앞</span>
+     3              1              4          3
+     4              4              4          0      <span class="lbl">없는 값 -&gt; 둘이 같다</span>
+     7              5              7          2
+     9              7              9          2
+    10              9              9          0      <span class="lbl">모두보다 크다 -&gt; n</span></pre>
+  <div class="box teal">
+    <h4>표에서 읽어야 할 세 가지</h4>
+    <ul style="margin-bottom:0;">
+      <li><strong>없는 값은 두 함수가 같은 값을 돌려준다</strong>(key=4에서 둘 다 4). 그래서 개수가 0이 된다 — <em class="hl">“없음”을 따로 처리하지 않아도 된다</em></li>
+      <li><strong>key=4의 답 4는 “4를 끼워 넣을 자리”</strong>다. 그 자리에 넣으면 정렬이 유지된다</li>
+      <li><strong>모두보다 크면 n</strong>이 나온다. 배열 밖 자리이고, 그래서 <code class="inl">p &lt; n</code> 검사가 필요하다</li>
+    </ul>
+  </div>
+
+  <div class="foot"><span>12 이분 탐색</span><span><b>세영코딩연구소</b> 저자 : 컴퓨터공학박사 KIM</span></div>
+</section>
+
+<!-- ============ 3.3 ============ -->
+<section class="page">
+  <h2 class="sec"><span class="num">3</span>구현 <span style="font-size:10pt;color:var(--muted);font-weight:400;">(이어서)</span></h2>
+
+  <h3 class="sub">3.3 전수 검증 — 이 장에서 반드시 익힐 습관</h3>
+  <p>이분 탐색은 <strong>경계 조건을 잘못 써도 일부 작은 입력에서는 맞는 답이 나올 수 있다.</strong> 변종 (2)는 2,766가지 중 2,127가지에서 정답을 냈다. <em class="hl">무작위 테스트만으로 충분하다고 보장할 수 없다.</em> 그래서 이 장에서는 <strong>작은 입력을 전부 만들어</strong> 검사한다.</p>
+<pre><span class="cm">/* 길이 1~6, 값 0~4 인 '모든 비내림 수열'을 만들어 검사한다 */</span>
+<span class="kw">static</span> <span class="kw">int</span> b[8], bn, errors, cases;
+
+<span class="kw">static</span> <span class="kw">int</span> <span class="fn">truth</span>(<span class="kw">int</span> key){                 <span class="cm">/* 믿을 수 있는 느린 답 */</span>
+    <span class="kw">int</span> i = 0; <span class="kw">while</span> (i &lt; bn &amp;&amp; b[i] &lt; key) i++; <span class="kw">return</span> i;
+}
+<span class="kw">static</span> <span class="kw">void</span> <span class="fn">rec</span>(<span class="kw">int</span> pos, <span class="kw">int</span> maxlen, <span class="kw">int</span> minv){
+    <span class="kw">if</span> (pos &gt; 0) {
+        bn = pos;
+        <span class="kw">for</span> (<span class="kw">int</span> key = 0; key &lt;= 5; key++) {
+            cases++;
+            <span class="kw">if</span> (<span class="fn">lower_bound</span>(b, bn, key) != <span class="fn">truth</span>(key)) errors++;
+        }
+    }
+    <span class="kw">if</span> (pos == maxlen) <span class="kw">return</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> v = minv; v &lt;= 4; v++) { b[pos] = v; <span class="fn">rec</span>(pos+1, maxlen, v); }
+}
+
+<span class="cm">/* main에서 호출할 때: */</span>
+<span class="cm">/* rec(0, 6, 0); printf("%d cases, %d errors\n", cases, errors); */</span></pre>
+  <div class="box">
+    <h4>두 가지 장치</h4>
+    <ul style="margin-bottom:0;">
+      <li><code class="inl">minv</code>를 넘겨 <strong>비내림만 만든다.</strong> 정렬되지 않은 입력은 이분 탐색의 전제를 벗어나므로 검사 대상이 아니다</li>
+      <li>질의값을 <strong>0부터 5까지</strong> — 값의 범위(0~4)보다 <em class="hl">하나 넓게</em> 잡는다. “모두보다 큰 값”이라는 경계를 반드시 포함시키기 위해서다</li>
+    </ul>
+  </div>
+  <div class="box warm">
+    <h4>무한 루프를 검사기가 먼저 잡게 한다</h4>
+    <p style="margin-bottom:0;">틀린 변종은 <strong>멈추지 않을 수 있다.</strong> 그러면 검사기 자체가 죽어 아무것도 알아내지 못한다. <em class="hl">반복 횟수 상한을 두고, 넘으면 “무한 루프”로 보고</em>하게 한다 — 1.2절의 표에서 1,980이라는 숫자가 그렇게 나온 것이다. 10장 연습 06의 <code class="inl">check()</code>에서 쓴 것과 같은 장치다.</p>
+  </div>
+  <div class="qa">
+    <div class="q">Q. 길이 6, 값 0~4면 너무 작지 않나요?</div>
+    <div><strong>대표적인 경계 오류를 찾기에는 유용하다.</strong> 많은 이분 탐색 오류가 <em class="hl">경계에서 드러나기 때문</em>이다 — 후보가 1개 또는 2개 남았을 때, 답이 맨 앞·맨 뒤일 때, 같은 값이 연달아 있을 때. 길이 6이면 그 모든 조합이 들어 있다. <strong>작은 범위 전수 검사는 강력한 검증 수단이지만, 모든 가능한 입력에 대한 올바름의 수학적 증명을 대체하지는 못한다.</strong></div>
+  </div>
+
+  <div class="foot"><span>12 이분 탐색</span><span><b>세영코딩연구소</b> 저자 : 컴퓨터공학박사 KIM</span></div>
+</section>
+
+<!-- ============ 4.1~4.2 ============ -->
+<section class="page">
+  <h2 class="sec"><span class="num">4</span>함정과 복잡도</h2>
+
+  <h3 class="sub">4.1 네 가지 함정</h3>
+  <table>
+    <thead><tr><th style="width:22%">함정</th><th style="width:30%">증상</th><th>바로잡기</th></tr></thead>
+    <tbody>
+      <tr><td class="k tt no">① 정렬하지 않았다</td><td class="no">답이 <strong>그냥 틀린다</strong></td><td>이분 탐색의 전제다. 4.2절에서 측정</td></tr>
+      <tr><td class="k tt">② <code class="inl">lo = mid</code></td><td class="no"><strong>무한 루프</strong></td><td>버리는 쪽에 +1 (2.3절)</td></tr>
+      <tr><td class="k tt">③ <code class="inl">hi = mid - 1</code></td><td class="mid">반열린 구간에서 <strong>답을 건너뛴다</strong></td><td>남기는 쪽은 <code class="inl">hi = mid</code></td></tr>
+      <tr><td class="k tt">④ <code class="inl">(lo+hi)/2</code></td><td class="mid">큰 값에서 <strong>넘침</strong></td><td><code class="inl">lo + (hi-lo)/2</code></td></tr>
+    </tbody>
+  </table>
+
+  <h4 class="mini">④ 는 언제 실제로 문제가 되는가</h4>
+<pre class="out">lo = 2000000000, hi = 2100000000
+  lo + hi = 4100000000  (수학적 합, 32비트 int 범위 초과)
+  (lo + hi) / 2        : <span class="bad">C에서 정의되지 않은 동작</span>
+  lo + (hi - lo) / 2   = <span class="lbl">2050000000</span>
+  INT_MAX = 2147483647</pre>
+  <div class="box">
+    <h4>배열 첨자와 매개 변수 탐색 모두 넘침을 주의</h4>
+    <p style="margin-bottom:0;">일반적인 배열 크기에서는 잘 드러나지 않지만, <strong>매우 큰 배열 첨자도 32비트 합이 넘칠 수 있다.</strong> <strong>그런데 13장 매개 변수 탐색은 <em class="hl">첨자가 아니라 “답의 값”을 이분 탐색</em>한다.</strong> lo와 hi가 모두 10억대 후반이면 <code class="inl">lo+hi</code>가 범위를 넘을 수 있다. <em class="hl">두 경계의 차 <code class="inl">hi-lo</code>도 int 범위를 넘지 않는 조건에서는 <code class="inl">lo + (hi-lo)/2</code>가 안전하다. 전체 범위가 더 크면 <code class="inl">long long</code>을 사용한다.</em></p>
+  </div>
+
+  <h3 class="sub">4.2 정렬하지 않고 이분 탐색하면</h3>
+<pre class="out">정렬하지 않은 배열 2,000개를 검사한 한 측정 예시
+  이분 탐색이 틀린 횟수 : <span class="bad">792 / 2000   (39.6%)</span>
+  ※ 오류 비율은 배열과 질의값의 생성 방법에 따라 달라진다.</pre>
+  <div class="box warm">
+    <h4>이 표본에서 60.4%는 맞는다 — 그래서 더 위험하다</h4>
+    <p style="margin-bottom:0;">위 표본에서는 정렬을 깜빡해도 <em class="hl">약 60%가 우연히 맞았다.</em> 이는 모든 무작위 입력에서 성립하는 비율이 아니다. 예제 몇 개로 확인하면 통과할 수 있다. <strong>“이분 탐색을 쓰기 전에 정렬했는가”는 코드를 제출하기 전 반드시 눈으로 확인할 한 줄</strong>이다.</p>
+  </div>
+
+  <div class="foot"><span>12 이분 탐색</span><span><b>세영코딩연구소</b> 저자 : 컴퓨터공학박사 KIM</span></div>
+</section>
+
+<!-- ============ 4.3 ============ -->
+<section class="page">
+  <h2 class="sec"><span class="num">4</span>함정과 복잡도 <span style="font-size:10pt;color:var(--muted);font-weight:400;">(이어서)</span></h2>
+
+  <h3 class="sub">4.3 복잡도 — 반복 횟수를 직접 센다</h3>
+  <p>후보 구간의 길이는 매 반복마다 <strong>절반 이하</strong>가 된다. n에서 시작해 1보다 작아지기까지 걸리는 횟수가 <code class="inl">log₂n</code>이다. 실제로 세어 보았다.</p>
+<pre class="out">           n      평균 반복     ceil(log₂(n+1))
+        1000           9.98              10
+      100000          16.69              17
+     1000000          19.95              20</pre>
+  <p><strong>이론과 거의 정확히 맞는다.</strong> 09·10장에서 연산 횟수와 실제 시간이 어긋나는 경우를 여럿 보았는데, <em class="hl">이분 탐색의 반복 횟수는 예측이 그대로 맞는 드문 경우</em>다.</p>
+  <table>
+    <thead><tr><th style="width:26%">항목</th><th class="c" style="width:22%">복잡도</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td class="k">한 번의 이분 탐색</td><td class="c ok">O(log N)</td><td>N = 100만이면 <strong>20번</strong></td></tr>
+      <tr><td class="k">정렬 + Q번 질의</td><td class="c ok">O(N log N + Q log N)</td><td>정렬 비용을 잊지 않는다</td></tr>
+      <tr><td class="k">선형 탐색 Q번</td><td class="c no">O(NQ)</td><td>N=Q=100만이면 <em class="hl">5×10¹¹</em> — 불가능</td></tr>
+      <tr><td class="k">개수 세기</td><td class="c ok">O(log N)</td><td>이분 탐색 두 번</td></tr>
+    </tbody>
+  </table>
+  <div class="box teal">
+    <h4>N을 외우는 대신 20을 외운다</h4>
+    <p style="margin-bottom:0;">log₂(100만) ≈ 20, log₂(10억) ≈ 30이다. <em class="hl">정렬된 배열의 탐색 범위가 백만이면 약 20번, 십억이면 약 30번의 비교로 경계를 찾는다.</em> 그래서 이분 탐색은 <strong>“질의당 O(log N)이므로 많은 질의에도 상대적으로 유리하다”</strong>는 뜻이 되고, 12·13·14장과 24장 세그먼트 트리가 전부 이 사실 위에 선다.</p>
+  </div>
+  <div class="qa">
+    <div class="q">Q. 평균 반복이 19.95로 20보다 살짝 작은 이유는?</div>
+    <div>배열 길이가 2의 거듭제곱이 아니면 <strong>분할되는 왼쪽·오른쪽 구간 크기가 달라</strong> 경로에 따라 반복 횟수가 한 번 정도 차이 나기 때문이다. 다만 <code class="inl">lower_bound</code>는 <em class="hl">값을 찾아도 멈추지 않고 끝까지 구간을 좁힌다</em>(가장 왼쪽을 찾아야 하므로). 따라서 값이 일찍 발견되어 종료되는 것이 아니라, <code class="inl">⌊log₂n⌋</code> 또는 그 부근 횟수만큼 후보 범위를 줄인다 — <strong>최악과 평균이 사실상 같다.</strong></div>
+  </div>
+
+  <div class="foot"><span>12 이분 탐색</span><span><b>세영코딩연구소</b> 저자 : 컴퓨터공학박사 KIM</span></div>
+</section>
+
+<!-- ============ 5. 예제 1~2 ============ -->
+<section class="page">
+  <h2 class="sec"><span class="num">5</span>예제</h2>
+
+  <div class="ex">
+    <div class="ex-h">예제 1 <span class="tag">손으로 추적</span></div>
+    <div class="ex-b">
+      <p><code class="inl">A = [2, 4, 4, 4, 6, 8]</code> (n = 6)에서 <code class="inl">lower_bound(4)</code>를 추적하라. 매 반복의 <code class="inl">lo</code>, <code class="inl">hi</code>, <code class="inl">mid</code>, 판단을 쓸 것.</p>
+      <div class="sol">
+        <table style="margin-bottom:2mm;">
+          <thead><tr><th class="c" style="width:12%">반복</th><th class="c" style="width:10%">lo</th><th class="c" style="width:10%">hi</th><th class="c" style="width:10%">mid</th><th class="c" style="width:14%">a[mid]</th><th>판단</th></tr></thead>
+          <tbody>
+            <tr><td class="c">1</td><td class="c m">0</td><td class="c m">6</td><td class="c m">3</td><td class="c m">4</td><td>4 &lt; 4 거짓 → <code class="inl">hi = 3</code> (남긴다)</td></tr>
+            <tr><td class="c">2</td><td class="c m">0</td><td class="c m">3</td><td class="c m">1</td><td class="c m">4</td><td>거짓 → <code class="inl">hi = 1</code></td></tr>
+            <tr><td class="c">3</td><td class="c m">0</td><td class="c m">1</td><td class="c m">0</td><td class="c m">2</td><td>2 &lt; 4 참 → <code class="inl">lo = 1</code> (버린다)</td></tr>
+            <tr><td class="c tt">끝</td><td class="c m ok">1</td><td class="c m ok">1</td><td class="c">—</td><td class="c">—</td><td class="ok"><code class="inl">lo == hi</code> → 답 <strong>1</strong></td></tr>
+          </tbody>
+        </table>
+        <p style="margin-bottom:0;"><b>확인.</b> <code class="inl">A[1] = 4</code>이고 <code class="inl">A[0] = 2 &lt; 4</code>이므로 <strong>4가 처음 나오는 자리는 1</strong>이 맞다.<br>
+        <b>주목.</b> 반복 1에서 <code class="inl">a[mid]</code>가 이미 찾는 값 4였는데도 <em class="hl">멈추지 않았다.</em> <strong>가장 왼쪽을 찾아야 하기 때문</strong>이다 — 4.3절의 질문에 대한 답이 여기 있다.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="ex">
+    <div class="ex-h">예제 2 <span class="tag">네 가지 질문, 한 가지 도구</span></div>
+    <div class="ex-b">
+      <p><code class="inl">A = [1, 3, 3, 3, 5, 7, 7, 9, 9]</code>에서 다음을 <code class="inl">lower_bound</code>·<code class="inl">upper_bound</code>만으로 구하라.</p>
+      <div class="sol">
+        <table style="margin-bottom:2mm;">
+          <thead><tr><th style="width:34%">묻는 것</th><th class="c" style="width:30%">식</th><th class="c">답</th></tr></thead>
+          <tbody>
+            <tr><td>3이 몇 개인가</td><td class="c m">ub(3) − lb(3)</td><td class="c tt">4 − 1 = <strong>3</strong></td></tr>
+            <tr><td>5 미만이 몇 개인가</td><td class="c m">lb(5)</td><td class="c tt"><strong>4</strong></td></tr>
+            <tr><td>7 이하가 몇 개인가</td><td class="c m">ub(7)</td><td class="c tt"><strong>7</strong></td></tr>
+            <tr><td>3 이상 7 이하가 몇 개인가</td><td class="c m">ub(7) − lb(3)</td><td class="c tt">7 − 1 = <strong>6</strong></td></tr>
+          </tbody>
+        </table>
+        <div class="box teal" style="margin-bottom:0;">
+          <p style="margin-bottom:0;"><b>외울 것은 두 줄뿐이다.</b> <code class="inl">lb(x)</code>는 <em class="hl">“x보다 작은 것의 개수”</em>, <code class="inl">ub(x)</code>는 <em class="hl">“x 이하인 것의 개수”</em>이기도 하다. 자리를 돌려주는 함수인데 <strong>그 자리의 번호가 곧 앞쪽 개수</strong>이기 때문이다(0번부터 세므로). 이 해석을 쥐고 있으면 범위 개수 문제를 전부 뺄셈으로 바꿀 수 있다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot"><span>12 이분 탐색</span><span><b>세영코딩연구소</b> 저자 : 컴퓨터공학박사 KIM</span></div>
+</section>
+
+<!-- ============ 예제 3~4 ============ -->
+<section class="page">
+  <h2 class="sec"><span class="num">5</span>예제 <span style="font-size:10pt;color:var(--muted);font-weight:400;">(이어서)</span></h2>
+
+  <div class="ex">
+    <div class="ex-h">예제 3 <span class="tag">어디가 틀렸나</span></div>
+    <div class="ex-b">
+      <p>다음 두 코드는 <code class="inl">lower_bound</code>를 의도했다. 각각 무슨 일이 일어나는가?</p>
+<pre style="margin-bottom:2mm;"><span class="cm">/* 가 */</span>                                  <span class="cm">/* 나 */</span>
+<span class="kw">int</span> lo=0, hi=n;                            <span class="kw">int</span> lo=0, hi=n;
+<span class="kw">while</span> (lo &lt; hi) {                          <span class="kw">while</span> (lo &lt; hi) {
+    <span class="kw">int</span> mid = (lo+hi)/2;                       <span class="kw">int</span> mid = (lo+hi)/2;
+    <span class="kw">if</span> (a[mid] &lt; key) lo = mid;                <span class="kw">if</span> (a[mid] &lt; key) lo = mid+1;
+    <span class="kw">else</span> hi = mid;                             <span class="kw">else</span> hi = mid-1;
+}                                          }</pre>
+      <div class="sol">
+        <table style="margin-bottom:2mm;">
+          <thead><tr><th class="c" style="width:10%">구분</th><th class="c" style="width:20%">증상</th><th>이유</th></tr></thead>
+          <tbody>
+            <tr><td class="c tt">가</td><td class="c no"><strong>일부 입력에서 무한 루프</strong></td><td>후보가 1개 남으면 <code class="inl">mid == lo</code>인데 <code class="inl">lo = mid</code>는 <em class="hl">전진이 없다</em>. 전수 검증에서 <strong>1,980번</strong> 멈추지 않았다</td></tr>
+            <tr><td class="c tt">나</td><td class="c mid"><strong>답이 틀린다</strong></td><td><code class="inl">hi = mid-1</code>은 <em class="hl">mid를 후보에서 빼 버린다.</em> 그런데 mid가 답일 수 있다. 전수 검증에서 <strong>639번</strong> 틀렸다</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-bottom:0;"><b>어느 쪽이 더 위험한가.</b> <strong>나</strong>다. 가는 <em class="hl">바로 멈추지 않으니 즉시 알아차린다.</em> 나는 2,766가지 중 2,127가지에서 <strong>정답을 내므로</strong> 테스트를 통과하고 대회장에서 틀린다.<br>
+        <span style="color:var(--muted);">※ 둘 다 <code class="inl">(lo+hi)/2</code>를 쓰고 있다. 배열 첨자라 지금은 넘치지 않지만, 이것도 고쳐야 할 습관이다(4.1절 ④).</span></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="ex">
+    <div class="ex-h">예제 4 <span class="tag">전수 검증 설계</span></div>
+    <div class="ex-b">
+      <p>자기 <code class="inl">lower_bound</code>를 전수 검증하려 한다. (1) 어떤 입력을 만들어야 하는가? (2) 질의값의 범위는? (3) 무한 루프에 빠지는 코드는 어떻게 다루는가?</p>
+      <div class="sol">
+        <ul style="margin-bottom:2mm;">
+          <li><b>(1)</b> <strong>길이 1~6, 값 0~4인 모든 비내림 수열.</strong> 정렬되지 않은 입력은 전제를 벗어나므로 제외한다. <em class="hl">길이 6이면 “후보 1개·2개 남는 순간”, “답이 양 끝”, “같은 값 연속”이 모두 들어간다</em></li>
+          <li><b>(2)</b> <strong>−1부터 5까지</strong>(값 범위보다 양쪽으로 하나씩 넓게). <em class="hl">“모두보다 작은 값”과 “모두보다 큰 값”이 가장 자주 틀리는 경계</em>이므로 반드시 넣는다</li>
+          <li><b>(3)</b> <strong>반복 횟수에 상한을 둔다.</strong> 예컨대 100번을 넘으면 멈추고 “무한 루프”로 보고한다. <em class="hl">상한이 없으면 검사기가 먼저 죽어</em> 아무것도 알아내지 못한다</li>
+        </ul>
+        <div class="box warm" style="margin-bottom:0;">
+          <p style="margin-bottom:0;"><b>비교 대상(믿을 수 있는 답)은 선형 탐색으로 만든다.</b> <code class="inl">while (i &lt; n &amp;&amp; a[i] &lt; key) i++;</code> — <em class="hl">느리지만 틀릴 수 없을 만큼 단순</em>하다. <strong>빠른 코드를 느린 코드로 검증한다</strong>는 이 방식은 08~11장에서 계속 써 온 것이고, PART 2 이후 모든 장에서 쓴다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot"><span>12 이분 탐색</span><span><b>세영코딩연구소</b> 저자 : 컴퓨터공학박사 KIM</span></div>
+</section>
+
+<!-- ============ 6. 연습 ============ -->
+<section class="page">
+  <h2 class="sec"><span class="num">6</span>연습 문제</h2>
+  <p class="lead">01~05는 공책에, 06~10은 컴퓨터로 푼다. 제한 시간 60분. <strong>이 장은 “돌아간다”가 아니라 “전수 검증을 통과한다”가 기준이다.</strong></p>
+
+  <div class="prob"><span class="pn">01</span>반열린 구간 <code class="inl">[lo, hi)</code>의 뜻을 쓰고, <strong>이 방식이 좋은 이유 세 가지</strong>를 들라. 빈 구간은 어떤 상태인가?</div>
+
+  <div class="prob"><span class="pn">02</span>표준 <code class="inl">lower_bound</code>에서 <code class="inl">lo = mid + 1</code>에는 +1이 있고 <code class="inl">hi = mid</code>에는 없다. <strong>왜 비대칭인지</strong> 두 줄로 설명하라.</div>
+
+  <div class="prob"><span class="pn">03</span><code class="inl">A = [2, 5, 5, 5, 8, 9]</code>에서 <code class="inl">lower_bound(5)</code>와 <code class="inl">upper_bound(5)</code>를 각각 추적하라. 매 반복의 <code class="inl">lo</code>, <code class="inl">hi</code>, <code class="inl">mid</code>, <code class="inl">a[mid]</code>, 판단을 표로 쓸 것.</div>
+
+  <div class="prob"><span class="pn">04</span><code class="inl">A = [1, 1, 4, 4, 4, 6, 9, 9, 9, 9]</code>에 대해 다음을 <code class="inl">lb</code>·<code class="inl">ub</code>로 표현하고 값을 구하라.<br>
+  ① 4의 개수 &nbsp; ② 6 미만의 개수 &nbsp; ③ 4 이상 9 미만의 개수 &nbsp; ④ 가장 큰 값의 개수 &nbsp; ⑤ 5가 들어갈 자리</div>
+
+  <div class="prob"><span class="pn">05</span>다음 세 변종이 각각 어떻게 되는지 쓰라. (무한 루프 / 답이 틀림 / 배열 범위 밖 접근 / 올바름 중 해당 항목을 모두 쓰기)<br>
+  ① <code class="inl">lo = mid;</code> &nbsp; ② <code class="inl">hi = mid - 1;</code> &nbsp; ③ <code class="inl">while (lo &lt;= hi)</code>로 바꾸고 <code class="inl">hi = mid;</code> 유지<br>
+  그리고 <strong>셋 중 가장 위험한 것</strong>을 고르고 이유를 쓰라.</div>
+
+  <div class="prob"><span class="pn">06</span><code class="inl">lower_bound</code>, <code class="inl">upper_bound</code>, <code class="inl">count_key</code>를 구현하라. 예제 2의 배열로 여섯 가지 질의값(0, 3, 4, 7, 9, 10)의 결과가 교재 표와 일치하는지 확인할 것.</div>
+
+  <div class="prob"><span class="pn">07</span><strong>전수 검증기를 만들라.</strong> 길이 1~6, 값 0~4인 모든 비내림 수열과 질의값 −1~5에 대해 자기 <code class="inl">lower_bound</code>·<code class="inl">upper_bound</code>·<code class="inl">count_key</code>를 선형 탐색과 대조하라. <strong>검사한 경우의 수</strong>를 출력할 것.</div>
+
+  <div class="prob"><span class="pn">08</span>07의 검증기에 <strong>틀린 변종 세 개</strong>(<code class="inl">lo=mid</code> / <code class="inl">hi=mid-1</code> / <code class="inl">while(lo&lt;=hi)</code>)를 넣어 돌려라. 각각 <strong>틀린 횟수와 무한 루프 횟수</strong>를 세어 표로 만들고, <strong>반복 상한</strong>을 반드시 둘 것.</div>
+
+  <div class="prob"><span class="pn">09</span>n = 100,000 / 300,000 / 1,000,000인 <strong>무작위 정렬 배열</strong>을 만들어 선형 탐색과 이분 탐색으로 각각 20,000번 질의하라. 시간과 <strong>비교 횟수</strong>를 모두 재고, 성공 질의가 위치 전체에 고르게 분포한다면 비교 횟수의 비가 <code class="inl">(n/2) ÷ log₂n</code>에 가까운지 확인하라. <strong>규칙적인 값 배열을 쓰는 것도 알고리즘 검증에는 유효하지만, 성능 실험에서는 값·질의 분포를 어떻게 구성해야 편향을 줄일 수 있는지</strong> 설명하라.</div>
+
+  <div class="prob"><span class="pn">10</span><strong>정렬하지 않은</strong> 무작위 배열 2,000개에 대해 “값이 있는가”를 이분 탐색으로 판정하고, 선형 탐색 결과와 대조해 <strong>틀린 비율</strong>을 구하라. 오답 비율은 표본에 따라 달라지며 0% 또는 100%일 수도 있다. 일부 입력에서만 맞는 코드가 왜 위험한지 쓸 것.</div>
+
+  <div class="foot"><span>12 이분 탐색</span><span><b>세영코딩연구소</b> 저자 : 컴퓨터공학박사 KIM</span></div>
+</section>
+
+<!-- ============ 7. 도전 ============ -->
+<section class="page">
+  <h2 class="sec"><span class="num">7</span>도전 문제</h2>
+
+  <div class="prob" style="border-left:4px solid var(--accent);">
+    <span class="pn">C1</span><strong>합이 S인 두 수</strong><br>
+    수열 A와 정수 S가 주어진다. <strong>서로 다른 두 위치</strong> i &lt; j 로 <code class="inl">A[i] + A[j] = S</code>인 쌍의 <strong>개수</strong>를 구하라. 2 ≤ N ≤ 100,000, 원소와 S는 각각 −10억 ~ 10억.<br>
+    <span style="color:var(--muted);">예 : A = 1 2 3 4 5 5, S = 7 → 2+5(두 번), 3+4(한 번) = <strong>3쌍</strong></span><br>
+    (1) 모든 쌍을 보는 풀이의 복잡도는? N = 100,000에서 어림하라.<br>
+    (2) 정렬한 뒤 각 <code class="inl">A[i]</code>에 대해 <code class="inl">S − A[i]</code>를 이분 탐색하면 된다. <strong>같은 원소를 두 번 세지 않으려면</strong> 어느 범위에서 찾아야 하는가?<br>
+    (3) 값이 중복될 수 있다. <strong>개수를 세려면</strong> 무엇을 써야 하는가? (힌트 — 2.4절)<br>
+    (4) <code class="inl">S − A[i]</code>를 <code class="inl">int</code>로 계산하면 위험하다. 왜이며 어떻게 고치는가? <strong>찾는 값이 int 범위를 벗어날 수도 있으므로 탐색 함수의 key 자료형도 점검하라.</strong> 또한 정답 쌍의 수가 최대 <strong>4,999,950,000</strong>개임을 이용해 <strong>정답 변수의 자료형</strong>을 정하라.<br>
+    (5) 구현해서 (1)과 시간을 비교하라. <strong>중복이 많은 입력</strong>으로 측정할 것.
+  </div>
+
+  <div class="prob" style="border-left:4px solid var(--accent);">
+    <span class="pn">C2</span><strong>경계값 자동 검사기</strong><br>
+    이 장의 핵심 습관을 도구로 만든다. <strong>같은 계약을 따르는 lower_bound·upper_bound 함수를 인자로 받아 정해진 입력 범위에서 전수 검증하는 검사기</strong>를 작성하라.<br>
+    (1) 검사기의 <strong>함수 시그니처</strong>를 설계하라. 11장에서 <code class="inl">qsort</code>가 비교 함수를 받았던 것처럼, <em class="hl">검사할 함수를 인자로 받아야</em> 한다.<br>
+    (2) 생성할 입력의 범위를 정하고 <strong>그 선택의 근거</strong>를 쓰라. 길이 6으로 어떤 대표적 경계 오류를 확인할 수 있으며, 왜 모든 버그를 잡는다는 보장은 없는가?<br>
+    (3) <strong>무한 루프를 어떻게 잡을 것인가?</strong> 반복 횟수를 세려면 검사 대상 함수에 무엇이 필요한가? 두 가지 방법을 제시하고 장단점을 비교하라.<br>
+    (4) 틀린 변종 세 개를 넣어 <strong>검사기가 오답·반복 상한 초과·범위 밖 접근을 구별하는지</strong> 보이라. 잡지 못하는 변종이 있다면 검사 범위를 넓혀라.<br>
+    (5) 이 검사기를 <strong>13장 매개 변수 탐색에도 쓸 수 있는가?</strong> 쓸 수 없다면 무엇을 바꿔야 하는가?
+  </div>
+
+  <div class="box teal">
+    <h4>두 문항이 겨냥하는 것</h4>
+    <p style="margin-bottom:0;">C1은 <strong>11장 정렬 + 12장 이분 탐색</strong>을 한 문제에서 쓴다. (2)(3)(4)가 각각 다른 종류의 실수를 묻는데, <em class="hl">셋 중 하나만 틀려도 답이 틀린다.</em> 같은 문제를 <strong>14장에서 투 포인터로 다시</strong> 풀어 O(N)으로 줄인다.<br>
+    C2는 이 교재가 반복해 온 <strong>“맞는지 어떻게 아는가”</strong>를 도구로 만드는 문항이다. 여기서 만든 검사기는 <em class="hl">13장부터 계속 쓰게 되므로</em>, 한 번 제대로 만들어 두면 남는 장사다. (5)가 가장 중요하다 — <strong>13장은 배열이 아니라 “값”을 탐색</strong>하므로 단조 술어의 정의와 참·거짓 경계를 검증하는 형태로 바꿔야 한다.</p>
+  </div>
+
+  <div class="foot"><span>12 이분 탐색</span><span><b>세영코딩연구소</b> 저자 : 컴퓨터공학박사 KIM</span></div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section class="page">
+  <h2 class="sec"><span class="num">8</span>막히는 지점</h2>
+
+  <table>
+    <thead><tr><th style="width:27%">흔한 생각</th><th style="width:30%">무엇이 틀렸나</th><th>바로잡기</th></tr></thead>
+    <tbody>
+      <tr><td class="tt">“찾으면 바로 멈추면 되지”</td><td><code class="inl">lower_bound</code>는 <strong>가장 왼쪽</strong>을 찾아야 한다</td><td>끝까지 구간을 좁힌다 (예제 1)</td></tr>
+      <tr><td class="tt">“<code class="inl">lo = mid</code>도 비슷하지”</td><td>후보 1개일 때 <strong>전진이 없다</strong> → 무한 루프 1,980번</td><td>버리는 쪽에 <strong>+1</strong> (2.3절)</td></tr>
+      <tr><td class="tt">“<code class="inl">hi = mid-1</code>이 안전해 보인다”</td><td>답일 수도 있는 mid를 <strong>버린다</strong> → 639번 틀림</td><td>반열린 구간에서는 <code class="inl">hi = mid</code></td></tr>
+      <tr><td class="tt">“테스트 통과했으니 맞다”</td><td>이 검사의 변종 (2)는 <strong>약 77%에서 정답</strong>을 냈다</td><td><strong>전수 검증</strong>으로 확인한다 (3.3절)</td></tr>
+      <tr><td class="tt">“<code class="inl">(lo+hi)/2</code>면 충분”</td><td>13장 값 탐색에서 <strong>넘친다</strong></td><td>지금부터 <code class="inl">lo + (hi-lo)/2</code></td></tr>
+      <tr><td class="tt">“<code class="inl">a[p]==key</code>로 확인”</td><td><code class="inl">p == n</code>이면 <strong>배열 밖</strong></td><td><code class="inl">p &lt; n &amp;&amp; a[p]==key</code> — <em class="hl">순서가 중요</em></td></tr>
+      <tr><td class="tt">“정렬은 당연히 했겠지”</td><td>표본에 따라 일부 질의는 우연히 맞을 수 있다</td><td>제출 전 정렬 여부를 눈으로 확인 (4.2절)</td></tr>
+      <tr><td class="tt">“개수 세는 함수를 따로”</td><td>이미 있다 — <code class="inl">ub − lb</code></td><td>두 함수의 차이는 <strong>부등호 하나</strong>뿐 (2.4절)</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">자가 점검</h3>
+  <div class="box">
+    <ul class="chk" style="margin-bottom:0;">
+      <li>반열린 구간의 뜻과 장점 세 가지를 말할 수 있다</li>
+      <li><code class="inl">lower_bound</code>를 보지 않고 다섯 줄로 쓸 수 있다</li>
+      <li><code class="inl">upper_bound</code>와의 차이가 부등호 하나임을 안다</li>
+      <li>개수 세기를 <code class="inl">ub − lb</code>로 구할 수 있다</li>
+      <li>무한 루프가 생기는 자리를 정확히 지목할 수 있다</li>
+      <li><strong>전수 검증기를 만들어 자기 코드를 검사했다</strong></li>
+      <li><code class="inl">p &lt; n</code> 검사를 먼저 쓰는 이유를 안다</li>
+    </ul>
+  </div>
+
+  <div class="box teal">
+    <h4>다음은 13 매개 변수 탐색</h4>
+    <p style="margin-bottom:0;">이 장의 이분 탐색은 <strong>배열의 첨자</strong>를 좁혔다. 13장은 <em class="hl">“답 그 자체”를 좁힌다.</em><br>
+    “길이 x로 자를 수 있는가?”처럼 <strong>예/아니오로 답할 수 있고, x가 커질수록 한 방향으로만 바뀌는</strong> 질문을 만들면, 그 x를 이분 탐색할 수 있다. 배열이 없어도 된다.<br>
+    그때도 <strong>경계 위치를 찾는 핵심 원리</strong>는 같지만, 검사할 조건과 경계의 자료형·종료 조건은 문제에 맞춰 설계해야 한다. 다만 <code class="inl">hi</code>가 10억대가 되므로 <em class="hl"><code class="inl">(lo+hi)/2</code>에서 넘침이 발생할 수 있다</em>(4.1절 ④). 그리고 <strong>C2에서 만든 검사기도 모양을 바꿔야 한다</strong> — 그 준비가 C2 (5)다.</p>
+  </div>
+
+  <div class="foot"><span>12 이분 탐색</span><span><b>세영코딩연구소</b> 저자 : 컴퓨터공학박사 KIM</span></div>
+</section>
+
+</body>
+</html>
